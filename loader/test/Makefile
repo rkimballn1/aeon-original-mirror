@@ -43,6 +43,7 @@ TEST_SRCS := \
     test_pixel_mask.cpp \
     test_provider.cpp \
     test_provider_audio.cpp \
+    test_tensor.cpp \
     test_types.cpp \
     test_util.cpp \
     test_video.cpp \

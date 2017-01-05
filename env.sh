@@ -11,6 +11,7 @@ SRCS="
     block_loader_file.cpp
     block_loader_nds.cpp
     box.cpp
+    bstream.cpp
     buffer_in.cpp
     buffer_out.cpp
     buffer_pool.cpp
@@ -28,6 +29,7 @@ SRCS="
     etl_pixel_mask.cpp
     etl_depthmap.cpp
     etl_video.cpp
+    etl_tensor.cpp
     file_util.cpp
     image.cpp
     interface.cpp
