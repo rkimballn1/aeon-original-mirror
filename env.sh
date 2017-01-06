@@ -27,9 +27,9 @@ SRCS="
     etl_localization.cpp
     etl_multicrop.cpp
     etl_pixel_mask.cpp
+    etl_raw_image.cpp
     etl_depthmap.cpp
     etl_video.cpp
-    etl_tensor.cpp
     file_util.cpp
     image.cpp
     interface.cpp
