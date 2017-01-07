@@ -70,10 +70,14 @@ private:
 class nervana::raw_image::extractor : public interface::extractor<image::decoded>
 {
 public:
-    extractor(const image::config&);
+    extractor(const raw_image::config&);
     ~extractor() {}
     virtual std::shared_ptr<image::decoded> extract(const char*, int) override;
 private:
+    std::string m_input_type;
+    int32_t     m_height;
+    int32_t     m_width;
+    int32_t     m_channels;
 };
 
 class nervana::raw_image::loader : public interface::loader<image::decoded>
