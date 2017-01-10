@@ -14,6 +14,7 @@
 */
 
 #include "etl_raw_image.hpp"
+#include "log.hpp"
 
 using namespace std;
 using namespace nervana;
@@ -28,6 +29,14 @@ raw_image::config::config(nlohmann::json js)
         info->parse(js);
     }
     verify_config("image", config_list, js);
+
+    shape_t shape;
+    if (channel_major) {
+        shape = {channels, height, width};
+    } else{
+        shape = {height, width, channels};
+    }
+    add_shape_type(shape, output_type);
 }
 
 void raw_image::config::validate()
@@ -83,17 +92,76 @@ shared_ptr<image::decoded> raw_image::extractor::extract(const char* data, int s
         cv_type = CV_MAKETYPE(CV_8U, m_channels);
     }
 
-    cv::Mat mat{m_height, m_width, cv_type, data, size};
+    cv::Mat mat{(int)m_height, (int)m_width, cv_type, (void*)data, (size_t)size};
+    rc->add(mat);
 
     return rc;
 }
 
 raw_image::loader::loader(const raw_image::config& cfg)
+    : channel_major{cfg.channel_major}
+    , stype{cfg.get_shape_type()}
+    , channels{cfg.channels}
 {
 
 }
 
-void raw_image::loader::load(const std::vector<void*>&, std::shared_ptr<image::decoded>)
+void raw_image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<image::decoded> input)
 {
+    INFO;
+    char* outbuf = (char*)outlist[0];
+    // TODO: Generalize this to also handle multi_crop case
+    INFO;
+    auto cv_type = stype.get_otype().cv_type;
+    INFO;
+    auto element_size = stype.get_otype().size;
+    INFO << (input ? "valid" : "nullptr");
+    INFO << input->get_image_count();
+    auto img = input->get_image(0);
+    INFO << img.elemSize();
+    int image_size = img.channels() * img.total() * element_size;
 
+    INFO << image_size;
+    for (int i=0; i < input->get_image_count(); i++)
+    {
+        INFO;
+        auto outbuf_i = outbuf + (i * image_size);
+        auto input_image = input->get_image(i);
+        vector<cv::Mat> source;
+        vector<cv::Mat> target;
+        vector<int>     from_to;
+
+        INFO;
+        source.push_back(input_image);
+        INFO;
+        if (channel_major)
+        {
+        INFO;
+            for(int ch=0; ch<channels; ch++)
+            {
+                target.emplace_back(img.size(), cv_type, (char*)(outbuf_i + ch * img.total() * element_size));
+                from_to.push_back(ch);
+                from_to.push_back(ch);
+            }
+        }
+        else
+        {
+        INFO;
+            target.emplace_back(input_image.size(), CV_MAKETYPE(cv_type, channels), (char*)(outbuf_i));
+        INFO;
+            for(int ch=0; ch<channels; ch++)
+            {
+        INFO;
+                from_to.push_back(ch);
+        INFO;
+                from_to.push_back(ch);
+        INFO;
+            }
+        INFO;
+        }
+        INFO;
+        image::convert_mix_channels(source, target, from_to);
+        INFO;
+    }
+    INFO;
 }

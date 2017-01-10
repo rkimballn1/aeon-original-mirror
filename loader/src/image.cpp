@@ -17,9 +17,44 @@
 
 #include "image.hpp"
 #include "util.hpp"
+#include "log.hpp"
 
 using namespace nervana;
 using namespace std;
+
+
+static void convert_float_image(cv::Mat mat, const string& path)
+{
+    float max = 0;
+    float* p = (float*)mat.data;
+    size_t size = mat.rows * mat.cols;
+    for (size_t i=0; i<size; i++)
+    {
+        max = std::max(max, p[i]);
+    }
+    for (size_t i=0; i<size; i++)
+    {
+        p[i] = p[i] / max;
+    }
+    INFO << max;
+
+    cv::Mat image(mat.rows, mat.cols, CV_8UC1);
+
+    float* s = (float*)mat.data;
+    uint8_t* d = image.data;
+    for (size_t row=0; row<image.rows; row++)
+    {
+        for (size_t col=0; col<image.cols; col++)
+        {
+            *d++ = (*s++)/max*255;
+        }
+    }
+
+    cv::imwrite(path, image);
+}
+
+
+
 
 void image::rotate(const cv::Mat& input, cv::Mat& output, int angle, bool interpolate, const cv::Scalar& border)
 {
@@ -55,6 +90,7 @@ void image::resize(const cv::Mat& input, cv::Mat& output, const cv::Size2i& size
 
 void image::convert_mix_channels(vector<cv::Mat>& source, vector<cv::Mat>& target, vector<int>& from_to)
 {
+    INFO;
     if(source.size() == 0) throw invalid_argument("convertMixChannels source size must be > 0");
     if(target.size() == 0) throw invalid_argument("convertMixChannels target size must be > 0");
     if(from_to.size() == 0) throw invalid_argument("convertMixChannels from_to size must be > 0");
@@ -62,6 +98,7 @@ void image::convert_mix_channels(vector<cv::Mat>& source, vector<cv::Mat>& targe
     const vector<cv::Mat>* prepared_source = &source;
     vector<cv::Mat>  tmp_source;
     if(source[0].depth() != target[0].depth()) {
+    INFO;
         // Conversion required
         for(cv::Mat mat : source) {
             cv::Mat tmp;
@@ -72,12 +109,25 @@ void image::convert_mix_channels(vector<cv::Mat>& source, vector<cv::Mat>& targe
     }
 
     if(prepared_source->size() == 1 && target.size() == 1) {
+    INFO;
         size_t size = target[0].total() * target[0].elemSize();
+        INFO << target[0].total();
+        INFO << target[0].elemSize();
+        INFO << size;
         memcpy(target[0].data, (*prepared_source)[0].data, size);
+        if (target[0].elemSize() == 4)
+        {
+            cv::Mat mat1(480,640,CV_32FC1, (*prepared_source)[0].data, size);
+            convert_float_image(mat1, "image_source.png");
+            cv::Mat mat2(480,640,CV_32FC1, target[0].data, size);
+            convert_float_image(mat2, "image_target.png");
+        }
     }
     else {
+    INFO;
         cv::mixChannels(*prepared_source, target, from_to);
     }
+    INFO;
 }
 
 float image::calculate_scale(const cv::Size& size, int output_width, int output_height)

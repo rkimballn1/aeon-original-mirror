@@ -26,6 +26,8 @@
 #include "provider_video_only.hpp"
 #include "provider_image_stereo.hpp"
 #include "provider_image_blob.hpp"
+#include "provider_image_raw_image.hpp"
+#include "log.hpp"
 
 #include <sstream>
 
@@ -39,6 +41,7 @@ std::shared_ptr<nervana::provider_interface> nervana::provider_factory::create(n
     }
     std::string mediaType = configJs["type"];
 
+    INFO << mediaType;
     if( mediaType == "image,label" ) {
         rc = make_shared<image_classifier>(configJs);
     } else if( mediaType == "image,blob" ) {
@@ -57,6 +60,8 @@ std::shared_ptr<nervana::provider_interface> nervana::provider_factory::create(n
         rc = make_shared<image_pixelmask>(configJs);
     } else if( mediaType == "image,boundingbox" ) {
         rc = make_shared<image_boundingbox>(configJs);
+    } else if( mediaType == "image,raw_image" ) {
+        rc = make_shared<image_raw_image>(configJs);
     } else if( mediaType == "stereo_image,blob" ) {
         rc = make_shared<image_stereo_blob>(configJs);
     } else if( mediaType == "video,label" ) {

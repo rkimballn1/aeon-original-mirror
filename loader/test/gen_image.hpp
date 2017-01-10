@@ -29,12 +29,14 @@ public:
 
     gen_image& ImageSize( int rows, int cols );
 
-private:
-    int         _imageRows;
-    int         _imageCols;
+    static std::vector<uint8_t> render_depth(size_t rows, size_t cols, bool row_major=true);
 
     std::vector<unsigned char> render_target( int datumNumber ) override;
     std::vector<unsigned char> render_datum( int datumNumber ) override;
 
     std::vector<unsigned char> RenderImage( int number, int label );
+
+private:
+    int         _imageRows;
+    int         _imageCols;
 };

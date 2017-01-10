@@ -45,9 +45,10 @@ namespace nervana
 class nervana::raw_image::config : public interface::config
 {
 public:
-    int32_t     height;
-    int32_t     width;
-    int32_t     channels = 1;
+    size_t      height;
+    size_t      width;
+    size_t      channels = 1;
+    bool        channel_major = false;
     std::string input_type{"float"};
     std::string output_type{"float"};
     bool        debug = false;
@@ -75,9 +76,9 @@ public:
     virtual std::shared_ptr<image::decoded> extract(const char*, int) override;
 private:
     std::string m_input_type;
-    int32_t     m_height;
-    int32_t     m_width;
-    int32_t     m_channels;
+    size_t      m_height;
+    size_t      m_width;
+    size_t      m_channels;
 };
 
 class nervana::raw_image::loader : public interface::loader<image::decoded>
@@ -88,4 +89,7 @@ public:
     virtual void load(const std::vector<void*>&, std::shared_ptr<image::decoded>) override;
 
 private:
+    bool        channel_major;
+    shape_type  stype;
+    size_t      channels;
 };
