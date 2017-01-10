@@ -41,7 +41,6 @@ std::shared_ptr<nervana::provider_interface> nervana::provider_factory::create(n
     }
     std::string mediaType = configJs["type"];
 
-    INFO << mediaType;
     if( mediaType == "image,label" ) {
         rc = make_shared<image_classifier>(configJs);
     } else if( mediaType == "image,blob" ) {
