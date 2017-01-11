@@ -18,8 +18,10 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <iomanip>
 
 #include "dataset.hpp"
+#include "util.hpp"
 
 class gen_image : public dataset<gen_image>
 {
@@ -29,7 +31,25 @@ public:
 
     gen_image& ImageSize( int rows, int cols );
 
-    static std::vector<uint8_t> render_depth(size_t rows, size_t cols, bool row_major=true);
+    template<typename T>
+    static std::vector<T> render_depth(size_t rows, size_t cols, bool row_major=true)
+    {
+        std::vector<T> rc;
+        for (size_t row=0; row<rows; row++)
+        {
+            for (size_t col=0; col<cols; col++)
+            {
+                float value = row * 1000 + col;
+                uint8_t tmp[4];
+                nervana::pack<uint32_t>((char*)tmp, *(uint32_t*)&value);
+                // uint32_t f = *(uint32_t*)tmp;
+                // std::cout << "float " << std::hex << std::setw(8) << std::setfill('0') << f << std::endl;
+                rc.insert(rc.end(), std::begin(tmp), std::end(tmp));
+            }
+        }
+
+        return rc;
+    }
 
     std::vector<unsigned char> render_target( int datumNumber ) override;
     std::vector<unsigned char> render_datum( int datumNumber ) override;

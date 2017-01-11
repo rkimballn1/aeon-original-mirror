@@ -103,40 +103,28 @@ raw_image::loader::loader(const raw_image::config& cfg)
     , stype{cfg.get_shape_type()}
     , channels{cfg.channels}
 {
-
 }
 
 void raw_image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<image::decoded> input)
 {
-    INFO;
     char* outbuf = (char*)outlist[0];
     // TODO: Generalize this to also handle multi_crop case
-    INFO;
     auto cv_type = stype.get_otype().cv_type;
-    INFO;
     auto element_size = stype.get_otype().size;
-    INFO << (input ? "valid" : "nullptr");
-    INFO << input->get_image_count();
     auto img = input->get_image(0);
-    INFO << img.elemSize();
     int image_size = img.channels() * img.total() * element_size;
 
-    INFO << image_size;
     for (int i=0; i < input->get_image_count(); i++)
     {
-        INFO;
         auto outbuf_i = outbuf + (i * image_size);
         auto input_image = input->get_image(i);
         vector<cv::Mat> source;
         vector<cv::Mat> target;
         vector<int>     from_to;
 
-        INFO;
         source.push_back(input_image);
-        INFO;
         if (channel_major)
         {
-        INFO;
             for(int ch=0; ch<channels; ch++)
             {
                 target.emplace_back(img.size(), cv_type, (char*)(outbuf_i + ch * img.total() * element_size));
@@ -146,22 +134,13 @@ void raw_image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<
         }
         else
         {
-        INFO;
             target.emplace_back(input_image.size(), CV_MAKETYPE(cv_type, channels), (char*)(outbuf_i));
-        INFO;
             for(int ch=0; ch<channels; ch++)
             {
-        INFO;
                 from_to.push_back(ch);
-        INFO;
                 from_to.push_back(ch);
-        INFO;
             }
-        INFO;
         }
-        INFO;
         image::convert_mix_channels(source, target, from_to);
-        INFO;
     }
-    INFO;
 }

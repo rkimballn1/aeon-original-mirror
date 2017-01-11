@@ -22,7 +22,6 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "gen_image.hpp"
-#include "util.hpp"
 
 using namespace std;
 
@@ -70,21 +69,5 @@ vector<unsigned char> gen_image::render_target( int number )
     int target = number + 42;
     vector<unsigned char> rc(4);
     nervana::pack<int>((char*)&rc[0],target);
-    return rc;
-}
-
-vector<uint8_t> gen_image::render_depth(size_t rows, size_t cols, bool row_major)
-{
-    vector<uint8_t> rc;
-    for (size_t row=0; row<rows; row++)
-    {
-        for (size_t col=0; col<cols; col++)
-        {
-            float value = row * 1000 + col;
-            uint8_t tmp[4];
-            nervana::pack<uint32_t>((char*)tmp, *(uint32_t*)&value);
-            rc.insert(rc.end(), begin(tmp), end(tmp));
-        }
-    }
     return rc;
 }

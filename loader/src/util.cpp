@@ -26,6 +26,7 @@ using namespace std;
 
 void nervana::dump( ostream& out, const void* _data, size_t _size )
 {
+    ios::fmtflags f(out.flags());
     const uint8_t* data = reinterpret_cast<const uint8_t*>(_data);
     int len = _size;
     int index = 0;
@@ -39,7 +40,7 @@ void nervana::dump( ostream& out, const void* _data, size_t _size )
                 out << "   ";
             }
         }
-        cout << "  ";
+        out << "  ";
         for (int i = 8; i < 16; i++) {
             if (index+i<len) {
                 out << " " << std::hex << std::setw(2) << std::setfill('0') << (uint32_t)data[i];
@@ -47,15 +48,16 @@ void nervana::dump( ostream& out, const void* _data, size_t _size )
                 out << "   ";
             }
         }
-        cout << "  ";
+        out << "  ";
         for (int i = 0; i < 16; i++) {
             char ch = (index+i<len ? data[i] : ' ');
-            cout << ((ch < 32) ? '.' : ch);
+            out << ((ch < 32) ? '.' : ch);
         }
-        cout << "\n";
+        out << "\n";
         data += 16;
         index += 16;
     }
+    out.flags(f);
 }
 
 std::string nervana::to_lower(const std::string& s)
