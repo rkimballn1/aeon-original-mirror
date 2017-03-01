@@ -45,6 +45,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+find_package(TurboJpeg)
+if (TURBOJPEG_FOUND)
+    # message("TURBOJPEG_INCLUDE_DIR ${TURBOJPEG_INCLUDE_DIR}")
+    # message("TURBOJPEG_NAMES ${TURBOJPEG_NAMES}")
+    # message("TURBOJPEG_LIBRARY ${TURBOJPEG_LIBRARY}")
+    include_directories(${TURBOJPEG_INCLUDE_DIR})
+endif()
+
 # opecv_ts is for testing opencv. if it is left in the lib list then we get an error when
 # the unit test exits.
 list(REMOVE_ITEM OpenCV_LIBRARIES opencv_ts)
