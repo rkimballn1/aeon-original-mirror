@@ -27,6 +27,8 @@
 #include <functional>
 #include <future>
 #include <map>
+#include <type_traits>
+#include "blocking_queue.hpp"
 #include "log.hpp"
 
 namespace nervana
@@ -54,6 +56,172 @@ public:
     virtual async_state        get_state() const = 0;
     virtual const std::string& get_name() const  = 0;
 };
+
+template <typename T>
+class sync_queues
+{
+public:
+    std::unique_ptr<nervana::blocking_queue<std::shared_ptr<T>>> m_done_queue;
+    std::unique_ptr<nervana::blocking_queue<std::shared_ptr<T>>> m_ready_queue;
+
+//    size_t m_prefetch_size;
+
+public:
+    sync_queues(/*size_t prefetch_size*/)
+        : m_done_queue{new nervana::blocking_queue<std::shared_ptr<T>>}
+        , m_ready_queue{new nervana::blocking_queue<std::shared_ptr<T>>}
+//        , m_prefetch_size{prefetch_size}
+    { }
+};
+
+template <typename INPUT, typename OUTPUT, typename T>
+class node
+{
+    size_t m_prefetch_size;
+
+public:
+    std::shared_ptr<sync_queues<INPUT>> m_input_queues;
+    std::shared_ptr<sync_queues<OUTPUT>> m_output_queues;
+
+    std::unique_ptr<T> m_worker;
+    std::thread m_worker_thread;
+
+public:
+    using input_type = INPUT;
+    using output_type = OUTPUT;
+
+    template <typename ...ARGS>
+    node(size_t prefetch_size, ARGS... args)
+        : m_prefetch_size{prefetch_size}
+        , m_input_queues{new sync_queues<INPUT>}
+        , m_output_queues{new sync_queues<OUTPUT>}
+        , m_worker{new T(args...)}
+    {
+        m_worker_thread = std::thread{&node::entry, this};   
+    }
+
+    void entry()
+    {
+        for (;;) 
+        {
+            for (size_t i = 0; i < m_prefetch_size; ++i) {
+                std::shared_ptr<INPUT> in;
+                std::shared_ptr<OUTPUT> out;
+
+                m_input_queues->m_ready_queue->pop(in);
+                m_output_queues->m_done_queue->pop(out);
+
+//                m_worker->filler(in, out);
+                m_worker->filler();
+
+                m_input_queues->m_done_queue->push(in);
+                m_output_queues->m_ready_queue->push(out);
+            }
+        }
+    }
+
+    ~node()
+    {
+        m_worker_thread.join();
+    }
+};
+
+template <typename OUTPUT, typename T>
+class start_node
+{
+    size_t m_prefetch_size;
+    std::shared_ptr<sync_queues<OUTPUT>> m_output_queues;
+
+    std::unique_ptr<T> m_worker;
+    std::thread m_worker_thread;
+
+public:
+//    typename OUTPUT output_type;
+
+    template <class... ARGS>
+    start_node(size_t prefetch_size, ARGS... args)
+        : m_prefetch_size{prefetch_size}
+        , m_output_queues{new sync_queues<OUTPUT>}
+        , m_worker{new T(args...)}
+    { 
+        m_worker_thread = std::thread{&start_node::entry, this};
+    }
+
+    void entry()
+    {
+        for (;;)
+        {
+            for (size_t i = 0; i < m_prefetch_size; ++i)
+            {
+                std::shared_ptr<OUTPUT> out;
+
+                m_output_queues->m_done_queue->pop(out);
+                m_worker->filler();
+//                m_worker->filler(out);
+                m_output_queues->m_ready_queue->push(out);
+            }
+        }
+    }
+
+    ~start_node()
+    {
+        m_worker_thread.join();
+    }
+};
+
+template <typename INPUT, typename T>
+class end_node
+{
+public:
+    sync_queues<INPUT> m_input_queues;
+
+    std::unique_ptr<T> m_worker;
+    std::thread m_worker_thread;
+
+    size_t m_prefetch_size;
+
+public:
+    using input_type = INPUT;
+
+    template <typename ...ARGS>
+    end_node(size_t prefetch_size, ARGS... args)
+        : m_prefetch_size{prefetch_size}
+        , m_input_queues{new sync_queues<INPUT>{m_prefetch_size}}
+        , m_worker{new T{args...}}
+    { 
+        m_worker_thread = std::thread{&end_node::entry, this};
+    }
+
+    void entry()
+    {
+        for (;;)
+        {
+            std::shared_ptr<INPUT> in;
+
+            m_input_queues.m_ready_queue->pop(in);
+            m_worker->filler(in);
+            m_input_queues.m_done_queue->push(in);
+        }
+    }
+
+    ~end_node()
+    {
+        m_worker_thread.join();
+    }
+};
+
+template<typename LHS, typename RHS>
+void connect_nodes(LHS& lhs, RHS& rhs)
+{
+    static_assert(std::is_same<typename LHS::input_type, typename RHS::output_type>::value, "Different types for LHS and RHS");
+
+    using connection_type = typename LHS::input_type;
+
+    std::shared_ptr<sync_queues<connection_type>> q1{new sync_queues<connection_type>};
+
+    rhs.m_output_queues->m_ready_queue.swap(q1->m_ready_queue);
+    lhs.m_input_queues->m_done_queue.swap(q1->m_done_queue);   
+}
 
 template <typename OUTPUT>
 class nervana::async_manager_source
