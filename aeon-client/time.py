@@ -33,6 +33,8 @@ parser.add_argument('-c', '--config_path', default=None)
 parser.add_argument('--cache_root', default='/tmp')
 parser.add_argument('-s', '--seconds', type=int, default=100, help='Timing period')
 parser.add_argument('-l', '--manifest_lines', type=int, default=500, help='Lines in randomly generated manifest')
+parser.add_argument('-i', '--interval', type=int, default=100, help='Print output interval')
+
 args=parser.parse_args()
 
 if args.cache is not True:
@@ -58,7 +60,7 @@ start_time = time.time()
 for i in train_set:
 
     #time.sleep(0.05)
-    if (a%100 is 0):
+    if (a%args.interval is 0):
         print('Batch read %d' % a)
     a += 1
     if time.time() - start_time > args.seconds:
