@@ -22,33 +22,48 @@ import time
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--batch_size', type=int, default=20)
-parser.add_argument('-c', '--cache', action='store_true', help='Caching on')
+parser.add_argument('-b', '--batch_size', type=int, default=64)
+parser.add_argument('--cache', action='store_true', help='Caching on', default=True)
+parser.add_argument('-m', '--manifest_file_name', default=None) #'/data/i1k-extracted/train-index.csv')
+parser.add_argument('-r', '--manifest_root_path', default='') #'/data/i1k-extracted/')
+parser.add_argument('--width', default=256)
+parser.add_argument('--height', default=256)
+parser.add_argument('--channels', default=3)
+parser.add_argument('-c', '--config_path', default=None)
 parser.add_argument('--cache_root', default='/tmp')
-parser.add_argument('-s', '--seconds', type=int, default=20, help='Timing period')
-parser.add_argument('-l', '--manifest_lines', type=int, default=200, help='Lines in randomly generated manifest')
+parser.add_argument('-s', '--seconds', type=int, default=100, help='Timing period')
+parser.add_argument('-l', '--manifest_lines', type=int, default=500, help='Lines in randomly generated manifest')
 args=parser.parse_args()
 
 if args.cache is not True:
     args.cache_root=''
 
-manifest,temp_files=generate_manifest(args.manifest_lines)
+if args.config_path is not None and args.manifest_path is not None:
+    print('Ingoring manifest_path setting and using config_path')
+
+manifest,temp_files=(args.manifest_file_name, []) if args.manifest_file_name\
+                                                is not None else\
+    generate_manifest(args.manifest_lines, (args.width, args.height, args.channels))
 train_config = Config(
-    manifest_file=manifest.name,
+    manifest_file=manifest,
+    manifest_root=args.manifest_root_path,
     batch_size=args.batch_size,
+    image_params=(args.width, args.height, args.channels),
     cache_root=args.cache_root).get()
 
 train_set = DataLoaderProvider.load(train_config)
 
 a = 1
 start_time = time.time()
-test_miliseconds=args.seconds * 1000
 for i in train_set:
-    if (a%1000 is 0):
+
+    #time.sleep(0.05)
+    if (a%100 is 0):
         print('Batch read %d' % a)
     a += 1
     if time.time() - start_time > args.seconds:
         break
+
 
 print('Img/s: %d' % (args.batch_size * a / args.seconds))
 

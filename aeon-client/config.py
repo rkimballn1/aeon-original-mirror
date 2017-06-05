@@ -22,12 +22,14 @@ class Config(object):
                 batch_size,
                 #macrobatch=25000,
                 cache_root='',
-                image_params=(28,28,1),
+                manifest_root='',
+                image_params=(32,32,3),
                 label_binary=True,
                 data_type='image',
                 augmentations=[]):
 
         self.manifest_file=manifest_file
+        self.manifest_root=manifest_root
         self.batch_size=batch_size
         #self.macrobatch=macrobatch
         self.cache_root=cache_root
@@ -41,9 +43,10 @@ class Config(object):
 
     def get(self):
         config = {'manifest_filename': self.manifest_file,
-                  "iteration_mode": "INFINITE",
+                  'manifest_root': self.manifest_root,
+                  #"iteration_mode": "INFINITE",
                   #"single_thread": self.single_thread,
-                  'cache_directory': self.cache_root,
+                  #'cache_directory': self.cache_root,
                 'etl': ({'type': self.data_type,
                          'height': self.image_height,
                           'width': self.image_width
@@ -53,6 +56,7 @@ class Config(object):
                             'binary': self.label_binary
                         }),
                 'batch_size': self.batch_size}
+                #'augmentation': ()}
 
         for _, aug in enumerate(self.augmentations):
             for key,value in enumerate(aug):

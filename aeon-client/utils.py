@@ -15,7 +15,7 @@
 
 import random
 import tempfile
-from PIL import Image as PILImage
+from PIL import Image
 import numpy as np
 import struct
 import json
@@ -26,17 +26,17 @@ def generate_target(filename):
         f.write(struct.pack('i', target))
     return filename
 
-def generate_image(filename):
-    a = np.random.random((2, 2, 3)).astype('uint8')
-    img = PILImage.fromarray(a)
+def generate_image(filename, image_params):
+    a = np.random.uniform(-10,10,image_params).astype('uint8')
+    img = Image.fromarray(a)
     img.save(filename)
 
-def generate_manifest(num_lines):
+def generate_manifest(num_lines, image_params=(32, 32, 3)):
     temp_files = []
     manifest = tempfile.NamedTemporaryFile(mode='w', delete=False)
     for i in range(num_lines):
         img_filename = tempfile.mkstemp(suffix='.jpg')[1]
-        generate_image(img_filename)
+        generate_image(img_filename, image_params)
         target_filename = tempfile.mkstemp(suffix='.txt')[1]
         generate_target(target_filename)
         temp_files.append(img_filename)
@@ -45,4 +45,4 @@ def generate_manifest(num_lines):
 
     manifest.flush()
     temp_files.append(manifest.name)
-    return (manifest,temp_files)
+    return (manifest.name,temp_files)
