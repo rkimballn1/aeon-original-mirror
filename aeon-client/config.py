@@ -46,7 +46,7 @@ class Config(object):
                   'manifest_root': self.manifest_root,
                   #"iteration_mode": "INFINITE",
                   #"single_thread": self.single_thread,
-                  #'cache_directory': self.cache_root,
+                  'cache_directory': self.cache_root,
                 'etl': ({'type': self.data_type,
                          'height': self.image_height,
                           'width': self.image_width
