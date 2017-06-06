@@ -20,6 +20,10 @@ import numpy as np
 import struct
 import json
 
+def load_config(file_path):
+    with open(file_path) as config:
+        return json.load(config)
+
 def generate_target(filename):
     target = int(random.random() * 1024)
     with open(filename, 'wb') as f:

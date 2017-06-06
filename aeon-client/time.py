@@ -14,8 +14,7 @@
 # ----------------------------------------------------------------------------
 from data_loader_provider import DataLoaderProvider
 from config import Config
-from aeon import DataLoader
-from utils import generate_manifest
+from utils import generate_manifest, load_config
 import argparse
 from timeit import default_timer as timer
 import os
@@ -35,15 +34,15 @@ parser.add_argument('--cache_root', default='/tmp')
 parser.add_argument('-s', '--seconds', type=int, default=5, help='Timing period')
 parser.add_argument('-l', '--manifest_lines', type=int, default=500, help='Lines in randomly generated manifest')
 parser.add_argument('-i', '--interval', type=int, default=1, help='Print output interval')
-parser.add_argument('-n', '--skip_iter', type=int, default=100, help='Ignores skip_iter measurements')
+parser.add_argument('-n', '--skip_iter', type=int, default=200, help='Ignores skip_iter measurements')
 
 args=parser.parse_args()
 
 if args.cache is not True:
     args.cache_root=''
 
-if args.config_path is not None and args.manifest_path is not None:
-    print('Ingoring manifest_path setting and using config_path')
+if args.config_path is not None and args.manifest_file_name is not None:
+    print('Ingoring manifest_file_name setting and using config_path')
 
 manifest,temp_files=(args.manifest_file_name, []) if args.manifest_file_name\
                                                 is not None else\
@@ -53,7 +52,7 @@ train_config = Config(
     manifest_root=args.manifest_root_path,
     batch_size=args.batch_size,
     image_params=(args.width, args.height, args.channels),
-    cache_root=args.cache_root).get()
+    cache_root=args.cache_root).get() if args.config_path is None else load_config(args.config_path)
 
 train_set = DataLoaderProvider.load(train_config)
 
