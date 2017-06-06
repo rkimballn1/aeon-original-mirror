@@ -32,9 +32,10 @@ parser.add_argument('--height', default=256)
 parser.add_argument('--channels', default=3)
 parser.add_argument('-c', '--config_path', default=None)
 parser.add_argument('--cache_root', default='/tmp')
-parser.add_argument('-s', '--seconds', type=int, default=10, help='Timing period')
+parser.add_argument('-s', '--seconds', type=int, default=5, help='Timing period')
 parser.add_argument('-l', '--manifest_lines', type=int, default=500, help='Lines in randomly generated manifest')
 parser.add_argument('-i', '--interval', type=int, default=1, help='Print output interval')
+parser.add_argument('-n', '--skip_iter', type=int, default=100, help='Ignores skip_iter measurements')
 
 args=parser.parse_args()
 
@@ -56,9 +57,13 @@ train_config = Config(
 
 train_set = DataLoaderProvider.load(train_config)
 
+for i, _ in enumerate(train_set):
+    if i >= args.skip_iter:
+        break
+
+a = 0
 start_time = timer()
 interval_start = start_time
-a = 0
 for i,_ in enumerate(train_set):
     t = timer()
     interval_end = t - interval_start
@@ -72,9 +77,9 @@ for i,_ in enumerate(train_set):
 
     end_time = t - start_time
     if end_time > args.seconds:
-        print('\nTotal Img/s: %d' % (args.batch_size * (i + 1) / end_time))
         break
 
+print('\nTotal Img/s: %d' % (args.batch_size * (i + 1) / end_time))
 
 for f in temp_files:
     os.remove(f)
