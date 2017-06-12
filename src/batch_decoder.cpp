@@ -83,21 +83,24 @@ batch_decoder::~batch_decoder()
     finalize();
 }
 
-fixed_buffer_map* batch_decoder::filler()
+fixed_buffer_map batch_decoder::fill(encoded_record_list& inputs)
 {
     m_state                     = async_state::wait_for_buffer;
-    fixed_buffer_map* outputs   = get_pending_buffer();
     m_state                     = async_state::fetching_data;
-    encoded_record_list* inputs = m_source->next();
     m_state                     = async_state::processing;
 
-    if (inputs == nullptr)
+    INFO << "Batch decoder begin";
+
+    fixed_buffer_map outputs = m_containers[0];
+
+    if (inputs.size() == 0)
     {
-        outputs = nullptr;
+        INFO << "Return here?";
+        return outputs;
     }
     else
     {
-        for(const encoded_record& record : *inputs)
+        for(const encoded_record& record : inputs)
         {
             record.rethrow_if_exception();
         }
@@ -105,11 +108,13 @@ fixed_buffer_map* batch_decoder::filler()
         m_active_count = m_decode_thread_info.size();
         for (int id = 0; id < m_decode_thread_info.size(); ++id)
         {
-            m_decode_thread_info[id]->set_buffers(inputs, outputs);
+            m_decode_thread_info[id]->set_buffers(&inputs, &outputs);
         }
         m_work_complete_event.wait();
     }
 
     m_state = async_state::idle;
+
+    INFO << "Batch decoder";
     return outputs;
 }

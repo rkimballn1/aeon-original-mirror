@@ -43,7 +43,7 @@ using namespace std;
 using namespace nervana;
 
 static string test_data_directory = file_util::path_join(string(CURDIR), "test_data");
-
+#if 0
 TEST(manifest, constructor)
 {
     manifest_builder       mm;
@@ -739,3 +739,4 @@ TEST(benchmark, manifest)
 
     remove(manifest_filename.c_str());
 }
+#endif

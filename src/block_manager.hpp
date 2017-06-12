@@ -42,7 +42,8 @@ public:
                   bool                 enable_shuffle);
 
     virtual ~block_manager() { finalize(); }
-    encoded_record_list* filler() override;
+
+    encoded_record_list fill(encoded_record_list&) override;
 
     size_t record_count() const override { return m_block_size; }
     size_t elements_per_record() const override { return m_file_loader.elements_per_record(); }

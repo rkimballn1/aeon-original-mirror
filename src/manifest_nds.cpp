@@ -268,9 +268,9 @@ manifest_nds::manifest_nds(const std::string& base_url,
     // }
 }
 
-encoded_record_list* manifest_nds::next()
+void manifest_nds::fill(nervana::encoded_record_list* rc)
 {
-    encoded_record_list* rc = nullptr;
+    rc = nullptr;
 
     if (m_current_block_number < m_block_count)
     {
@@ -278,8 +278,6 @@ encoded_record_list* manifest_nds::next()
 
         m_current_block_number++;
     }
-
-    return rc;
 }
 
 encoded_record_list* manifest_nds::load_block(size_t block_index)

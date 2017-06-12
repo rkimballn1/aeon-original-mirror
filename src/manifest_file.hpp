@@ -66,8 +66,8 @@ public:
     std::string cache_id() override;
     std::string version() override;
 
-    std::vector<std::vector<std::string>>* next() override;
     void                                   reset() override;
+    std::vector<std::vector<std::string>> fill();
 
     size_t   block_count() const { return m_block_list.size(); }
     size_t   record_count() const override { return m_record_count; }

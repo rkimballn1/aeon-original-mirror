@@ -95,6 +95,26 @@ loader::~loader()
     }
 }
 
+fixed_buffer_map loader::get_datum()
+{
+    fixed_buffer_map out;
+ 
+    while (!m_batch_decoder2->m_input_queues->m_input_comm_queue->empty())
+    {
+        message m;
+        m_batch_decoder2->m_input_queues->m_input_comm_queue->pop(m);
+
+        if (m == message::END_OF_DATA)
+        {
+            m_batch_decoder2->m_input_queues->m_input_comm_queue->push(message::RESET);
+        }
+    }
+
+    m_batch_decoder2->m_input_queues->m_data_queue->pop(out);
+
+    return out;
+}
+
 void loader::initialize(nlohmann::json& config_json)
 {
     string config_string = config_json.dump();
@@ -106,16 +126,21 @@ void loader::initialize(nlohmann::json& config_json)
     sox_format_init();
 
     // the manifest defines which data should be included in the dataset
-    m_manifest = make_shared<manifest_file>(
-        lcfg.manifest_filename, lcfg.shuffle_manifest, lcfg.manifest_root, lcfg.subset_fraction);
+//    m_manifest = make_shared<manifest_file>(
+//        lcfg.manifest_filename, lcfg.shuffle_manifest, lcfg.manifest_root, lcfg.subset_fraction);
+
+    size_t prefetch_size = 2;
+
+    m_manifest2 = std::make_shared<start_node<std::vector<std::vector<std::string>>, manifest_file>>(
+                               prefetch_size, lcfg.manifest_filename, lcfg.shuffle_manifest, lcfg.manifest_root, lcfg.subset_fraction);
 
     // TODO: make the constructor throw this error
-    if (m_manifest->record_count() == 0)
+    if (m_manifest2->m_worker->record_count() == 0)
     {
         throw std::runtime_error("manifest file is empty");
     }
     // Default ceil div to get number of batches
-    m_batch_count_value = (m_manifest->record_count() + m_batch_size - 1) / m_batch_size;
+    m_batch_count_value = (m_manifest2->m_worker->record_count() + m_batch_size - 1) / m_batch_size;
     if (lcfg.iteration_mode == "ONCE")
     {
         m_batch_mode = BatchMode::ONCE;
@@ -129,23 +154,47 @@ void loader::initialize(nlohmann::json& config_json)
         m_batch_mode        = BatchMode::COUNT;
         m_batch_count_value = lcfg.iteration_mode_count;
     }
-
+/*
     m_block_loader = make_shared<block_loader_file>(m_manifest.get(), lcfg.block_size);
 
     m_block_manager = make_shared<block_manager>(
         m_block_loader.get(), lcfg.block_size, lcfg.cache_directory, lcfg.shuffle_enable);
 
     m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
-
+*/
     m_provider = provider_factory::create(config_json);
-
+/*
     m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),
                                            static_cast<size_t>(lcfg.batch_size),
                                            lcfg.decode_thread_count,
                                            lcfg.pinned,
                                            m_provider);
+*/
+    m_block_loader2 = std::make_shared<node<std::vector<std::vector<std::string>>, encoded_record_list, block_loader_file>>(
+                                prefetch_size, m_manifest2->m_worker.get(), lcfg.block_size);
 
-    m_output_buffer_ptr = m_decoder->next();
+    m_block_manager2 = std::make_shared<node<encoded_record_list, encoded_record_list, block_manager>>(
+                                prefetch_size, m_block_loader2->m_worker.get(), lcfg.block_size, lcfg.cache_directory, lcfg.shuffle_enable);
+
+    m_batch_iterator2 = std::make_shared<node<encoded_record_list, encoded_record_list, batch_iterator>>(
+                                prefetch_size, m_block_manager2->m_worker.get(), lcfg.batch_size);
+
+    m_batch_decoder2 = std::make_shared<node<encoded_record_list, fixed_buffer_map, batch_decoder>>(
+                                prefetch_size, m_batch_iterator2->m_worker.get(), static_cast<size_t>(lcfg.batch_size), lcfg.decode_thread_count, lcfg.pinned,  m_provider);
+
+    connect_nodes(*m_block_loader2, *m_manifest2);
+    connect_nodes(*m_block_manager2, *m_block_loader2);
+    connect_nodes(*m_batch_iterator2, *m_block_manager2);
+    connect_nodes(*m_batch_decoder2, *m_batch_iterator2);
+
+    m_manifest2->start();
+    m_block_loader2->start();
+    m_block_manager2->start();
+    m_batch_iterator2->start();
+    m_batch_decoder2->start();
+    
+    //m_output_buffer_ptr = m_decoder->next();
+    m_output_buffer_ptr = get_datum();
 
     if (lcfg.web_server_port != 0)
     {
@@ -218,9 +267,9 @@ const fixed_buffer_map& loader::iterator::operator*() const
 {
     const fixed_buffer_map* rc = nullptr;
 
-    if (m_current_loader.m_output_buffer_ptr)
+    if (m_current_loader.m_output_buffer_ptr.size() != 0)
     {
-        rc = m_current_loader.m_output_buffer_ptr;
+        rc = &m_current_loader.m_output_buffer_ptr;
     }
     else
     {
@@ -232,7 +281,8 @@ const fixed_buffer_map& loader::iterator::operator*() const
 
 void loader::increment_position()
 {
-    m_output_buffer_ptr = m_decoder->next();
+//    m_output_buffer_ptr = m_decoder->next();
+    m_output_buffer_ptr = get_datum();
     m_position++;
 
     // Wrap around if this is an infinite iterator

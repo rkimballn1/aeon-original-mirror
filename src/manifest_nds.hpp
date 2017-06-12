@@ -92,7 +92,9 @@ class nervana::manifest_nds : public nervana::async_manager_source<encoded_recor
 public:
     manifest_nds(const manifest_nds&) = default;
     virtual ~manifest_nds() {}
-    encoded_record_list* next() override;
+    
+    void fill(nervana::encoded_record_list*);
+    
     void                 reset() override
     {
         if (m_shuffle)

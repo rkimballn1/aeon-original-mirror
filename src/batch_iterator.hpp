@@ -36,14 +36,15 @@ class nervana::batch_iterator : public async_manager<encoded_record_list, encode
 public:
     batch_iterator(block_manager*, size_t batch_size);
     ~batch_iterator() { finalize(); }
-    encoded_record_list* filler() override;
+
+    encoded_record_list fill(encoded_record_list& input) override;
 
     size_t record_count() const override { return m_batch_size; }
     size_t elements_per_record() const override { return m_block_manager.elements_per_record(); }
     void   initialize() override
     {
         async_manager<encoded_record_list, encoded_record_list>::initialize();
-        m_input_ptr = nullptr;
+//        m_input_ptr = nullptr;
     }
 
 private:

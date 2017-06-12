@@ -39,7 +39,7 @@ public:
     block_loader_nds(manifest_nds*, size_t block_size);
 
     virtual ~block_loader_nds() { finalize(); }
-    encoded_record_list* filler() override;
+    encoded_record_list fill(encoded_record_list&) override;
 
     void                 reset() override { m_manifest.reset(); }
     size_t               record_count() const override { return m_record_count; }
@@ -47,10 +47,6 @@ public:
     size_t               block_count() const override { return m_block_count; }
     size_t               elements_per_record() const override { return m_elements_per_record; }
     source_uid_t         get_uid() const override { return 0; }
-    encoded_record_list* next() override
-    {
-        return async_manager<encoded_record_list, encoded_record_list>::next();
-    }
 
 private:
     manifest_nds& m_manifest;

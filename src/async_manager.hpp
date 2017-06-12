@@ -28,8 +28,10 @@
 #include <future>
 #include <map>
 #include <type_traits>
+
 #include "blocking_queue.hpp"
 #include "log.hpp"
+#include "event.hpp"
 
 namespace nervana
 {
@@ -57,27 +59,40 @@ public:
     virtual const std::string& get_name() const  = 0;
 };
 
+enum class message
+{
+    RESET,
+    TERMINATE,
+    DATA_SENT,
+    DATA_RECEIVED,
+    END_OF_DATA
+};
+
+enum class node_state
+{
+    RUNNING,
+    SUSPENDED,
+    TERMINATED
+};
+
 template <typename T>
 class sync_queues
 {
 public:
-    std::unique_ptr<nervana::blocking_queue<std::shared_ptr<T>>> m_done_queue;
-    std::unique_ptr<nervana::blocking_queue<std::shared_ptr<T>>> m_ready_queue;
-
-//    size_t m_prefetch_size;
+    std::shared_ptr<nervana::blocking_queue<message>> m_input_comm_queue;
+    std::shared_ptr<nervana::blocking_queue<message>> m_output_comm_queue;
+    std::shared_ptr<nervana::blocking_queue<T>> m_data_queue;
 
 public:
     sync_queues(/*size_t prefetch_size*/)
-        : m_done_queue{new nervana::blocking_queue<std::shared_ptr<T>>}
-        , m_ready_queue{new nervana::blocking_queue<std::shared_ptr<T>>}
-//        , m_prefetch_size{prefetch_size}
+        : m_data_queue{new nervana::blocking_queue<T>}
     { }
 };
 
 template <typename INPUT, typename OUTPUT, typename T>
 class node
 {
-    size_t m_prefetch_size;
+    node_state m_state;
 
 public:
     std::shared_ptr<sync_queues<INPUT>> m_input_queues;
@@ -92,30 +107,83 @@ public:
 
     template <typename ...ARGS>
     node(size_t prefetch_size, ARGS... args)
-        : m_prefetch_size{prefetch_size}
-        , m_input_queues{new sync_queues<INPUT>}
+        : m_input_queues{new sync_queues<INPUT>}
         , m_output_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
     {
-        m_worker_thread = std::thread{&node::entry, this};   
+    }
+
+    void start()
+    {
+        m_state = node_state::RUNNING;
+        m_worker_thread = std::thread{&node::entry, this};
     }
 
     void entry()
     {
         for (;;) 
         {
-            for (size_t i = 0; i < m_prefetch_size; ++i) {
-                std::shared_ptr<INPUT> in;
-                std::shared_ptr<OUTPUT> out;
+            while (m_state == node_state::RUNNING)
+            {
+                if (!m_input_queues->m_input_comm_queue->empty())
+                {
+                    message m;
+                    m_input_queues->m_input_comm_queue->pop(m);
 
-                m_input_queues->m_ready_queue->pop(in);
-                m_output_queues->m_done_queue->pop(out);
+                    if (m == message::END_OF_DATA)
+                    {
+                        m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
+                        m_state = node_state::SUSPENDED;
+                        INFO << "End of data";
+                        break;
+                    }
+                }
+                else
+                {
+                    INPUT in;
 
-//                m_worker->filler(in, out);
-                m_worker->filler();
+                    m_input_queues->m_data_queue->pop(in);
+                    OUTPUT out = m_worker->fill(in);
+                    m_output_queues->m_data_queue->push(std::move(out));
+                }
+            }
 
-                m_input_queues->m_done_queue->push(in);
-                m_output_queues->m_ready_queue->push(out);
+            while (m_state == node_state::SUSPENDED)
+            {
+                if (!m_output_queues->m_input_comm_queue->empty())
+                {
+                    message m;
+                    m_output_queues->m_input_comm_queue->pop(m);
+
+                    if (m == message::RESET)
+                    {
+                        m_input_queues->m_output_comm_queue->push(message::RESET);
+                        INFO << "Reset";
+                        m_state = node_state::RUNNING;
+                        break;
+                    }
+                    else if (m == message::TERMINATE)
+                    {
+                        m_input_queues->m_output_comm_queue->push(message::TERMINATE);
+                        m_state = node_state::TERMINATED;
+                        return;
+                    }
+                }
+                
+                if (!m_input_queues->m_input_comm_queue->empty())
+                {
+                    message m;
+                    m_input_queues->m_input_comm_queue->pop(m);
+
+                    if (m == message::RESET)
+                    {
+                        m_output_queues->m_output_comm_queue->push(message::RESET);
+                    }
+                    else if (m == message::TERMINATE)
+                    {
+                        m_output_queues->m_output_comm_queue->push(message::TERMINATE);
+                    }
+                }
             }
         }
     }
@@ -129,21 +197,27 @@ public:
 template <typename OUTPUT, typename T>
 class start_node
 {
-    size_t m_prefetch_size;
+public:
+    node_state m_state;
+
     std::shared_ptr<sync_queues<OUTPUT>> m_output_queues;
 
     std::unique_ptr<T> m_worker;
     std::thread m_worker_thread;
 
 public:
-//    typename OUTPUT output_type;
-
+    using output_type = OUTPUT;
+    
     template <class... ARGS>
     start_node(size_t prefetch_size, ARGS... args)
-        : m_prefetch_size{prefetch_size}
-        , m_output_queues{new sync_queues<OUTPUT>}
+        : m_output_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
-    { 
+    {
+    }
+
+    void start()
+    {
+        m_state = node_state::RUNNING;
         m_worker_thread = std::thread{&start_node::entry, this};
     }
 
@@ -151,14 +225,42 @@ public:
     {
         for (;;)
         {
-            for (size_t i = 0; i < m_prefetch_size; ++i)
+            while (m_state == node_state::RUNNING)
             {
-                std::shared_ptr<OUTPUT> out;
+                OUTPUT out = m_worker->fill();
+            
+                if (out.size() == 0)
+                {
+                    INFO << "Send END_OF_DATA";
+                    m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
+                    m_state = node_state::SUSPENDED;
+                    break;
+                }
+                else
+                {
+                    m_output_queues->m_data_queue->push(std::move(out));
+                }
+            }
 
-                m_output_queues->m_done_queue->pop(out);
-                m_worker->filler();
-//                m_worker->filler(out);
-                m_output_queues->m_ready_queue->push(out);
+            while (m_state == node_state::SUSPENDED)
+            {
+                if (!m_output_queues->m_input_comm_queue->empty())
+                {
+                    message m;
+                    m_output_queues->m_input_comm_queue->pop(m);
+
+                    if (m == message::RESET)
+                    {
+                        INFO << "Do RESET";
+                        m_state = node_state::RUNNING;
+                        break;
+                    }
+                    else if (m == message::TERMINATE)
+                    {
+                        m_state = node_state::TERMINATED;
+                        return;
+                    }
+                }
             }
         }
     }
@@ -168,7 +270,7 @@ public:
         m_worker_thread.join();
     }
 };
-
+/*
 template <typename INPUT, typename T>
 class end_node
 {
@@ -196,10 +298,10 @@ public:
     {
         for (;;)
         {
-            std::shared_ptr<INPUT> in;
+            INPUT* in;
 
             m_input_queues.m_ready_queue->pop(in);
-            m_worker->filler(in);
+            m_worker->fill(in);
             m_input_queues.m_done_queue->push(in);
         }
     }
@@ -209,18 +311,23 @@ public:
         m_worker_thread.join();
     }
 };
-
+*/
 template<typename LHS, typename RHS>
 void connect_nodes(LHS& lhs, RHS& rhs)
 {
+
     static_assert(std::is_same<typename LHS::input_type, typename RHS::output_type>::value, "Different types for LHS and RHS");
 
     using connection_type = typename LHS::input_type;
 
-    std::shared_ptr<sync_queues<connection_type>> q1{new sync_queues<connection_type>};
+    rhs.m_output_queues->m_data_queue.reset(new nervana::blocking_queue<connection_type>);
+    lhs.m_input_queues->m_data_queue = rhs.m_output_queues->m_data_queue;
 
-    rhs.m_output_queues->m_ready_queue.swap(q1->m_ready_queue);
-    lhs.m_input_queues->m_done_queue.swap(q1->m_done_queue);   
+    rhs.m_output_queues->m_input_comm_queue.reset(new nervana::blocking_queue<message>);
+    lhs.m_input_queues->m_output_comm_queue = rhs.m_output_queues->m_input_comm_queue;
+
+    rhs.m_output_queues->m_output_comm_queue.reset(new nervana::blocking_queue<message>);
+    lhs.m_input_queues->m_input_comm_queue = rhs.m_output_queues->m_output_comm_queue;
 }
 
 template <typename OUTPUT>
@@ -229,7 +336,7 @@ class nervana::async_manager_source
 public:
     async_manager_source() {}
     virtual ~async_manager_source() {}
-    virtual OUTPUT* next()                      = 0;
+//    virtual OUTPUT* next()                      = 0;
     virtual size_t  record_count() const        = 0;
     virtual size_t  elements_per_record() const = 0;
     virtual void    reset()                     = 0;
@@ -251,6 +358,7 @@ public:
         async_manager_status.push_back(this);
     }
 
+/*
     OUTPUT* next() override
     {
         // Special case for first time through
@@ -273,9 +381,9 @@ public:
         }
         return result;
     }
-
+*/
     // do the work to fill up m_containers
-    virtual OUTPUT* filler() = 0;
+    virtual OUTPUT fill(INPUT&) = 0;
 
     virtual void reset() override
     {
@@ -305,7 +413,7 @@ protected:
         m_index_pend = m_index_pend == 1 ? 0 : 1;
     }
 
-    OUTPUT*                      get_pending_buffer() { return &m_containers[m_index_pend]; }
+    //OUTPUT*                      get_pending_buffer() { return &m_containers[m_index_pend]; }
     std::mutex                   m_mutex;
     OUTPUT                       m_containers[2];
     int                          m_index_pend{0};

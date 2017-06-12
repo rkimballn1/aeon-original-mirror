@@ -111,7 +111,7 @@ public:
 
     virtual size_t            record_count() const override { return m_batch_size; }
     virtual size_t            elements_per_record() const override { return m_number_elements_out; }
-    virtual fixed_buffer_map* filler() override;
+    fixed_buffer_map        fill(encoded_record_list&) override;
 
     void register_info_handler(std::function<void(const fixed_buffer_map*)>& f)
     {

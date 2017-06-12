@@ -32,6 +32,7 @@
 using namespace std;
 using namespace nervana;
 
+#if 0
 TEST(block_manager, block_list)
 {
     {
@@ -766,3 +767,4 @@ TEST(block_manager, nds_shuffle_no_cache)
     EXPECT_FALSE(equal(second_pass.begin(), second_pass.end(), first_pass.begin()));
     EXPECT_FALSE(equal(second_pass.begin(), second_pass.end(), sorted_record_list.begin()));
 }
+#endif

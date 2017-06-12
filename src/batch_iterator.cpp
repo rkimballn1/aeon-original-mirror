@@ -26,19 +26,21 @@ batch_iterator::batch_iterator(block_manager* blkl, size_t batch_size)
     m_element_count = elements_per_record();
 }
 
-encoded_record_list* batch_iterator::filler()
+encoded_record_list batch_iterator::fill(encoded_record_list& input)
 {
     m_state                 = async_state::wait_for_buffer;
-    encoded_record_list* rc = get_pending_buffer();
     m_state                 = async_state::processing;
 
-    rc->clear();
+    encoded_record_list rc;
+
+    m_input_ptr = &input;
+
+    rc.clear();
 
     // This is for the first pass
     if (m_input_ptr == nullptr)
     {
         m_state     = async_state::fetching_data;
-        m_input_ptr = m_source->next();
         m_state     = async_state::processing;
     }
 
@@ -47,7 +49,6 @@ encoded_record_list* batch_iterator::filler()
     {
         if (m_input_ptr == nullptr)
         {
-            rc = nullptr;
             break;
         }
 
@@ -62,18 +63,19 @@ encoded_record_list* batch_iterator::filler()
         }
 
         // swap records one at a time
-        m_input_ptr->move_to(*rc, move_count);
+        m_input_ptr->move_to(rc, move_count);
 
         remainder -= move_count;
 
         if (remainder > 0 || m_input_ptr->size() == 0)
         {
             m_state     = async_state::fetching_data;
-            m_input_ptr = m_source->next();
             m_state     = async_state::processing;
         }
     }
 
     m_state = async_state::idle;
+
+    INFO << "Batch iterator";
     return rc;
 }

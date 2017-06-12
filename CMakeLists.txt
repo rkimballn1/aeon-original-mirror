@@ -19,7 +19,7 @@ if(COVERAGE)
   set(CMAKE_CXX_FLAGS "-O0 -g --coverage")
   set(LCOVERAGE "--coverage")
 else(COVERAGE)
-  set(CMAKE_CXX_FLAGS "-O3")
+  set(CMAKE_CXX_FLAGS "-O0 -g")
 endif(COVERAGE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

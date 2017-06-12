@@ -69,14 +69,14 @@ nervana::block_manager::block_manager(block_loader_source* file_loader,
     }
 }
 
-nervana::encoded_record_list* block_manager::filler()
+encoded_record_list block_manager::fill(encoded_record_list& input)
 {
     m_state                    = async_state::wait_for_buffer;
-    encoded_record_list* rc    = get_pending_buffer();
     m_state                    = async_state::processing;
-    encoded_record_list* input = nullptr;
 
-    rc->clear();
+    encoded_record_list rc;
+
+    rc.clear();
 
     if (m_cache_enabled)
     {
@@ -101,7 +101,7 @@ nervana::encoded_record_list* block_manager::filler()
                         reader.read(e);
                         record.add_element(e);
                     }
-                    rc->add_record(record);
+                    rc.add_record(record);
                 }
             }
         }
@@ -109,11 +109,12 @@ nervana::encoded_record_list* block_manager::filler()
         {
             m_cache_miss++;
             m_state = async_state::fetching_data;
-            input   = m_source->next();
             m_state = async_state::processing;
-            if (input == nullptr)
+
+            if (input.size() == 0)
             {
-                rc = nullptr;
+                rc.clear();
+     //           rc = nullptr;
             }
             else
             {
@@ -121,9 +122,9 @@ nervana::encoded_record_list* block_manager::filler()
                 if (f)
                 {
                     cpio::writer writer(f);
-                    writer.write_all_records(*input);
+                    writer.write_all_records(input);
                 }
-                input->swap(*rc);
+                input.swap(rc);
             }
         }
 
@@ -140,12 +141,11 @@ nervana::encoded_record_list* block_manager::filler()
     {
         // The non-cache path
         m_state = async_state::fetching_data;
-        input   = m_source->next();
         m_state = async_state::processing;
 
-        if (input != nullptr)
+        if (input.size() != 0)
         {
-            rc->swap(*input);
+            rc.swap(input);
 
             if (++m_current_block_number == m_block_count)
             {
@@ -161,12 +161,14 @@ nervana::encoded_record_list* block_manager::filler()
         shuffle(m_block_load_sequence.begin(), m_block_load_sequence.end(), m_rnd);
     }
 
-    if (rc && rc->size() == 0)
+    if (rc.size() == 0)
     {
-        rc = nullptr;
+        rc.clear();
     }
 
     m_state = async_state::idle;
+
+    INFO << "Block manager";
     return rc;
 }
 

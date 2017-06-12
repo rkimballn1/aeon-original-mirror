@@ -41,20 +41,20 @@ block_loader_file::block_loader_file(manifest_file* manifest, size_t block_size)
     m_elements_per_record = manifest->elements_per_record();
 }
 
-nervana::encoded_record_list* block_loader_file::filler()
+encoded_record_list block_loader_file::fill(std::vector<std::vector<std::string>>& block)
 {
     m_state                 = async_state::wait_for_buffer;
-    encoded_record_list* rc = get_pending_buffer();
     m_state                 = async_state::processing;
 
-    rc->clear();
+    encoded_record_list rc;
+
+    rc.clear();
 
     m_state    = async_state::fetching_data;
-    auto block = m_source->next();
     m_state    = async_state::processing;
-    if (block != nullptr)
+    if (!block.empty())
     {
-        for (auto element_list : *block)
+        for (auto element_list : block)
         {
             const vector<manifest::element_t>& types = m_manifest.get_element_types();
             encoded_record                     record;
@@ -102,15 +102,17 @@ nervana::encoded_record_list* block_loader_file::filler()
                     record.add_exception(current_exception());
                 }
             }
-            rc->add_record(std::move(record));
+            rc.add_record(std::move(record));
         }
     }
 
-    if (rc && rc->size() == 0)
+    if (rc.size() == 0)
     {
-        rc = nullptr;
+        rc.clear();
     }
 
     m_state = async_state::idle;
+
+    INFO << "Block loader file";
     return rc;
 }

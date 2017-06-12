@@ -26,6 +26,7 @@
 using namespace std;
 using namespace nervana;
 
+#if 0
 TEST(block_loader_file, file_block)
 {
     manifest_builder mb;
@@ -150,3 +151,4 @@ TEST(block_loader_file, iterate_batch)
         }
     }
 }
+#endif

@@ -41,17 +41,16 @@ block_loader_nds::block_loader_nds(manifest_nds* manifest, size_t block_size)
 {
 }
 
-nervana::encoded_record_list* block_loader_nds::filler()
+nervana::encoded_record_list block_loader_nds::fill(nervana::encoded_record_list& input)
 {
     m_state                    = async_state::wait_for_buffer;
-    encoded_record_list* rc    = get_pending_buffer();
-    encoded_record_list* input = nullptr;
 
-    rc->clear();
-    input = m_manifest.next();
-    if (input != nullptr)
+    nervana::encoded_record_list rc;
+
+    rc.clear();
+    if (input.size() != 0)
     {
-        input->swap(*rc);
+        input.swap(rc);
     }
 
     return rc;

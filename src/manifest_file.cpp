@@ -248,15 +248,18 @@ const std::vector<manifest_file::element_t>& manifest_file::get_element_types() 
     return m_element_types;
 }
 
-vector<vector<string>>* manifest_file::next()
+vector<vector<string>> manifest_file::fill()
 {
-    vector<vector<string>>* rc = nullptr;
+    vector<vector<string>> rc;
+
     if (m_counter < m_block_list.size())
     {
         auto load_index = m_block_load_sequence[m_counter];
-        rc              = &(m_block_list[load_index]);
+        rc              = m_block_list[load_index];
         m_counter++;
+        INFO << "Something was done";
     }
+
     return rc;
 }
 

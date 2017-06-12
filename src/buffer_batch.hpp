@@ -181,6 +181,11 @@ class nervana::fixed_buffer_map
 {
 public:
     fixed_buffer_map() {}
+
+    fixed_buffer_map(const fixed_buffer_map& other)
+        : m_data{other.m_data}
+    { }
+
     fixed_buffer_map(const std::map<std::string, shape_type>& write_sizes,
                      size_t batch_size,
                      bool   pinned = false)
@@ -211,7 +216,7 @@ public:
     {
         for (auto buf : m_data)
         {
-            delete buf.second;
+//            delete buf.second;
         }
     }
 
@@ -230,7 +235,7 @@ public:
 
     size_t size() const { return m_data.size(); }
 private:
-    fixed_buffer_map(const fixed_buffer_map&) = delete;
+    //fixed_buffer_map(const fixed_buffer_map&) = delete;
 
     // these must be defined because fixed_buffer_map[0] is resolved to call the string method
     const buffer_fixed_size_elements* operator[](int) const = delete;

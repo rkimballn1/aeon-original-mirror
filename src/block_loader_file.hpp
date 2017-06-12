@@ -40,7 +40,8 @@ public:
     block_loader_file(manifest_file* mfst, size_t block_size);
 
     virtual ~block_loader_file() { finalize(); }
-    encoded_record_list* filler() override;
+
+    encoded_record_list  fill(std::vector<std::vector<std::string>>& input) override;
 
     void                 reset() override { m_manifest.reset(); }
     size_t               block_count() const override { return m_manifest.block_count(); }
@@ -48,10 +49,6 @@ public:
     size_t               block_size() const override { return 1; }
     size_t               elements_per_record() const override { return m_elements_per_record; }
     source_uid_t         get_uid() const override { return m_manifest.get_crc(); }
-    encoded_record_list* next() override
-    {
-        return async_manager<std::vector<std::vector<std::string>>, encoded_record_list>::next();
-    }
 
     async_state get_state() const override
     {

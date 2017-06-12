@@ -112,7 +112,7 @@ public:
     const std::map<std::string, shape_type>& get_names_and_shapes() const;
     const shape_t& get_shape(const std::string& name) const;
 
-    int record_count() { return m_manifest->record_count(); }
+    int record_count() { return m_manifest2->m_worker->record_count(); }
     int batch_size() { return m_batch_size; }
     // member typedefs provided through inheriting from std::iterator
     class iterator : public std::iterator<std::input_iterator_tag, // iterator_category
@@ -136,6 +136,8 @@ public:
         const size_t& position() const { return m_current_loader.m_position; }
         bool          positional_end() const;
 
+
+
     private:
         iterator() = delete;
 
@@ -143,6 +145,8 @@ public:
         const bool m_is_end;
         fixed_buffer_map m_empty_buffer;
     };
+
+    fixed_buffer_map get_datum();
 
     // Note that these are returning COPIES
     iterator begin()
@@ -157,8 +161,9 @@ public:
     iterator& get_end_iter() { return m_end_iter; }
     void      reset()
     {
-        m_decoder->reset();
-        m_output_buffer_ptr = m_decoder->next();
+        m_batch_decoder2->m_worker->reset();
+//        m_output_buffer_ptr = m_decoder->next();
+        m_output_buffer_ptr = get_datum();
         m_position          = 0;
     }
 
@@ -172,17 +177,24 @@ private:
 
     iterator                            m_current_iter;
     iterator                            m_end_iter;
-    std::shared_ptr<manifest_file>      m_manifest;
-    std::shared_ptr<block_loader_file>  m_block_loader;
-    std::shared_ptr<block_manager>      m_block_manager;
-    std::shared_ptr<batch_iterator>     m_batch_iterator;
+    //std::shared_ptr<manifest_file>      m_manifest;
+    //std::shared_ptr<block_loader_file>  m_block_loader;
+    //std::shared_ptr<block_manager>      m_block_manager;
+    //std::shared_ptr<batch_iterator>     m_batch_iterator;
     std::shared_ptr<provider_interface> m_provider;
-    std::shared_ptr<batch_decoder>      m_decoder;
+    //std::shared_ptr<batch_decoder>      m_decoder;
+
+    std::shared_ptr<start_node<std::vector<std::vector<std::string>>, manifest_file>>                    m_manifest2;
+    std::shared_ptr<node<std::vector<std::vector<std::string>>, encoded_record_list, block_loader_file>> m_block_loader2;
+    std::shared_ptr<node<encoded_record_list, encoded_record_list, block_manager>>                       m_block_manager2;
+    std::shared_ptr<node<encoded_record_list, encoded_record_list, batch_iterator>>                      m_batch_iterator2;
+    std::shared_ptr<node<encoded_record_list, fixed_buffer_map, batch_decoder>>                          m_batch_decoder2; 
+
     int                                 m_batch_size;
     BatchMode                           m_batch_mode;
     size_t                              m_batch_count_value;
     size_t                              m_position{0};
-    fixed_buffer_map*                   m_output_buffer_ptr{nullptr};
+    fixed_buffer_map                    m_output_buffer_ptr;
     nlohmann::json                      m_current_config;
     std::shared_ptr<web_app>            m_debug_web_app;
 };

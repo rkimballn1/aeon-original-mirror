@@ -265,7 +265,8 @@ TEST(loader, test)
     int    width             = 16;
     size_t batch_size        = 32;
     size_t record_count      = 1003;
-    size_t block_size        = 300;
+    size_t block_size        = 500;
+
     string manifest_filename = create_manifest_file(record_count, width, height);
 
     nlohmann::json js_image = {
@@ -275,6 +276,7 @@ TEST(loader, test)
     nlohmann::json js           = {{"manifest_filename", manifest_filename},
                          {"batch_size", batch_size},
                          {"block_size", block_size},
+                         {"iteration_mode", "ONCE"},
                          {"etl", {js_image, label}},
                          {"augmentation", augmentation}};
 
@@ -300,6 +302,7 @@ TEST(loader, test)
     int expected_id = 0;
     for (const fixed_buffer_map& data : train_set)
     {
+        INFO << "Start one iteration";
         ASSERT_EQ(2, data.size());
         const buffer_fixed_size_elements* image_buffer_ptr = data["image"];
         ASSERT_NE(nullptr, image_buffer_ptr);
@@ -318,6 +321,7 @@ TEST(loader, test)
         {
             break;
         }
+        INFO << "Finished one iteration " << expected_id;
     }
 }
 
@@ -487,6 +491,7 @@ TEST(benchmark, decode_jpeg)
     cout << ((float)manifest_size / time) << " images/second " << endl;
 }
 
+#if 0
 TEST(benchmark, read_jpeg)
 {
     stopwatch timer;
@@ -521,6 +526,7 @@ TEST(benchmark, read_jpeg)
         }
     }
 }
+#endif
 
 TEST(benchmark, load_jpeg)
 {
@@ -538,6 +544,7 @@ TEST(benchmark, load_jpeg)
     cout << "images/second " << ((float)manifest_size / time) << endl;
 }
 
+#if 0
 TEST(benchmark, load_jpeg_manifest)
 {
     stopwatch timer;
@@ -563,7 +570,8 @@ TEST(benchmark, load_jpeg_manifest)
     auto time = (float)timer.get_milliseconds() / 1000.;
     cout << "images/second " << ((float)manifest_size / time) << endl;
 }
-
+#endif
+#if 0
 TEST(benchmark, load_block_manager)
 {
     stopwatch timer;
@@ -598,3 +606,4 @@ TEST(benchmark, load_block_manager)
         timer.start();
     }
 }
+#endif
