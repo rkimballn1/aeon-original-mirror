@@ -42,8 +42,8 @@ public:
     size_t elements_per_record() const override { return m_block_manager.elements_per_record(); }
     void   initialize() override
     {
-        async_manager<encoded_record_list, encoded_record_list>::initialize();
         m_input_ptr = nullptr;
+        async_manager<encoded_record_list, encoded_record_list>::initialize();
     }
 
 private:
@@ -52,3 +52,5 @@ private:
     size_t               m_element_count;
     encoded_record_list* m_input_ptr{nullptr};
 };
+
+
