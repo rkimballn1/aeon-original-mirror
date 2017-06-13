@@ -114,9 +114,10 @@ public:
         OUTPUT* output_buffer;
         if (!m_bfirst_next)
         {
-            qoutput.pop(output_buffer);
+            qoutput.top(output_buffer);
             if (output_buffer == nullptr)
                 return nullptr; 
+            qoutput.pop(output_buffer);
             qinput.push(output_buffer);
         }
         m_bfirst_next = false;
