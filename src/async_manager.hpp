@@ -79,13 +79,13 @@ template <typename T>
 class sync_queues
 {
 public:
-    std::shared_ptr<nervana::blocking_queue<message>> m_input_comm_queue;
-    std::shared_ptr<nervana::blocking_queue<message>> m_output_comm_queue;
+    std::shared_ptr<nervana::blocking_queue<message>> m_in_comm_queue;
+    std::shared_ptr<nervana::blocking_queue<message>> m_out_comm_queue;
     std::shared_ptr<nervana::blocking_queue<T>> m_data_queue;
 
 public:
     sync_queues(/*size_t prefetch_size*/)
-        : m_data_queue{new nervana::blocking_queue<T>}
+//        : m_data_queue{new nervana::blocking_queue<T>}
     { }
 };
 
@@ -96,8 +96,8 @@ class node
     node_state m_state;
 
 public:
-    std::shared_ptr<sync_queues<INPUT>> m_input_queues;
-    std::shared_ptr<sync_queues<OUTPUT>> m_output_queues;
+    std::shared_ptr<sync_queues<INPUT>> m_incoming_queues;
+    std::shared_ptr<sync_queues<OUTPUT>> m_outgoing_queues;
 
     std::unique_ptr<T> m_worker;
     std::thread m_worker_thread;
@@ -109,8 +109,8 @@ public:
     template <typename ...ARGS>
     node(const std::string& name, ARGS... args)
         : m_name{name}
-        , m_input_queues{new sync_queues<INPUT>}
-        , m_output_queues{new sync_queues<OUTPUT>}
+        , m_incoming_queues{new sync_queues<INPUT>}
+        , m_outgoing_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
     {
     }
@@ -127,26 +127,26 @@ public:
         {
             while (m_state == node_state::RUNNING)
             {
-                if (!m_input_queues->m_input_comm_queue->empty())
+                if (!m_incoming_queues->m_in_comm_queue->empty())
                 {
                     message m;
-                    m_input_queues->m_input_comm_queue->pop(m);
+                    m_incoming_queues->m_in_comm_queue->pop(m);
 
                     if (m == message::END_OF_DATA)
                     {
-                        m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
+                        m_outgoing_queues->m_out_comm_queue->push(message::END_OF_DATA);
                         m_state = node_state::SUSPENDED;
                         INFO << m_name << " End of data";
                         break;
                     }
                 }
-                else
+                else if (!m_incoming_queues->m_data_queue->empty())
                 {
                     INPUT in;
 
-                    m_input_queues->m_data_queue->pop(in);
+                    m_incoming_queues->m_data_queue->pop(in);
                     OUTPUT out = m_worker->fill(in);
-                    m_output_queues->m_data_queue->push(std::move(out));
+                    m_outgoing_queues->m_data_queue->push(std::move(out));
 
                     INFO << m_name << " data received and sent";
                 }
@@ -154,41 +154,43 @@ public:
 
             while (m_state == node_state::SUSPENDED)
             {
-                if (!m_output_queues->m_input_comm_queue->empty())
+                if (!m_incoming_queues->m_in_comm_queue->empty())
+                {
+                    message m;
+                    m_incoming_queues->m_in_comm_queue->pop(m);
+
+                    if (m == message::RESET)
+                    {
+                        INFO << m_name << " Reset received. Sending reset";
+                        m_outgoing_queues->m_out_comm_queue->push(message::RESET);
+
+                    }
+                    else if (m == message::TERMINATE)
+                    {
+                        m_outgoing_queues->m_out_comm_queue->push(message::TERMINATE);
+                    }
+                }
+
+                if (!m_outgoing_queues->m_in_comm_queue->empty())
                 {
                     INFO << m_name << " not empty";
 
                     message m;
-                    m_output_queues->m_input_comm_queue->pop(m);
+                    m_outgoing_queues->m_in_comm_queue->pop(m);
 
                     if (m == message::RESET)
                     {
-                        m_input_queues->m_output_comm_queue->push(message::RESET);
+                        m_incoming_queues->m_out_comm_queue->push(message::RESET);
                         INFO << m_name << " Reset";
+                        m_worker->reset();
                         m_state = node_state::RUNNING;
                         break;
                     }
                     else if (m == message::TERMINATE)
                     {
-                        m_input_queues->m_output_comm_queue->push(message::TERMINATE);
+                        m_incoming_queues->m_out_comm_queue->push(message::TERMINATE);
                         m_state = node_state::TERMINATED;
                         return;
-                    }
-                }
-                
-                if (!m_input_queues->m_input_comm_queue->empty())
-                {
-                    message m;
-                    m_input_queues->m_input_comm_queue->pop(m);
-
-                    if (m == message::RESET)
-                    {
-                        INFO << m_name << " Reset received. Sending reset";
-                        m_output_queues->m_output_comm_queue->push(message::RESET);
-                    }
-                    else if (m == message::TERMINATE)
-                    {
-                        m_output_queues->m_output_comm_queue->push(message::TERMINATE);
                     }
                 }
             }
@@ -209,7 +211,7 @@ class start_node
 public:
     node_state m_state;
 
-    std::shared_ptr<sync_queues<OUTPUT>> m_output_queues;
+    std::shared_ptr<sync_queues<OUTPUT>> m_outgoing_queues;
 
     std::unique_ptr<T> m_worker;
     std::thread m_worker_thread;
@@ -220,7 +222,7 @@ public:
     template <class... ARGS>
     start_node(const std::string& name, ARGS... args)
         : m_name{name}
-        , m_output_queues{new sync_queues<OUTPUT>}
+        , m_outgoing_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
     {
     }
@@ -242,26 +244,27 @@ public:
                 if (out.size() == 0)
                 {
                     INFO << m_name << " Send END_OF_DATA";
-                    m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
+                    m_outgoing_queues->m_out_comm_queue->push(message::END_OF_DATA);
                     m_state = node_state::SUSPENDED;
                     break;
                 }
                 else
                 {
-                    m_output_queues->m_data_queue->push(std::move(out));
+                    m_outgoing_queues->m_data_queue->push(std::move(out));
                 }
             }
 
             while (m_state == node_state::SUSPENDED)
             {
-                if (!m_output_queues->m_input_comm_queue->empty())
+                if (!m_outgoing_queues->m_in_comm_queue->empty())
                 {
                     message m;
-                    m_output_queues->m_input_comm_queue->pop(m);
+                    m_outgoing_queues->m_in_comm_queue->pop(m);
 
                     if (m == message::RESET)
                     {
                         INFO << m_name << " Do RESET";
+                        m_worker->reset();
                         m_state = node_state::RUNNING;
                         break;
                     }
@@ -287,47 +290,59 @@ class end_node
     std::string m_name;
     node_state m_state;
 public:
-    std::shared_ptr<sync_queues<INPUT>> m_input_queues;
+    std::shared_ptr<sync_queues<INPUT>> m_incoming_queues;
+    std::thread m_worker_thread;
 
 public:
     using input_type = INPUT;
 
     end_node(const std::string& name)
         : m_name{name}
-        , m_input_queues{new sync_queues<INPUT>}
+        , m_incoming_queues{new sync_queues<INPUT>}
     { 
     }
     
     void start()
     {
         m_state = node_state::RUNNING;
+        m_worker_thread = std::thread{&end_node::entry, this};
+    }
+
+    void entry()
+    {
+        for (;;)
+        {
+            while (m_state == node_state::RUNNING)
+            {
+                if (!m_incoming_queues->m_in_comm_queue->empty())
+                {
+                    message m;
+
+                    m_incoming_queues->m_in_comm_queue->pop(m);
+
+                    if (m == message::END_OF_DATA)
+                    {
+                        m_incoming_queues->m_out_comm_queue->push(message::RESET);
+                    }
+                }
+            }
+        }
     }
 
     INPUT get_datum()
     {
         INFO << m_name << " get datum";
 
-        if (!m_input_queues->m_input_comm_queue->empty())
-        {
-            message m;
-
-            m_input_queues->m_input_comm_queue->pop(m);
-            if (m == message::END_OF_DATA)
-            {
-                m_input_queues->m_output_comm_queue->push(message::RESET);
-                INFO << m_name << " End of data in sink and reset sent";
-            }
-        }
-    
 
         INPUT in;
-        m_input_queues->m_data_queue->pop(in);
+        m_incoming_queues->m_data_queue->pop(in);
     
         return in;
     }
 
     ~end_node()
     {
+        m_worker_thread.join();
     }
 };
 
@@ -339,14 +354,14 @@ void connect_nodes(LHS& lhs, RHS& rhs)
 
     using connection_type = typename LHS::input_type;
 
-    rhs.m_output_queues->m_data_queue.reset(new nervana::blocking_queue<connection_type>);
-    lhs.m_input_queues->m_data_queue = rhs.m_output_queues->m_data_queue;
+    rhs.m_outgoing_queues->m_data_queue = std::make_shared<nervana::blocking_queue<connection_type>>();
+    lhs.m_incoming_queues->m_data_queue = rhs.m_outgoing_queues->m_data_queue;
 
-    rhs.m_output_queues->m_input_comm_queue.reset(new nervana::blocking_queue<message>);
-    lhs.m_input_queues->m_output_comm_queue = rhs.m_output_queues->m_input_comm_queue;
+    rhs.m_outgoing_queues->m_in_comm_queue = std::make_shared<nervana::blocking_queue<message>>();
+    lhs.m_incoming_queues->m_out_comm_queue = rhs.m_outgoing_queues->m_in_comm_queue;
 
-    rhs.m_output_queues->m_output_comm_queue.reset(new nervana::blocking_queue<message>);
-    lhs.m_input_queues->m_input_comm_queue = rhs.m_output_queues->m_output_comm_queue;
+    rhs.m_outgoing_queues->m_out_comm_queue = std::make_shared<nervana::blocking_queue<message>>();
+    lhs.m_incoming_queues->m_in_comm_queue = rhs.m_outgoing_queues->m_out_comm_queue;
 }
 
 template <typename OUTPUT>

@@ -161,7 +161,6 @@ public:
     iterator& get_end_iter() { return m_end_iter; }
     void      reset()
     {
-        m_batch_decoder2->m_worker->reset();
 //        m_output_buffer_ptr = m_decoder->next();
         m_output_buffer_ptr = get_datum();
         m_position          = 0;
@@ -177,12 +176,7 @@ private:
 
     iterator                            m_current_iter;
     iterator                            m_end_iter;
-    //std::shared_ptr<manifest_file>      m_manifest;
-    //std::shared_ptr<block_loader_file>  m_block_loader;
-    //std::shared_ptr<block_manager>      m_block_manager;
-    //std::shared_ptr<batch_iterator>     m_batch_iterator;
     std::shared_ptr<provider_interface> m_provider;
-    //std::shared_ptr<batch_decoder>      m_decoder;
 
     std::shared_ptr<start_node<std::vector<std::vector<std::string>>, manifest_file>>                    m_manifest2;
     std::shared_ptr<node<std::vector<std::vector<std::string>>, encoded_record_list, block_loader_file>> m_block_loader2;
