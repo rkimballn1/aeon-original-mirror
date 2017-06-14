@@ -92,6 +92,7 @@ public:
 template <typename INPUT, typename OUTPUT, typename T>
 class node
 {
+    std::string m_name;
     node_state m_state;
 
 public:
@@ -106,8 +107,9 @@ public:
     using output_type = OUTPUT;
 
     template <typename ...ARGS>
-    node(size_t prefetch_size, ARGS... args)
-        : m_input_queues{new sync_queues<INPUT>}
+    node(const std::string& name, ARGS... args)
+        : m_name{name}
+        , m_input_queues{new sync_queues<INPUT>}
         , m_output_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
     {
@@ -134,7 +136,7 @@ public:
                     {
                         m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
                         m_state = node_state::SUSPENDED;
-                        INFO << "End of data";
+                        INFO << m_name << " End of data";
                         break;
                     }
                 }
@@ -145,6 +147,8 @@ public:
                     m_input_queues->m_data_queue->pop(in);
                     OUTPUT out = m_worker->fill(in);
                     m_output_queues->m_data_queue->push(std::move(out));
+
+                    INFO << m_name << " data received and sent";
                 }
             }
 
@@ -152,13 +156,15 @@ public:
             {
                 if (!m_output_queues->m_input_comm_queue->empty())
                 {
+                    INFO << m_name << " not empty";
+
                     message m;
                     m_output_queues->m_input_comm_queue->pop(m);
 
                     if (m == message::RESET)
                     {
                         m_input_queues->m_output_comm_queue->push(message::RESET);
-                        INFO << "Reset";
+                        INFO << m_name << " Reset";
                         m_state = node_state::RUNNING;
                         break;
                     }
@@ -177,6 +183,7 @@ public:
 
                     if (m == message::RESET)
                     {
+                        INFO << m_name << " Reset received. Sending reset";
                         m_output_queues->m_output_comm_queue->push(message::RESET);
                     }
                     else if (m == message::TERMINATE)
@@ -197,6 +204,8 @@ public:
 template <typename OUTPUT, typename T>
 class start_node
 {
+    std::string m_name;
+
 public:
     node_state m_state;
 
@@ -209,8 +218,9 @@ public:
     using output_type = OUTPUT;
     
     template <class... ARGS>
-    start_node(size_t prefetch_size, ARGS... args)
-        : m_output_queues{new sync_queues<OUTPUT>}
+    start_node(const std::string& name, ARGS... args)
+        : m_name{name}
+        , m_output_queues{new sync_queues<OUTPUT>}
         , m_worker{new T(args...)}
     {
     }
@@ -231,7 +241,7 @@ public:
             
                 if (out.size() == 0)
                 {
-                    INFO << "Send END_OF_DATA";
+                    INFO << m_name << " Send END_OF_DATA";
                     m_output_queues->m_output_comm_queue->push(message::END_OF_DATA);
                     m_state = node_state::SUSPENDED;
                     break;
@@ -251,7 +261,7 @@ public:
 
                     if (m == message::RESET)
                     {
-                        INFO << "Do RESET";
+                        INFO << m_name << " Do RESET";
                         m_state = node_state::RUNNING;
                         break;
                     }
@@ -270,48 +280,57 @@ public:
         m_worker_thread.join();
     }
 };
-/*
-template <typename INPUT, typename T>
+
+template <typename INPUT>
 class end_node
 {
+    std::string m_name;
+    node_state m_state;
 public:
-    sync_queues<INPUT> m_input_queues;
-
-    std::unique_ptr<T> m_worker;
-    std::thread m_worker_thread;
-
-    size_t m_prefetch_size;
+    std::shared_ptr<sync_queues<INPUT>> m_input_queues;
 
 public:
     using input_type = INPUT;
 
-    template <typename ...ARGS>
-    end_node(size_t prefetch_size, ARGS... args)
-        : m_prefetch_size{prefetch_size}
-        , m_input_queues{new sync_queues<INPUT>{m_prefetch_size}}
-        , m_worker{new T{args...}}
+    end_node(const std::string& name)
+        : m_name{name}
+        , m_input_queues{new sync_queues<INPUT>}
     { 
-        m_worker_thread = std::thread{&end_node::entry, this};
+    }
+    
+    void start()
+    {
+        m_state = node_state::RUNNING;
     }
 
-    void entry()
+    INPUT get_datum()
     {
-        for (;;)
-        {
-            INPUT* in;
+        INFO << m_name << " get datum";
 
-            m_input_queues.m_ready_queue->pop(in);
-            m_worker->fill(in);
-            m_input_queues.m_done_queue->push(in);
+        if (!m_input_queues->m_input_comm_queue->empty())
+        {
+            message m;
+
+            m_input_queues->m_input_comm_queue->pop(m);
+            if (m == message::END_OF_DATA)
+            {
+                m_input_queues->m_output_comm_queue->push(message::RESET);
+                INFO << m_name << " End of data in sink and reset sent";
+            }
         }
+    
+
+        INPUT in;
+        m_input_queues->m_data_queue->pop(in);
+    
+        return in;
     }
 
     ~end_node()
     {
-        m_worker_thread.join();
     }
 };
-*/
+
 template<typename LHS, typename RHS>
 void connect_nodes(LHS& lhs, RHS& rhs)
 {

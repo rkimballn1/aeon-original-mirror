@@ -257,7 +257,6 @@ vector<vector<string>> manifest_file::fill()
         auto load_index = m_block_load_sequence[m_counter];
         rc              = m_block_list[load_index];
         m_counter++;
-        INFO << "Something was done";
     }
 
     return rc;

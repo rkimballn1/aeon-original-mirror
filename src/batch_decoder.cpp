@@ -89,13 +89,10 @@ fixed_buffer_map batch_decoder::fill(encoded_record_list& inputs)
     m_state                     = async_state::fetching_data;
     m_state                     = async_state::processing;
 
-    INFO << "Batch decoder begin";
-
     fixed_buffer_map outputs = m_containers[0];
 
     if (inputs.size() == 0)
     {
-        INFO << "Return here?";
         return outputs;
     }
     else
@@ -115,6 +112,5 @@ fixed_buffer_map batch_decoder::fill(encoded_record_list& inputs)
 
     m_state = async_state::idle;
 
-    INFO << "Batch decoder";
     return outputs;
 }

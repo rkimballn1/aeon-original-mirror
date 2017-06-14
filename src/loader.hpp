@@ -190,6 +190,8 @@ private:
     std::shared_ptr<node<encoded_record_list, encoded_record_list, batch_iterator>>                      m_batch_iterator2;
     std::shared_ptr<node<encoded_record_list, fixed_buffer_map, batch_decoder>>                          m_batch_decoder2; 
 
+    std::shared_ptr<end_node<fixed_buffer_map>> m_loader_sink;
+
     int                                 m_batch_size;
     BatchMode                           m_batch_mode;
     size_t                              m_batch_count_value;

@@ -168,7 +168,6 @@ encoded_record_list block_manager::fill(encoded_record_list& input)
 
     m_state = async_state::idle;
 
-    INFO << "Block manager";
     return rc;
 }
 
