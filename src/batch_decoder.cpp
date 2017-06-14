@@ -15,6 +15,7 @@
 
 #include "batch_decoder.hpp"
 #include "provider_factory.hpp"
+#include "batch_iterator.hpp"
 
 using namespace std;
 using namespace nervana;

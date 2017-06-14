@@ -177,7 +177,8 @@ private:
     std::shared_ptr<block_manager>      m_block_manager;
     std::shared_ptr<batch_iterator>     m_batch_iterator;
     std::shared_ptr<provider_interface> m_provider;
-    std::shared_ptr<batch_decoder>      m_decoder;
+    std::shared_ptr<batch_decoder>      m_decoder_large;
+    std::shared_ptr<async_manager_source<fixed_buffer_map> > m_decoder;
     int                                 m_batch_size;
     BatchMode                           m_batch_mode;
     size_t                              m_batch_count_value;

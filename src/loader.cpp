@@ -134,17 +134,32 @@ void loader::initialize(nlohmann::json& config_json)
 
     m_block_manager = make_shared<block_manager>(
         m_block_loader.get(), lcfg.block_size, lcfg.cache_directory, lcfg.shuffle_enable);
-
-    m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
-
+    
     m_provider = provider_factory::create(config_json);
-
-    m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),
+    
+    if (lcfg.batch_size > std::thread::hardware_concurrency()*0.92f)
+    {
+        m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
+        m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),
                                            static_cast<size_t>(lcfg.batch_size),
                                            lcfg.decode_thread_count,
                                            lcfg.pinned,
                                            m_provider);
+    }
+    else
+    {
+        const int decode_size = std::thread::hardware_concurrency()*4;
+        m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), decode_size);
 
+        m_decoder_large = make_shared<batch_decoder>(m_batch_iterator.get(),
+                                                    decode_size,
+                                                    lcfg.decode_thread_count,
+                                                    lcfg.pinned,
+                                                    m_provider);
+
+        m_decoder = make_shared<batch_iterator_fbm>(m_decoder_large.get(), lcfg.batch_size, m_provider);
+    }
+  
     m_output_buffer_ptr = m_decoder->next();
 
     if (lcfg.web_server_port != 0)

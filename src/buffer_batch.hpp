@@ -165,6 +165,7 @@ public:
     char*             data() const { return m_data; }
     size_t            get_item_count() const { return m_size / m_stride; }
     size_t            size() const { return m_size; }
+    size_t            get_stride() const {return m_stride;}
     const shape_type& get_shape_type() const { return m_shape_type; }
 protected:
     buffer_fixed_size_elements() = delete;

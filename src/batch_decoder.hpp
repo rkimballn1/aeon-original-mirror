@@ -17,7 +17,6 @@
 
 #include "async_manager.hpp"
 #include "buffer_batch.hpp"
-#include "batch_iterator.hpp"
 #include "provider_interface.hpp"
 #include "provider_factory.hpp"
 #include "event.hpp"
@@ -30,6 +29,7 @@ namespace nervana
     class decode_thread_info;
     template <typename T, void(T::*process_func)(int index)>
     class thread_pool;
+    class batch_iterator;
 }
 
 template <typename T, void(T::*process_func)(int index)>
