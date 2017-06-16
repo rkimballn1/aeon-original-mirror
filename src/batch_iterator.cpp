@@ -143,7 +143,7 @@ fixed_buffer_map* batch_iterator_fbm::filler()
             buffer_fixed_size_elements* dst =          (*rc)[name];
             char* p_src = src->get_item(m_src_index);
             char* p_dst = dst->get_item(m_dst_index);
-            memcpy(p_dst, p_src,  remainder * src->get_stride());
+            memcpy(p_dst, p_src,  move_count * src->get_stride());
         }
         m_src_index += move_count;
         m_dst_index += move_count;
