@@ -257,6 +257,7 @@ vector<vector<string>> manifest_file::fill()
         auto load_index = m_block_load_sequence[m_counter];
         rc              = m_block_list[load_index];
         m_counter++;
+        INFO << "Counter " << m_counter << " " << load_index;
     }
 
     return rc;
@@ -269,6 +270,8 @@ void manifest_file::reset()
         shuffle(m_block_load_sequence.begin(), m_block_load_sequence.end(), m_rnd);
     }
     m_counter = 0;
+
+    INFO << "Reset";
 }
 
 void manifest_file::generate_subset(vector<vector<string>>& record_list, float subset_fraction)

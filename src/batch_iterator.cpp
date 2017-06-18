@@ -47,11 +47,6 @@ encoded_record_list batch_iterator::fill(encoded_record_list& input)
     size_t remainder = m_batch_size;
     while (remainder > 0)
     {
-        if (m_input_ptr == nullptr)
-        {
-            break;
-        }
-
         size_t move_count;
         if (m_input_ptr->size() <= remainder)
         {
@@ -76,6 +71,5 @@ encoded_record_list batch_iterator::fill(encoded_record_list& input)
 
     m_state = async_state::idle;
 
-    INFO << "Batch iterator";
     return rc;
 }

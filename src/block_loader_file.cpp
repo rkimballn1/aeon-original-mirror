@@ -113,6 +113,5 @@ encoded_record_list block_loader_file::fill(std::vector<std::vector<std::string>
 
     m_state = async_state::idle;
 
-    INFO << "Block loader file";
     return rc;
 }

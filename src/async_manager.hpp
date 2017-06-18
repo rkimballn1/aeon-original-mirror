@@ -65,6 +65,7 @@ enum class message
     TERMINATE,
     DATA_SENT,
     DATA_RECEIVED,
+    REQUEST_DATA,
     END_OF_DATA
 };
 
@@ -84,8 +85,7 @@ public:
     std::shared_ptr<nervana::blocking_queue<T>> m_data_queue;
 
 public:
-    sync_queues(/*size_t prefetch_size*/)
-//        : m_data_queue{new nervana::blocking_queue<T>}
+    sync_queues()
     { }
 };
 
@@ -132,23 +132,42 @@ public:
                     message m;
                     m_incoming_queues->m_in_comm_queue->pop(m);
 
-                    if (m == message::END_OF_DATA)
+                    if (m == message::DATA_SENT)
+                    {
+                        INPUT in;
+
+                        m_incoming_queues->m_data_queue->pop(in);
+                        OUTPUT out = m_worker->fill(in);
+                        m_outgoing_queues->m_data_queue->push(std::move(out));
+                        m_outgoing_queues->m_out_comm_queue->push(message::DATA_SENT);
+
+                        INFO << m_name << " data received and sent";
+                    } 
+                    else if (m == message::END_OF_DATA)
                     {
                         m_outgoing_queues->m_out_comm_queue->push(message::END_OF_DATA);
                         m_state = node_state::SUSPENDED;
                         INFO << m_name << " End of data";
                         break;
                     }
+                    else if (m == message::REQUEST_DATA)
+                    {
+                        m_outgoing_queues->m_out_comm_queue->push(message::REQUEST_DATA);
+                        INFO << m_name << "Data requested";
+                    }
                 }
-                else if (!m_incoming_queues->m_data_queue->empty())
+
+                if (!m_outgoing_queues->m_in_comm_queue->empty())
                 {
-                    INPUT in;
+                    message m;
 
-                    m_incoming_queues->m_data_queue->pop(in);
-                    OUTPUT out = m_worker->fill(in);
-                    m_outgoing_queues->m_data_queue->push(std::move(out));
+                    m_outgoing_queues->m_in_comm_queue->pop(m);
 
-                    INFO << m_name << " data received and sent";
+                    if (m == message::REQUEST_DATA)
+                    {
+                        m_incoming_queues->m_out_comm_queue->push(message::REQUEST_DATA);
+                        
+                    }
                 }
             }
 
@@ -161,9 +180,11 @@ public:
 
                     if (m == message::RESET)
                     {
-                        INFO << m_name << " Reset received. Sending reset";
                         m_outgoing_queues->m_out_comm_queue->push(message::RESET);
-
+                        m_worker->reset();
+                        m_state = node_state::RUNNING;
+                        INFO << m_name << " reset done";
+                        break;
                     }
                     else if (m == message::TERMINATE)
                     {
@@ -173,18 +194,13 @@ public:
 
                 if (!m_outgoing_queues->m_in_comm_queue->empty())
                 {
-                    INFO << m_name << " not empty";
-
                     message m;
                     m_outgoing_queues->m_in_comm_queue->pop(m);
 
                     if (m == message::RESET)
                     {
                         m_incoming_queues->m_out_comm_queue->push(message::RESET);
-                        INFO << m_name << " Reset";
-                        m_worker->reset();
-                        m_state = node_state::RUNNING;
-                        break;
+                        INFO << m_name << " Reset received. Sending reset";
                     }
                     else if (m == message::TERMINATE)
                     {
@@ -239,18 +255,29 @@ public:
         {
             while (m_state == node_state::RUNNING)
             {
-                OUTPUT out = m_worker->fill();
+                if (!m_outgoing_queues->m_in_comm_queue->empty())
+                {
+                    message m;
+                    m_outgoing_queues->m_in_comm_queue->pop(m);
+
+                    if (m == message::REQUEST_DATA)
+                    {
+                        OUTPUT out = m_worker->fill();
             
-                if (out.size() == 0)
-                {
-                    INFO << m_name << " Send END_OF_DATA";
-                    m_outgoing_queues->m_out_comm_queue->push(message::END_OF_DATA);
-                    m_state = node_state::SUSPENDED;
-                    break;
-                }
-                else
-                {
-                    m_outgoing_queues->m_data_queue->push(std::move(out));
+                        if (out.empty())
+                        {
+                            INFO << m_name << " Send END_OF_DATA";
+                            m_outgoing_queues->m_out_comm_queue->push(message::END_OF_DATA);
+                            m_state = node_state::SUSPENDED;
+                            break;
+                        }
+                        else
+                        {
+                            m_outgoing_queues->m_data_queue->push(std::move(out));
+                            m_outgoing_queues->m_out_comm_queue->push(message::DATA_SENT);
+                            INFO << "Data sent";
+                        }
+                    }
                 }
             }
 
@@ -266,6 +293,7 @@ public:
                         INFO << m_name << " Do RESET";
                         m_worker->reset();
                         m_state = node_state::RUNNING;
+                        m_outgoing_queues->m_out_comm_queue->push(message::RESET);
                         break;
                     }
                     else if (m == message::TERMINATE)
@@ -291,7 +319,7 @@ class end_node
     node_state m_state;
 public:
     std::shared_ptr<sync_queues<INPUT>> m_incoming_queues;
-    std::thread m_worker_thread;
+    //std::thread m_worker_thread;
 
 public:
     using input_type = INPUT;
@@ -305,9 +333,9 @@ public:
     void start()
     {
         m_state = node_state::RUNNING;
-        m_worker_thread = std::thread{&end_node::entry, this};
+    //    m_worker_thread = std::thread{&end_node::entry, this};
     }
-
+/*
     void entry()
     {
         for (;;)
@@ -328,21 +356,48 @@ public:
             }
         }
     }
+*/
+#include <chrono>
 
     INPUT get_datum()
     {
         INFO << m_name << " get datum";
 
+        m_incoming_queues->m_out_comm_queue->push(message::REQUEST_DATA);
 
-        INPUT in;
-        m_incoming_queues->m_data_queue->pop(in);
-    
-        return in;
+        while (m_incoming_queues->m_in_comm_queue->empty())
+        { }
+
+        if (!m_incoming_queues->m_in_comm_queue->empty())
+        {
+            for (;;)
+            {
+                message m;
+                m_incoming_queues->m_in_comm_queue->pop(m);
+
+                if (m == message::DATA_SENT)
+                {
+                    INPUT in;
+                    m_incoming_queues->m_data_queue->pop(in);
+                    return in;
+                }
+                else if (m == message::END_OF_DATA)
+                {
+                    m_incoming_queues->m_out_comm_queue->push(message::RESET);     
+                }
+                else if (m == message::RESET)
+                {
+                    m_incoming_queues->m_out_comm_queue->push(message::REQUEST_DATA);           
+                }
+            }
+        }
+
+        return INPUT();
     }
 
     ~end_node()
     {
-        m_worker_thread.join();
+        m_incomming_queues->m_in_comm_queue->push(message::TERMINATE);
     }
 };
 
@@ -422,7 +477,7 @@ public:
     virtual void reset() override
     {
         finalize();
-        m_source->reset();
+        //m_source->reset();
         initialize();
     }
 

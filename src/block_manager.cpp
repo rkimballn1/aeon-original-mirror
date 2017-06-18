@@ -150,7 +150,7 @@ encoded_record_list block_manager::fill(encoded_record_list& input)
             if (++m_current_block_number == m_block_count)
             {
                 m_current_block_number = 0;
-                m_file_loader.reset();
+                //m_file_loader.reset();
             }
         }
     }
