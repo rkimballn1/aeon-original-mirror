@@ -157,8 +157,8 @@ public:
     iterator& get_end_iter() { return m_end_iter; }
     void      reset()
     {
-        m_decoder->reset();
-        m_output_buffer_ptr = m_decoder->next();
+        m_final_stage->reset();
+        m_output_buffer_ptr = m_final_stage->next();
         m_position          = 0;
     }
 
@@ -177,8 +177,8 @@ private:
     std::shared_ptr<block_manager>      m_block_manager;
     std::shared_ptr<batch_iterator>     m_batch_iterator;
     std::shared_ptr<provider_interface> m_provider;
-    std::shared_ptr<batch_decoder>      m_decoder_large;
-    std::shared_ptr<async_manager_source<fixed_buffer_map> > m_decoder;
+    std::shared_ptr<batch_decoder>      m_decoder;
+    std::shared_ptr<async_manager_source<fixed_buffer_map>> m_final_stage;
     int                                 m_batch_size;
     BatchMode                           m_batch_mode;
     size_t                              m_batch_count_value;

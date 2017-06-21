@@ -140,7 +140,7 @@ void loader::initialize(nlohmann::json& config_json)
     if (lcfg.batch_size > std::thread::hardware_concurrency()*0.92f)
     {
         m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
-        m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),
+        m_final_stage = make_shared<batch_decoder>(m_batch_iterator.get(),
                                            static_cast<size_t>(lcfg.batch_size),
                                            lcfg.decode_thread_count,
                                            lcfg.pinned,
@@ -151,16 +151,16 @@ void loader::initialize(nlohmann::json& config_json)
         const int decode_size = std::thread::hardware_concurrency()*4;
         m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), decode_size);
 
-        m_decoder_large = make_shared<batch_decoder>(m_batch_iterator.get(),
+        m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),
                                                     decode_size,
                                                     lcfg.decode_thread_count,
                                                     lcfg.pinned,
                                                     m_provider);
 
-        m_decoder = make_shared<batch_iterator_fbm>(m_decoder_large.get(), lcfg.batch_size, m_provider);
+        m_final_stage = make_shared<batch_iterator_fbm>(m_decoder.get(), lcfg.batch_size, m_provider);
     }
   
-    m_output_buffer_ptr = m_decoder->next();
+    m_output_buffer_ptr = m_final_stage->next();
 
     if (lcfg.web_server_port != 0)
     {
@@ -247,7 +247,7 @@ const fixed_buffer_map& loader::iterator::operator*() const
 
 void loader::increment_position()
 {
-    m_output_buffer_ptr = m_decoder->next();
+    m_output_buffer_ptr = m_final_stage->next();
     m_position++;
 
     // Wrap around if this is an infinite iterator

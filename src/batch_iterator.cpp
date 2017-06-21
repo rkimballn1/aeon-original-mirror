@@ -125,26 +125,12 @@ fixed_buffer_map* batch_iterator_fbm::filler()
             break;
         }
 
-        size_t move_count;
-
         const string first_name = (m_input_ptr->get_names())[0];
         size_t input_size = ((*m_input_ptr)[first_name])->get_item_count();
         size_t current_input_size = input_size - m_src_index;
+        size_t move_count = (current_input_size <= remainder) ? current_input_size :remainder;
 
-        if (current_input_size <= remainder)
-          move_count = current_input_size;
-        else
-          move_count = remainder; // Enough in the block to service this batch and more
-
-        std::vector<std::string> names = m_input_ptr->get_names();
-        for (auto name: names)
-        {
-            buffer_fixed_size_elements* src = (*m_input_ptr)[name];
-            buffer_fixed_size_elements* dst =          (*rc)[name];
-            char* p_src = src->get_item(m_src_index);
-            char* p_dst = dst->get_item(m_dst_index);
-            memcpy(p_dst, p_src,  move_count * src->get_stride());
-        }
+        rc->copy(*m_input_ptr, m_src_index, m_dst_index, move_count);
         m_src_index += move_count;
         m_dst_index += move_count;
 
