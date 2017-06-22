@@ -27,6 +27,8 @@
 #include <functional>
 #include <future>
 #include <map>
+#include <tuple>
+#include <exception>
 #include "log.hpp"
 #include "blocking_queue.h"
 
@@ -86,23 +88,38 @@ public:
         async_manager_status.push_back(this);
     }
     virtual ~async_manager() { finalize(); }
-        
+
     void run_filler()
     {
       for(;;)
       {
-        qinput.pop(m_pending_buffer);
+        inner_buffer_t free_buffer;
+        m_bq_input.pop(free_buffer);
+
+        m_pending_buffer = std::get<0>(free_buffer);
+
         if (!m_active_thread)
             return;
         if (m_pending_buffer == nullptr)
         {
-            qoutput.push(nullptr);
+            m_bq_output.push(inner_buffer_t(nullptr,nullptr));
             return;
         }
-        OUTPUT* buff = filler();
+
+        OUTPUT* buff;
+        try
+        {
+            buff = filler();
+        }
+        catch(const std::exception&)
+        {
+            m_bq_output.push(inner_buffer_t(nullptr, std::current_exception()));
+            return;
+        }
+
         if (!m_active_thread)
             return;
-        qoutput.push(buff);
+        m_bq_output.push(inner_buffer_t(buff, nullptr));
       }
     }
     
@@ -111,19 +128,24 @@ public:
         if (!m_active_thread) 
             initialize();
     
-        OUTPUT* output_buffer;
+        inner_buffer_t output_buffer;
         if (!m_bfirst_next)
         {
-            qoutput.top(output_buffer);
-            if (output_buffer == nullptr)
+            m_bq_output.top(output_buffer);
+            if (std::get<0>(output_buffer) == nullptr)
+            {
                 return nullptr; 
-            qoutput.pop(output_buffer);
-            qinput.push(output_buffer);
+            }
+            m_bq_output.pop(output_buffer);
+            m_bq_input.push(output_buffer);
         }
         m_bfirst_next = false;
 
-        qoutput.top(output_buffer);
-        return output_buffer;
+        m_bq_output.top(output_buffer);
+        if (std::get<1>(output_buffer))
+            std::rethrow_exception(std::get<1>(output_buffer));
+
+        return std::get<0>(output_buffer);
     }
  
     // do the work to fill up m_containers
@@ -135,8 +157,8 @@ public:
         if (m_active_thread)
         {
             m_active_thread = false;
-            qinput.clear();
-            qinput.push(nullptr);
+            m_bq_input.clear();
+            m_bq_input.push(inner_buffer_t(nullptr, nullptr));
             m_source->suspend_output();
             fill_thread->join();
         }
@@ -151,10 +173,10 @@ public:
         {
             m_active_thread = true;
             m_bfirst_next = true;
-            qinput.clear();
-            qoutput.clear();
-            qinput.push(&m_containers[0]);
-            qinput.push(&m_containers[1]);
+            m_bq_input.clear();
+            m_bq_output.clear();
+            m_bq_input.push(inner_buffer_t(&m_containers[0], nullptr));
+            m_bq_input.push(inner_buffer_t(&m_containers[1], nullptr));
             fill_thread.reset(new std::thread(&async_manager::run_filler, this));
         }
     }
@@ -166,13 +188,15 @@ public:
  
     virtual void suspend_output() override
     {
-        qoutput.clear();
-        qoutput.push(nullptr);
+        m_bq_output.clear();
+        m_bq_output.push(inner_buffer_t(nullptr, nullptr));
     }
 
     async_state        get_state() const override { return m_state; }
     const std::string& get_name() const override { return m_name; }
 protected:
+    typedef std::tuple<OUTPUT*, std::exception_ptr> inner_buffer_t;
+
     async_manager(const async_manager&) = delete;
 
     OUTPUT* get_pending_buffer()
@@ -189,9 +213,8 @@ protected:
     async_state m_state = async_state::idle;
     std::string m_name;
     
-    // ///////////////////////////////////////////////////////////////////
-    BlockingQueue<OUTPUT*>   qinput;
-    BlockingQueue<OUTPUT*>  qoutput;
+    BlockingQueue<inner_buffer_t>   m_bq_input;
+    BlockingQueue<inner_buffer_t>  m_bq_output;
     std::shared_ptr<std::thread> fill_thread;
     volatile bool       m_bfirst_next{true};
     volatile bool       m_active_thread{false};
