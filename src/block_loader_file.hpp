@@ -43,7 +43,7 @@ public:
 
     encoded_record_list  fill(std::vector<std::vector<std::string>>& input) override;
 
-    void                 reset() override { m_manifest.reset(); }
+    void                 reset() override { /*m_manifest.reset();*/ }
     size_t               block_count() const override { return m_manifest.block_count(); }
     size_t               record_count() const override { return m_manifest.record_count(); }
     size_t               block_size() const override { return 1; }

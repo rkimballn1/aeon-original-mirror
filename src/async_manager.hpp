@@ -186,10 +186,6 @@ public:
                         INFO << m_name << " reset done";
                         break;
                     }
-                    else if (m == message::TERMINATE)
-                    {
-                        m_outgoing_queues->m_out_comm_queue->push(message::TERMINATE);
-                    }
                 }
 
                 if (!m_outgoing_queues->m_in_comm_queue->empty())
@@ -204,6 +200,7 @@ public:
                     }
                     else if (m == message::TERMINATE)
                     {
+                        INFO << "Terminate";
                         m_incoming_queues->m_out_comm_queue->push(message::TERMINATE);
                         m_state = node_state::TERMINATED;
                         return;
@@ -277,6 +274,11 @@ public:
                             m_outgoing_queues->m_out_comm_queue->push(message::DATA_SENT);
                             INFO << "Data sent";
                         }
+                    }
+                    else if (m == message::TERMINATE)
+                    {
+                        m_state = node_state::TERMINATED;
+                        return;
                     }
                 }
             }
@@ -357,7 +359,6 @@ public:
         }
     }
 */
-#include <chrono>
 
     INPUT get_datum()
     {
@@ -397,7 +398,7 @@ public:
 
     ~end_node()
     {
-        m_incomming_queues->m_in_comm_queue->push(message::TERMINATE);
+        m_incoming_queues->m_in_comm_queue->push(message::TERMINATE);
     }
 };
 
