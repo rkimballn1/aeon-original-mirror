@@ -45,7 +45,7 @@ public:
         if (thread_count == 0)  // automatically determine number of threads
         {
             nthreads = std::thread::hardware_concurrency() - 
-                       std::min(2, static_cast<int>(std::thread::hardware_concurrency()/4));
+                       std::min(2, static_cast<int>(std::thread::hardware_concurrency()/8));
             nthreads = std::min(nthreads, m_task_count);
         }
         else
