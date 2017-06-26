@@ -104,7 +104,7 @@ nervana::encoded_record_list* block_manager::filler()
                     {
                         vector<char> e;
                         reader.read(e);
-                        record.add_element(e);
+                        record.add_element(std::move(e));
                     }
                     rc->add_record(record);
                 }

@@ -111,7 +111,7 @@ public:
         {
             buff = filler();
         }
-        catch(const std::exception&)
+        catch(...)
         {
             m_bq_output.push(inner_buffer_t(nullptr, std::current_exception()));
             return;
