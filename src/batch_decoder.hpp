@@ -15,13 +15,17 @@
 
 #pragma once
 
+#include <thread>
+#include <pthread.h>
+#include <atomic>
+#include <mutex>
+#include <exception>
+
 #include "async_manager.hpp"
 #include "buffer_batch.hpp"
 #include "provider_interface.hpp"
 #include "provider_factory.hpp"
 #include "event.hpp"
-#include <pthread.h>
-#include <atomic>
 
 namespace nervana
 {
@@ -82,8 +86,11 @@ public:
     void run()
     {
         m_current_task_id = 0;
+        m_pool_exception = nullptr;
         pthread_barrier_wait(&m_br_wake);
         pthread_barrier_wait(&m_br_endtasks);
+        if (m_pool_exception)
+            std::rethrow_exception(m_pool_exception);
     }
 private:
     T*                m_worker;
@@ -93,6 +100,8 @@ private:
     volatile bool     m_thread_pool_stop = false;
     std::vector<std::thread> m_threads;
     std::atomic<size_t> m_current_task_id;
+    std::exception_ptr  m_pool_exception;
+    std::mutex          m_mutex;
     
     template<bool dynamic_task_scheduling>
     void process(int thread_id)
@@ -108,18 +117,27 @@ private:
 
             if (m_thread_pool_stop) return;
             
-            if (!dynamic_task_scheduling)
+            try
             {
-                (m_worker->*process_func)(thread_id);
-            }
-            else 
-            {
-                for(;;)
+                if (!dynamic_task_scheduling)
                 {
-                    const size_t next_task_id = m_current_task_id.fetch_add(1);
-                    if (next_task_id >= m_task_count) break; 
-                    (m_worker->*process_func)(next_task_id);
+                    (m_worker->*process_func)(thread_id);
                 }
+                else
+                {
+                    for(;;)
+                    {
+                        const size_t next_task_id = m_current_task_id.fetch_add(1);
+                        if (next_task_id >= m_task_count) break;
+                        (m_worker->*process_func)(next_task_id);
+                    }
+                }
+            }
+            catch(...)
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (!m_pool_exception)
+                   m_pool_exception = std::current_exception();
             }
 
             pthread_barrier_wait(&m_br_endtasks);
