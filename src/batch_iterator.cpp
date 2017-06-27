@@ -14,6 +14,7 @@
 */
 
 #include <string>
+
 #include "batch_iterator.hpp"
 #include "block_manager.hpp"
 #include "batch_decoder.hpp"

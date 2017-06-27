@@ -29,6 +29,7 @@
 #include <map>
 #include <tuple>
 #include <exception>
+
 #include "log.hpp"
 #include "blocking_queue.h"
 
@@ -88,40 +89,6 @@ public:
         async_manager_status.push_back(this);
     }
     virtual ~async_manager() { finalize(); }
-
-    void run_filler()
-    {
-      for(;;)
-      {
-        inner_buffer_t free_buffer;
-        m_bq_input.pop(free_buffer);
-
-        m_pending_buffer = std::get<0>(free_buffer);
-
-        if (!m_active_thread)
-            return;
-        if (m_pending_buffer == nullptr)
-        {
-            m_bq_output.push(inner_buffer_t(nullptr,nullptr));
-            return;
-        }
-
-        OUTPUT* buff;
-        try
-        {
-            buff = filler();
-        }
-        catch(...)
-        {
-            m_bq_output.push(inner_buffer_t(nullptr, std::current_exception()));
-            return;
-        }
-
-        if (!m_active_thread)
-            return;
-        m_bq_output.push(inner_buffer_t(buff, nullptr));
-      }
-    }
     
     OUTPUT* next() override
     {
@@ -165,7 +132,6 @@ public:
         m_source->reset();
     }
 
-
     virtual void initialize() 
     {
         std::unique_lock<std::mutex> lock(m_mutex);
@@ -199,6 +165,40 @@ protected:
 
     async_manager(const async_manager&) = delete;
 
+    void run_filler()
+    {
+      for(;;)
+      {
+        inner_buffer_t free_buffer;
+        m_bq_input.pop(free_buffer);
+
+        m_pending_buffer = std::get<0>(free_buffer);
+
+        if (!m_active_thread)
+            return;
+        if (m_pending_buffer == nullptr)
+        {
+            m_bq_output.push(inner_buffer_t(nullptr,nullptr));
+            return;
+        }
+
+        OUTPUT* buff;
+        try
+        {
+            buff = filler();
+        }
+        catch(...)
+        {
+            m_bq_output.push(inner_buffer_t(nullptr, std::current_exception()));
+            return;
+        }
+
+        if (!m_active_thread)
+            return;
+        m_bq_output.push(inner_buffer_t(buff, nullptr));
+      }
+    }
+
     OUTPUT* get_pending_buffer()
     {
       if (m_active_thread)
@@ -216,8 +216,7 @@ protected:
     BlockingQueue<inner_buffer_t>   m_bq_input;
     BlockingQueue<inner_buffer_t>  m_bq_output;
     std::shared_ptr<std::thread> fill_thread;
-    volatile bool       m_bfirst_next{true};
+    bool                m_bfirst_next{true};
     volatile bool       m_active_thread{false};
     std::mutex          m_mutex;
 };
-

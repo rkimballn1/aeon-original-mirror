@@ -137,7 +137,7 @@ void loader::initialize(nlohmann::json& config_json)
     
     m_provider = provider_factory::create(config_json);
     
-    if (lcfg.batch_size > std::thread::hardware_concurrency()*1.5f)
+    if (lcfg.batch_size > std::thread::hardware_concurrency() * m_increase_input_size_coefficient )
     {
         m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
         m_final_stage = make_shared<batch_decoder>(m_batch_iterator.get(),
@@ -148,7 +148,7 @@ void loader::initialize(nlohmann::json& config_json)
     }
     else
     {
-        const int decode_size = std::thread::hardware_concurrency()*8;
+        const int decode_size = std::thread::hardware_concurrency() * m_input_multiplier;
         m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), decode_size);
 
         m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),

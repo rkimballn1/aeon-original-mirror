@@ -186,4 +186,9 @@ private:
     fixed_buffer_map*                   m_output_buffer_ptr{nullptr};
     nlohmann::json                      m_current_config;
     std::shared_ptr<web_app>            m_debug_web_app;
+    
+    //Shows, how bigger should be batch size than CPU thread count to not use additional object to better fill thread pool 
+    const float                         m_increase_input_size_coefficient = 1.5; 
+    // How many times we should increase input data size for decoder
+    const int                           m_input_multiplier = 8;
 };

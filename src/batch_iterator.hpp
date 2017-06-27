@@ -29,7 +29,7 @@
 namespace nervana
 {
     class batch_iterator;
-    class batch_iterator_fbm;
+    class batch_iterator_fbm; // batch iterator for fixed_buffer_map type
     class block_manager;
     class batch_decoder;
 }

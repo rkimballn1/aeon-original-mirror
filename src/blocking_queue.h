@@ -1,5 +1,5 @@
 /*
- Copyright 2016 Nervana Systems Inc.
+ Copyright 2017 Nervana Systems Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -44,7 +44,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mutex);
         m_queue.push(item);
         lock.unlock();
-        m_cond.notify_all();
+        m_cond.notify_one();
     }
 
     void clear()

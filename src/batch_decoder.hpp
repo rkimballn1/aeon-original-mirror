@@ -48,8 +48,10 @@ public:
 
         if (thread_count == 0)  // automatically determine number of threads
         {
+            // we don't use all threads, some of them we leave for other pipeline objects and system
             nthreads = std::thread::hardware_concurrency() - 
-                       std::min(2, static_cast<int>(std::thread::hardware_concurrency()/8));
+                       std::min(m_max_count_of_free_threads, 
+                                static_cast<int>(std::thread::hardware_concurrency()/m_free_threads_ratio));
             nthreads = std::min(nthreads, m_task_count);
         }
         else
@@ -58,7 +60,7 @@ public:
             nthreads = std::min(static_cast<int>(std::thread::hardware_concurrency()), thread_count);
         }
    
-        pthread_barrier_init(&m_br_wake, NULL, nthreads+1);
+        pthread_barrier_init(&m_br_wake, NULL, nthreads + 1);
         pthread_barrier_init(&m_br_endtasks, NULL, nthreads + 1);
 
         if (nthreads == m_task_count)
@@ -93,6 +95,8 @@ public:
             std::rethrow_exception(m_pool_exception);
     }
 private:
+    const int         m_max_count_of_free_threads = 2;
+    const int         m_free_threads_ratio = 8;
     T*                m_worker;
     int               m_task_count;
     pthread_barrier_t m_br_wake;
