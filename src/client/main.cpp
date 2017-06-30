@@ -1,54 +1,36 @@
+#include <chrono>
+
 #include <cpprest/http_client.h>
 
 using namespace web;
 using namespace http;
 
-class aeon_client
+static const size_t count = 10000;
+
+void communicate_par(client::http_client& client)
 {
-private:
-    uint64_t m_idx;
-    client::http_client m_client;
-
-public:
-    aeon_client(uint64_t idx, const client::http_client& client);
-    void next();
-};
-
-
-aeon_client::aeon_client(uint64_t idx, const client::http_client& client)
-    : m_idx(idx)
-    , m_client(client)
-{
+   std::ve
 }
 
-void aeon_client::next()
+void communicate(client::http_client& client)
 {
-    utility::ostringstream_t buf;
-    buf << U("?idx=") << m_idx;
+    http_response response = client.request(methods::GET).get();
 
-
+    if (response.status_code() != status_codes::OK)
+    {
+        throw std::runtime_error("Invalid response status");
+    }
 }
 
-std::shared_ptr<aeon_client> create_client(const http::uri& uri)
+void communicate(const http::uri& uri)
 {
     client::http_client client(http::uri_builder(uri).append_path(U("/aeon")).to_uri());
     http_response response = client.request(methods::GET).get();
 
-    std::shared_ptr<aeon_client> c;
-
-    if (response.status_code() == status_codes::OK)
+    if (response.status_code() != status_codes::OK)
     {
-        if (response.headers().content_type() == U("application/json"))
-        {
-            web::json::value json_idx = response.extract_json().get();
-            web::json::object idx_obj = json_idx.as_object();
-
-            web::json::value idx = idx_obj["idx"];
-            c = std::make_shared<aeon_client>(idx.as_number().to_uint64(), client);
-        }
+        throw std::runtime_error("Invalid response status");
     }
-
-    return c;
 }
 
 int main()
@@ -58,13 +40,19 @@ int main()
     address.append(port);
 
     http::uri uri = http::uri(address);
+    client::http_client client(http::uri_builder(uri).append_path(U("/aeon")).to_uri());
 
-    std::shared_ptr<aeon_client> client = create_client(uri);
-
-    while (true)
-    {
-
+   
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < count; i++) {
+        communicate(client);
     }
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    auto dur = stop - start;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur);
+    std::cout << "Duration:   Total: " << ms.count()             << " milliseconds." << std::endl <<
+                 "          Average: " << (1.0*ms.count())/count << " milliseconds." << std::endl;
 
     return 0;
 }
