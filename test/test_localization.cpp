@@ -99,7 +99,8 @@ TEST(DISABLED_localization, example)
                              {"etl", {js_image, js_local}},
                              {"augmentation", {js_aug}}};
 
-    auto train_set = nervana::loader{config};
+    loader_factory factory;
+    auto train_set = factory.get_loader(config);
 }
 
 TEST(localization, generate_anchors)
@@ -964,7 +965,7 @@ TEST(localization, loader)
 
     localization::extractor   extractor{cfg};
     localization::transformer transformer{cfg, factory.fixed_scaling_factor};
-    localization::loader      loader{cfg};
+    localization::loader loader{cfg};
     auto                      extract_data = extractor.extract(&data[0], data.size());
     ASSERT_NE(nullptr, extract_data);
 
