@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     exit(STATUS_ONEXIT_ERROR);
 
   log_info("aeon service has been started...");
-  tpatejko tp;
+  server_start srv;
 
   while (terminate == 0) {
     timestamp = time(NULL);

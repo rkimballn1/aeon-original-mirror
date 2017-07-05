@@ -5,15 +5,39 @@
 using namespace web;
 using namespace http;
 
+#define CAT(a, ...) PRIMITIVE_CAT(a, __VA_ARGS__)
+#define PRIMITIVE_CAT(a, ...) a ## __VA_ARGS__
+
+#define COMM_FUNC CAT(communicate_, MODE)
+
 static const size_t count = 10000;
 
-void communicate(client::http_client& client)
+void communicate_par(client::http_client& client)
 {
-    http_response response = client.request(methods::GET).get();
+    std::vector<pplx::task<http_response>> pending_responses;
+    pending_responses.reserve(count);
 
-    if (response.status_code() != status_codes::OK)
-    {
-        throw std::runtime_error("Invalid response status");
+    for (size_t i = 0; i < count; ++i) {
+        pending_responses[i] = client.request(methods::GET);
+    }
+
+    for (auto pr : pending_responses) {
+        http_response r = pr.get();
+
+        if (r.status_code() != status_codes::OK)
+            throw std::runtime_error("Invalid response status");
+    }
+}
+
+void communicate_seq(client::http_client& client)
+{
+    for (size_t i = 0; i < count; ++i) {
+        http_response response = client.request(methods::GET).get();
+
+        if (response.status_code() != status_codes::OK)
+        {
+            throw std::runtime_error("Invalid response status");
+        }
     }
 }
 
@@ -39,15 +63,12 @@ int main()
 
    
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
-        communicate(client);
-    }
+    COMM_FUNC(client);
     auto stop = std::chrono::high_resolution_clock::now();
 
     auto dur = stop - start;
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur);
-    std::cout << "Duration:   Total: " << ms.count()             << " seconds." << std::endl <<
-                 "          Average: " << (1.0*std::chrono::duration_cast<std::chrono::milliseconds>(ms).count())/count << " microseconds." << std::endl;
+    std::cout << "Duration:   Total: " << std::chrono::duration_cast<std::chrono::seconds>(dur).count() << " seconds." << std::endl <<
+                 "          Average: " << (1.0*std::chrono::duration_cast<std::chrono::microseconds>(dur).count())/count << " microseconds." << std::endl;
 
     return 0;
 }

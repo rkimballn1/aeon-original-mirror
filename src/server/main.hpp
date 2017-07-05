@@ -25,10 +25,10 @@ std::shared_ptr<aeon_server> initialize(const utility::string_t& address);
 
 void shutdown(std::shared_ptr<aeon_server> server);
 
-class tpatejko
+class server_start
 {
     std::shared_ptr<aeon_server> server;
 public:
-    tpatejko();
-    ~tpatejko();
+    server_start();
+    ~server_start();
 };

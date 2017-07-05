@@ -56,7 +56,7 @@ void shutdown(std::shared_ptr<aeon_server> server)
     server->close().wait();
 }
 
-tpatejko::tpatejko()
+server_start::server_start()
 {
     utility::string_t port = U("34568");
 
@@ -65,7 +65,8 @@ tpatejko::tpatejko()
 
     server = initialize(address);
 }
-tpatejko::~tpatejko()
+
+server_start::~server_start()
 {
     shutdown(server);
 }

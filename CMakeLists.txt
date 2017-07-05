@@ -59,6 +59,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-compat-deprecated-writable-st
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-double-promotion")
 
+ADD_DEFINITIONS(-DMODE=par)
+
 find_package(OpenCV REQUIRED)
 if(OpenCV_VERSION VERSION_LESS "2.4.8")
   message(FATAL_ERROR "ERROR: Can't find OpenCV 2.4.8+")
