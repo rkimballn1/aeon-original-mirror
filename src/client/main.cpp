@@ -7,11 +7,6 @@ using namespace http;
 
 static const size_t count = 10000;
 
-void communicate_par(client::http_client& client)
-{
-   std::ve
-}
-
 void communicate(client::http_client& client)
 {
     http_response response = client.request(methods::GET).get();
@@ -51,8 +46,8 @@ int main()
 
     auto dur = stop - start;
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur);
-    std::cout << "Duration:   Total: " << ms.count()             << " milliseconds." << std::endl <<
-                 "          Average: " << (1.0*ms.count())/count << " milliseconds." << std::endl;
+    std::cout << "Duration:   Total: " << ms.count()             << " seconds." << std::endl <<
+                 "          Average: " << (1.0*std::chrono::duration_cast<std::chrono::milliseconds>(ms).count())/count << " microseconds." << std::endl;
 
     return 0;
 }
