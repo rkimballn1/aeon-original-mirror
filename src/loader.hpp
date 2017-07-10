@@ -1,5 +1,5 @@
 /*
- Copyright 2016 Nervana Systems Inc.
+ Copyright 2017 Nervana Systems Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -112,11 +112,12 @@ public:
                                           >
     {
         friend class loader_local;
+        friend class loader_remote;
 
     public:
         explicit iterator(loader& ld, bool is_end);
         iterator(const iterator&);
-        ~iterator(){}
+        ~iterator() {}
         iterator& operator++();
         iterator& operator++(int);
         bool operator==(const iterator& other) const;
@@ -134,24 +135,23 @@ public:
     };
 
     virtual ~loader() {}
-
-    virtual const std::vector<std::string>& get_buffer_names() const = 0;
-    virtual const std::map<std::string, shape_type>& get_names_and_shapes() const = 0;
-    virtual const shape_t& get_shape(const std::string& name) const = 0;
+    virtual std::vector<std::string> get_buffer_names() const = 0;
+    virtual std::map<std::string, shape_type> get_names_and_shapes() const = 0;
+    virtual shape_t get_shape(const std::string& name) const = 0;
 
     virtual int record_count() = 0;
     virtual int batch_size()   = 0;
-    virtual size_t batch_count()   = 0;
+    virtual int batch_count()  = 0;
 
-    virtual iterator begin()            = 0;
-    virtual iterator end()              = 0;
+    virtual iterator  begin()            = 0;
+    virtual iterator  end()              = 0;
     virtual iterator& get_current_iter() = 0;
-    virtual iterator& get_end_iter() = 0;
+    virtual iterator& get_end_iter()     = 0;
 
-    virtual const fixed_buffer_map* get_output_buffer() const = 0;
-    virtual const size_t& position() = 0;
-    virtual void           reset()                    = 0;
-    virtual nlohmann::json get_current_config() const = 0;
+    virtual const fixed_buffer_map* get_output_buffer() const  = 0;
+    virtual const size_t&           position()                 = 0;
+    virtual void                    reset()                    = 0;
+    virtual nlohmann::json          get_current_config() const = 0;
 
 protected:
     virtual void increment_position() = 0;
@@ -167,7 +167,7 @@ private:
     bool remote_version(const nlohmann::json& config);
 };
 
-class nervana::loader_local : public nervana::loader
+class nervana::loader_local final : public nervana::loader
 {
 public:
     loader_local(const std::string&);
@@ -175,14 +175,13 @@ public:
 
     ~loader_local() override;
 
-    const std::vector<std::string>& get_buffer_names() const override;
-    const std::map<std::string, shape_type>& get_names_and_shapes() const override;
-    const shape_t& get_shape(const std::string& name) const override;
+    std::vector<std::string> get_buffer_names() const override;
+    std::map<std::string, shape_type> get_names_and_shapes() const override;
+    shape_t get_shape(const std::string& name) const override;
 
-    int record_count() override { return m_manifest->record_count(); }
-    int batch_size() override { return m_batch_size; }
-    size_t batch_count() override { return m_batch_count_value; }
-
+    int      record_count() override { return m_manifest->record_count(); }
+    int      batch_size() override { return m_batch_size; }
+    int      batch_count() override { return m_batch_count_value; }
     iterator begin() override
     {
         reset();
@@ -191,11 +190,11 @@ public:
 
     iterator end() override { return m_end_iter; }
     // These are returning references
-    iterator& get_current_iter() override { return m_current_iter; }
-    iterator& get_end_iter() override { return m_end_iter; }
+    iterator&               get_current_iter() override { return m_current_iter; }
+    iterator&               get_end_iter() override { return m_end_iter; }
     const fixed_buffer_map* get_output_buffer() const override { return m_output_buffer_ptr; }
-    const size_t& position() override { return m_position; }
-    void        reset() override
+    const size_t&           position() override { return m_position; }
+    void                    reset() override
     {
         m_final_stage->reset();
         m_output_buffer_ptr = m_final_stage->next();
@@ -210,25 +209,25 @@ private:
     void initialize(const nlohmann::json& config_json);
     void increment_position() override;
 
-    iterator                            m_current_iter;
-    iterator                            m_end_iter;
-    std::shared_ptr<manifest_file>      m_manifest;
-    std::shared_ptr<block_loader_file>  m_block_loader;
-    std::shared_ptr<block_manager>      m_block_manager;
-    std::shared_ptr<batch_iterator>     m_batch_iterator;
-    std::shared_ptr<provider_interface> m_provider;
-    std::shared_ptr<batch_decoder>      m_decoder;
+    iterator                                                m_current_iter;
+    iterator                                                m_end_iter;
+    std::shared_ptr<manifest_file>                          m_manifest;
+    std::shared_ptr<block_loader_file>                      m_block_loader;
+    std::shared_ptr<block_manager>                          m_block_manager;
+    std::shared_ptr<batch_iterator>                         m_batch_iterator;
+    std::shared_ptr<provider_interface>                     m_provider;
+    std::shared_ptr<batch_decoder>                          m_decoder;
     std::shared_ptr<async_manager_source<fixed_buffer_map>> m_final_stage;
-    int                                 m_batch_size;
-    BatchMode                           m_batch_mode;
-    size_t                              m_batch_count_value;
-    size_t                              m_position{0};
-    fixed_buffer_map*                   m_output_buffer_ptr{nullptr};
-    nlohmann::json                      m_current_config;
-    std::shared_ptr<web_app>            m_debug_web_app;
+    int                                                     m_batch_size;
+    BatchMode                                               m_batch_mode;
+    int                                                     m_batch_count_value;
+    size_t                                                  m_position{0};
+    fixed_buffer_map*                                       m_output_buffer_ptr{nullptr};
+    nlohmann::json                                          m_current_config;
+    std::shared_ptr<web_app>                                m_debug_web_app;
 
     // Shows how bigger should be batch size than CPU thread count to not use extended pipeline which increase input size for decoder
-    const float                         m_increase_input_size_coefficient = 1.5; 
+    const float m_increase_input_size_coefficient = 1.5;
     // How many times we should increase input data size for decoder
-    const int                           m_input_multiplier = 8;
+    const int m_input_multiplier = 8;
 };
