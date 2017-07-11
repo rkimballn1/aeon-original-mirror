@@ -16,14 +16,14 @@
 #pragma once
 
 #include "../loader.hpp"
-#include "service_client.hpp"
+#include "service.hpp"
 
 namespace nervana
 {
     class loader_remote final : public loader
     {
-        loader_remote(std::shared_ptr<service_client> client, const std::string&);
-        loader_remote(std::shared_ptr<service_client> client, const nlohmann::json&);
+        loader_remote(std::shared_ptr<service> client, const std::string&);
+        loader_remote(std::shared_ptr<service> client, const nlohmann::json&);
 
         ~loader_remote() override {}
         std::map<std::string, shape_type> get_names_and_shapes() const override
@@ -57,7 +57,7 @@ namespace nervana
         void retrieve_next_batch();
 
         nlohmann::json                  m_config;
-        std::shared_ptr<service_client> m_client;
+        std::shared_ptr<service> m_service;
         iterator                        m_current_iter;
         iterator                        m_end_iter;
         fixed_buffer_map*               m_output_buffer_ptr;
