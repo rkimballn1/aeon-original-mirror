@@ -36,22 +36,23 @@ nervana::loader_remote::loader_remote(shared_ptr<service_client> client, const s
 }
 
 nervana::loader_remote::loader_remote(shared_ptr<service_client> client, const nlohmann::json& config)
-    : m_client(client)
+    : m_config(config)
+    , m_client(client)
     , m_current_iter(*this, false)
     , m_end_iter(*this, true)
-    , m_config(config)
 {
     initialize();
 }
 
 void nervana::loader_remote::initialize()
 {
-    auto response = m_client->get_names_and_shapes();
-    if(response.success())
-    {
-        m_names_and_shapes = response.data;
-    }
-    throw std::runtime_error("not implemented");
+    retrieve_names_and_shapes();
+    retrieve_record_count();
+    retrieve_batch_size();
+    retrieve_batch_count();
+    retrieve_next_batch();
+
+    m_current_iter.m_empty_buffer.add_items(m_names_and_shapes, (size_t)batch_size());
 }
 
 vector<string> nervana::loader_remote::get_buffer_names() const
@@ -62,11 +63,6 @@ vector<string> nervana::loader_remote::get_buffer_names() const
         names.push_back(item.first);
     }
     return names;
-}
-
-map<string, shape_type> nervana::loader_remote::get_names_and_shapes() const
-{
-    return m_names_and_shapes;
 }
 
 shape_t nervana::loader_remote::get_shape(const string& name) const {
@@ -80,68 +76,66 @@ shape_t nervana::loader_remote::get_shape(const string& name) const {
     return it->second.get_shape();
 }
 
-int nervana::loader_remote::record_count()
+void nervana::loader_remote::retrieve_record_count()
+{
+    auto response = m_client->get_names_and_shapes();
+    if(!response.success())
+    {
+        handle_response_failure(response.status);
+        return;
+    }
+    m_names_and_shapes = response.data;
+}
+
+void nervana::loader_remote::retrieve_names_and_shapes()
 {
     auto response = m_client->record_count();
     if(!response.success())
     {
         handle_response_failure(response.status);
-        return -1;
+        m_record_count = -1;
     }
-    return response.data;
+    m_record_count = response.data;
 }
 
-int nervana::loader_remote::batch_size()
+void nervana::loader_remote::retrieve_batch_size()
 {
     auto response = m_client->batch_size();
     if(!response.success())
     {
         handle_response_failure(response.status);
-        return -1;
+        m_batch_size = -1;
     }
-    return response.data;
+    m_batch_size = response.data;
 }
 
-int nervana::loader_remote::batch_count()
+void nervana::loader_remote::retrieve_batch_count()
 {
     auto response = m_client->batch_count();
     if(!response.success())
     {
         handle_response_failure(response.status);
-        return -1;
+        m_batch_count = -1;
     }
-    return response.data;
+    m_batch_count = response.data;
+}
+
+void nervana::loader_remote::retrieve_next_batch()
+{
+    auto response = m_client->next();
+    if(!response.success())
+    {
+        handle_response_failure(response.status);
+    }
+    const next_response& next = response.data;
+    m_position = next.position;
+    m_output_buffer_ptr = next.data;
 }
 
 nervana::loader::iterator nervana::loader_remote::begin()
 {
     reset();
     return m_current_iter;
-}
-
-nervana::loader::iterator nervana::loader_remote::end()
-{
-    return m_end_iter;
-}
-
-nervana::loader::iterator& nervana::loader_remote::get_current_iter()
-{
-    return m_current_iter;
-}
-
-nervana::loader::iterator& nervana::loader_remote::get_end_iter()
-{
-    return m_end_iter;
-}
-
-const fixed_buffer_map* nervana::loader_remote::get_output_buffer() const
-{
-    return m_output_buffer_ptr;
-}
-
-const size_t& nervana::loader_remote::position()
-{
-    return -1;
 }
 
 void nervana::loader_remote::reset()
@@ -151,15 +145,12 @@ void nervana::loader_remote::reset()
     {
         handle_response_failure(status);
     }
-}
-
-json nervana::loader_remote::get_current_config() const
-{
-    return m_config;
+    retrieve_next_batch();
 }
 
 void nervana::loader_remote::increment_position()
 {
+    retrieve_next_batch();
 }
 
 void nervana::loader_remote::handle_response_failure(const service_status& status)
@@ -170,4 +161,3 @@ void nervana::loader_remote::handle_response_failure(const service_status& statu
         << "description: " << status.description;
     throw std::runtime_error(ss.str());
 }
-
