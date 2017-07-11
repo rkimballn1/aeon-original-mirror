@@ -18,6 +18,7 @@
 #include <string>
 
 #include "../buffer_batch.hpp"
+#include "http_connector.hpp"
 
 namespace nervana
 {
@@ -54,13 +55,13 @@ namespace nervana
     {
     public:
         fixed_buffer_map* data;
-        int position;
+        int               position;
     };
 
-    class service_client
+    class service
     {
     public:
-        virtual ~service_client() {}
+        virtual ~service() {}
         virtual unsigned long                      create_session()       = 0;
         virtual service_response<names_and_shapes> get_names_and_shapes() = 0;
         virtual service_response<next_response>    next()                 = 0;
@@ -69,5 +70,20 @@ namespace nervana
         virtual service_response<int> record_count() = 0;
         virtual service_response<int> batch_size()   = 0;
         virtual service_response<int> batch_count()  = 0;
+    };
+
+    class service_connector final : public service
+    {
+    public:
+        service_connector(std::shared_ptr<http_connector> http);
+
+        unsigned long                   create_session() override;
+        service_response<next_response> next() override;
+        service_status                  reset() override;
+
+        service_response<names_and_shapes> get_names_and_shapes() override;
+        service_response<int>              record_count() override;
+        service_response<int>              batch_size() override;
+        service_response<int>              batch_count() override;
     };
 }
