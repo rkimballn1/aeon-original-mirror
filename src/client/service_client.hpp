@@ -32,8 +32,8 @@ namespace nervana
     class service_status
     {
     public:
-        bool           success() { return type == service_status_type::SUCCESS; }
-        bool           failure() { return type != service_status_type::SUCCESS; }
+        bool                success() { return type == service_status_type::SUCCESS; }
+        bool                failure() { return type != service_status_type::SUCCESS; }
         service_status_type type;
         std::string         description;
     };
@@ -50,14 +50,21 @@ namespace nervana
 
     using names_and_shapes = std::map<std::string, shape_type>;
 
+    class next_response
+    {
+    public:
+        fixed_buffer_map* data;
+        int position;
+    };
+
     class service_client
     {
     public:
         virtual ~service_client() {}
         virtual unsigned long                      create_session()       = 0;
         virtual service_response<names_and_shapes> get_names_and_shapes() = 0;
-        virtual service_response<fixed_buffer_map> next()                 = 0;
-        virtual service_status             reset()                = 0;
+        virtual service_response<next_response>    next()                 = 0;
+        virtual service_status                     reset()                = 0;
 
         virtual service_response<int> record_count() = 0;
         virtual service_response<int> batch_size()   = 0;

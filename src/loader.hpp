@@ -139,9 +139,9 @@ public:
     virtual std::map<std::string, shape_type> get_names_and_shapes() const = 0;
     virtual shape_t get_shape(const std::string& name) const = 0;
 
-    virtual int record_count() = 0;
-    virtual int batch_size()   = 0;
-    virtual int batch_count()  = 0;
+    virtual int record_count() const = 0;
+    virtual int batch_size() const   = 0;
+    virtual int batch_count() const  = 0;
 
     virtual iterator  begin()            = 0;
     virtual iterator  end()              = 0;
@@ -179,9 +179,9 @@ public:
     std::map<std::string, shape_type> get_names_and_shapes() const override;
     shape_t get_shape(const std::string& name) const override;
 
-    int      record_count() override { return m_manifest->record_count(); }
-    int      batch_size() override { return m_batch_size; }
-    int      batch_count() override { return m_batch_count_value; }
+    int      record_count() const override { return m_manifest->record_count(); }
+    int      batch_size() const override { return m_batch_size; }
+    int      batch_count() const override { return m_batch_count_value; }
     iterator begin() override
     {
         reset();
