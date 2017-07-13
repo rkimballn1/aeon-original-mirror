@@ -143,10 +143,12 @@ private:
     template<bool dynamic_task_scheduling>
     void process(int thread_id)
     {
+#ifdef __linux__
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(thread_id, &cpuset);
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset); 
+#endif
 
         for(;;)
         {
