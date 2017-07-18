@@ -64,14 +64,14 @@ public:
     void add_exception(std::exception_ptr e) { m_exception = e; }
     variable_record_field_list::iterator  begin() { return m_elements.begin(); }
     variable_record_field_list::iterator  end() { return m_elements.end(); }
-
-    void rethrow_if_exception() const
+    void                                  rethrow_if_exception() const
     {
         if (m_exception != nullptr)
         {
             std::rethrow_exception(m_exception);
         }
     }
+
 private:
     variable_record_field_list m_elements;
     std::exception_ptr         m_exception;
@@ -150,13 +150,16 @@ private:
 class nervana::buffer_fixed_size_elements
 {
 public:
+    explicit buffer_fixed_size_elements() {}
     explicit buffer_fixed_size_elements(const shape_type& shp_tp,
                                         size_t            batch_size,
                                         bool              pinned = false);
-
     virtual ~buffer_fixed_size_elements();
 
     explicit buffer_fixed_size_elements(const buffer_fixed_size_elements&);
+    buffer_fixed_size_elements(buffer_fixed_size_elements&&);
+    buffer_fixed_size_elements& operator=(buffer_fixed_size_elements&&);
+    void swap(buffer_fixed_size_elements& first, buffer_fixed_size_elements& second);
 
     virtual void allocate();
     const char* get_item(size_t index) const;
@@ -165,11 +168,12 @@ public:
     char*             data() const { return m_data; }
     size_t            get_item_count() const { return m_size / m_stride; }
     size_t            size() const { return m_size; }
-    size_t            get_stride() const {return m_stride;}
+    size_t            get_stride() const { return m_stride; }
     const shape_type& get_shape_type() const { return m_shape_type; }
-protected:
-    buffer_fixed_size_elements() = delete;
+    std::ostream& serialize(std::ostream& out) const;
+    std::istream& deserialize(std::istream& in);
 
+protected:
     char*      m_data{nullptr};
     shape_type m_shape_type;
     size_t     m_size{0};
@@ -190,14 +194,14 @@ public:
     }
 
     void add_items(const std::map<std::string, shape_type>& write_sizes,
-                     size_t batch_size,
-                     bool   pinned = false)
+                   size_t batch_size,
+                   bool   pinned = false)
     {
-         for (auto sz : write_sizes)
-         {
-             add_item(sz.first, sz.second, batch_size, pinned);
-         }
-     }
+        for (auto sz : write_sizes)
+        {
+            add_item(sz.first, sz.second, batch_size, pinned);
+        }
+    }
 
     void add_item(const std::string& name,
                   const shape_type&  shp_tp,
@@ -228,10 +232,13 @@ public:
         auto it = m_data.find(name);
         return (it == m_data.end() ? nullptr : it->second);
     }
-    
+
     void copy(fixed_buffer_map& src, size_t src_index, size_t dst_index, size_t count);
- 
-    size_t size() const { return m_data.size(); }
+
+    size_t        size() const { return m_data.size(); }
+    std::ostream& serialize(std::ostream& out) const;
+    std::istream& deserialize(std::istream& in);
+
 private:
     fixed_buffer_map(const fixed_buffer_map&) = delete;
 
@@ -241,3 +248,6 @@ private:
     std::vector<std::string> m_names;
     std::map<std::string, buffer_fixed_size_elements*> m_data;
 };
+
+std::ostream& operator<<(std::ostream& out, const nervana::fixed_buffer_map& obj);
+std::istream& operator>>(std::istream& in, nervana::fixed_buffer_map& obj);
