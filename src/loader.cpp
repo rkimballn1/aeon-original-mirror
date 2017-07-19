@@ -287,7 +287,7 @@ bool loader_factory::remote_version(const json& config)
     {
         config.at("server");
     }
-    catch (std::out_of_range)
+    catch (json::out_of_range)
     {
         return false;
     }
