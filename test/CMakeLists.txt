@@ -41,7 +41,7 @@ set (SRC
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCURDIR=\\\"${CMAKE_CURRENT_SOURCE_DIR}\\\"")
 
 add_executable(test ${SRC})
-target_link_libraries(test aeon pthread sox ${CURL_LIBRARIES} googletest googlemock ${LCOVERAGE} ${OpenCV_LIBRARIES} ${PYTHON_LIBRARIES})
+target_link_libraries(test aeon pthread sox ${CURL_LIBRARIES} gtest gmock ${LCOVERAGE} ${OpenCV_LIBRARIES} ${PYTHON_LIBRARIES})
 add_dependencies(test aeon)
 
 add_custom_target(runtest
