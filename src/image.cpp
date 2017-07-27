@@ -46,6 +46,20 @@ void image::rotate(
     }
 }
 
+void image::add_padding(cv::Mat& input, int padding, cv::Size2i crop_offset)
+{
+    if(padding == 0 || (crop_offset.width == padding && crop_offset.height == padding))
+    {
+        return;
+    }
+
+    cv::Mat temporary(input.rows+padding, input.cols+padding, input.type(), cv::Scalar(0));
+
+    cv::Rect bbox_roi(crop_offset.width, crop_offset.height, input.cols, input.rows);
+    input.copyTo((temporary)(bbox_roi));
+    input = temporary;
+}
+
 void image::resize(const cv::Mat& input, cv::Mat& output, const cv::Size2i& size, bool interpolate)
 {
     if (size == input.size())
