@@ -48,6 +48,8 @@ public:
         out << "output_size         " << obj.output_size << "\n";
         out << "angle               " << obj.angle << "\n";
         out << "flip                " << obj.flip << "\n";
+        out << "padding             " << obj.padding << "\n";
+        out << "padding_crop_offset " << obj.padding_crop_offset << "\n";
         out << "lighting            " << join(obj.lighting, ", ") << "\n";
         out << "color_noise_std     " << obj.color_noise_std << "\n";
         out << "contrast            " << obj.contrast << "\n";
