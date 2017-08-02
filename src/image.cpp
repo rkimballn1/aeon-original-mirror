@@ -54,28 +54,12 @@ void image::add_padding(cv::Mat& input, int padding, cv::Size2i crop_offset)
         return;
     }
 
-    // temporary black image with padding size added
-    cv::Mat temporary(
-        input.rows + padding * 2, input.cols + padding * 2, input.type(), cv::Scalar(0));
-
-    // puts original image into center of temporary image (it's padded after that)
-    for (int row = 0; row < input.rows; row++)
-    {
-        for (int col = 0; col < input.cols; col++)
-        {
-            temporary.at<cv::Vec3b>(row + padding, col + padding) = input.at<cv::Vec3b>(row, col);
-        }
-    }
-
-    // puts cropped padded image to input image
-    for (int row = 0; row < input.rows; row++)
-    {
-        for (int col = 0; col < input.cols; col++)
-        {
-            input.at<cv::Vec3b>(row, col) =
-                temporary.at<cv::Vec3b>(crop_offset.height + row, crop_offset.width + col);
-        }
-    }
+    cv::Mat    paddedImage;
+    cv::Scalar blackPixel{0, 0, 0};
+    cv::copyMakeBorder(
+        input, paddedImage, padding, padding, padding, padding, cv::BORDER_CONSTANT, blackPixel);
+    cv::Rect cropbox{crop_offset.width, crop_offset.height, input.cols, input.rows};
+    input = paddedImage(cropbox);
 }
 
 void image::resize(const cv::Mat& input, cv::Mat& output, const cv::Size2i& size, bool interpolate)
