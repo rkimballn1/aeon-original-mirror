@@ -44,18 +44,11 @@ manifest_file::manifest_file(const string& filename,
                              const string& root,
                              float         subset_fraction,
                              size_t        block_size)
-    : m_record_count{0}
+    : m_source_filename{filename}
+    , m_record_count{0}
     , m_shuffle{shuffle}
     , m_rnd{get_global_random_seed()}
 {
-    if(!root.empty())
-    {
-        m_source_filename = root + "/" + filename;
-    }
-    else
-    {
-        m_source_filename = filename;
-    }
     // for now parse the entire manifest on creation
     ifstream infile(m_source_filename);
 
