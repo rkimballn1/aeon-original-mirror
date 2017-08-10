@@ -66,6 +66,7 @@ namespace nervana
     std::string dump_default(const std::normal_distribution<float>& v);
     std::string dump_default(const std::bernoulli_distribution& v);
     std::string dump_default(std::vector<nlohmann::json> v);
+    std::string dump_default(nlohmann::json v);
 }
 
 class nervana::interface::config_info_interface
@@ -107,6 +108,9 @@ public:
 #define ADD_OBJECT(var, mode, ...)                                                                 \
     std::make_shared<nervana::interface::config_info<decltype(var)>>(                              \
         var, #var, mode, parse_object<decltype(var)>, ##__VA_ARGS__)
+#define ADD_JSON(var, mode, ...)                                                              \
+    std::make_shared<nervana::interface::config_info<decltype(var)>>(                              \
+        var, #var, mode, parse_json<decltype(var)>, ##__VA_ARGS__)
 
     template <typename T, typename S>
     static void set_dist_params(T& dist, S& params)
@@ -144,6 +148,23 @@ public:
         if (val != js.end())
         {
             value = val->get<T>();
+        }
+        else if (required == mode::REQUIRED)
+        {
+            throw std::invalid_argument("Required Argument: '" + key + "' not set");
+        }
+    }
+
+    template <typename T>
+    static void parse_json(T&                    value,
+                           const std::string&    key,
+                           const nlohmann::json& js,
+                           mode                  required = mode::OPTIONAL)
+    {
+        auto val = js.find(key);
+        if (val != js.end())
+        {
+            value = val.value();
         }
         else if (required == mode::REQUIRED)
         {

@@ -67,6 +67,7 @@ public:
     uint16_t                    web_server_port      = 0;
     std::vector<nlohmann::json> etl;
     std::vector<nlohmann::json> augmentation;
+    nlohmann::json server;
 
     loader_config(nlohmann::json js);
 
@@ -90,6 +91,7 @@ private:
         ADD_SCALAR(iteration_mode_count, mode::OPTIONAL),
         ADD_SCALAR(web_server_port, mode::OPTIONAL),
         ADD_OBJECT(etl, mode::REQUIRED),
+        ADD_JSON(server, mode::OPTIONAL),
         ADD_OBJECT(augmentation, mode::OPTIONAL)};
 
     void validate();
