@@ -157,7 +157,7 @@ private:
     bool center      = true;
 
     /** Offset for padding cropbox */
-    std::uniform_int_distribution<int> padding_crop_offset{0, 0};
+    std::uniform_int_distribution<int> padding_crop_offset_distribution{0, 0};
 
     std::default_random_engine m_dre;
 };

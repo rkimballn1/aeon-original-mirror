@@ -43,8 +43,8 @@ TEST(image_augmentation, config)
     EXPECT_EQ(20, config.angle.b());
 
     EXPECT_EQ(4, config.padding);
-    EXPECT_EQ(0, config.padding_crop_offset.a());
-    EXPECT_EQ(8, config.padding_crop_offset.b());
+    EXPECT_EQ(0, config.padding_crop_offset_distribution.a());
+    EXPECT_EQ(8, config.padding_crop_offset_distribution.b());
 
     EXPECT_FLOAT_EQ(0.0, config.lighting.mean());
     EXPECT_FLOAT_EQ(0.1, config.lighting.stddev());

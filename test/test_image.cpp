@@ -340,8 +340,8 @@ TEST(image, transform_padding)
 
         cv::Mat image = transformed->get_image(0);
 
-        EXPECT_EQ(tc.width, image.size().width);
-        EXPECT_EQ(tc.height, image.size().height);
+        ASSERT_EQ(tc.width, image.size().width);
+        ASSERT_EQ(tc.height, image.size().height);
 
         for (int row = 0; row < tc.height + tc.padding * 2; row++)
         {

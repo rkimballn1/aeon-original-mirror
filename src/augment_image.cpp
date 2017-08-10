@@ -56,7 +56,7 @@ augment::image::param_factory::param_factory(nlohmann::json js)
 
             if (padding > 0)
             {
-                padding_crop_offset = std::uniform_int_distribution<int>(0, padding*2);
+                padding_crop_offset_distribution = std::uniform_int_distribution<int>(0, padding*2);
             }
         }
     }
@@ -85,8 +85,8 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(si
     cv::Size2f input_size = cv::Size(input_width, input_height);
     if (!crop_enable)
     {
-        int c_off_x = padding_crop_offset(m_dre);
-        int c_off_y = padding_crop_offset(m_dre);
+        int c_off_x = padding_crop_offset_distribution(m_dre);
+        int c_off_y = padding_crop_offset_distribution(m_dre);
         settings->padding_crop_offset = cv::Size2i(c_off_x, c_off_y);
         settings->cropbox = cv::Rect(cv::Point2f(0, 0), input_size);
         float image_scale;
