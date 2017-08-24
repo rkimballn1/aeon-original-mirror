@@ -43,5 +43,5 @@ target_link_libraries(testsuite aeon pthread sox ${CURL_LIBRARIES} gtest ${LCOVE
 add_dependencies(testsuite aeon)
 
 add_custom_target(runtest
-	COMMAND ${PROJECT_BINARY_DIR}/test/test
+	COMMAND ${PROJECT_BINARY_DIR}/test/testsuite
 	DEPENDS testsuite)
