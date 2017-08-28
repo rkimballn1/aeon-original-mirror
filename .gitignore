@@ -69,3 +69,5 @@ config_args.txt
 .nfs*
 venv/
 .vscode/
+
+.idea
