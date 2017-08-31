@@ -259,12 +259,13 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 auto axes_lengths = name_shape.second.get_shape();
                 auto axes_names   = name_shape.second.get_names();
 
-                PyObject* py_axis_dict = PyDict_New();
+                PyObject* py_axis_dict = PyODict_New();
 
                 for (size_t i = 0; i < axes_lengths.size(); ++i)
                 {
                     PyObject* tmp_length = Py_BuildValue("i", axes_lengths[i]);
-                    PyDict_SetItemString(py_axis_dict, axes_names[i].c_str(), tmp_length);
+                    PyObject* axes_name = Py_BuildValue("s", axes_names[i].c_str());
+                    PyODict_SetItem(py_axis_dict, axes_name, tmp_length);
                     Py_DECREF(tmp_length);
                 }
 
