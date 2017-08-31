@@ -24,6 +24,7 @@ set (SRC
     test_image.cpp
     test_label_map.cpp
     test_loader.cpp
+    test_loader_remote.cpp
     test_localization.cpp
     test_logging.cpp
     test_manifest_csv.cpp
