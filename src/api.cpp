@@ -259,19 +259,41 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 auto axes_lengths = name_shape.second.get_shape();
                 auto axes_names   = name_shape.second.get_names();
 
-                PyObject* py_axis_dict = PyODict_New();
+                // using tuple instead of dict to preserve the order
+                // python 2.x doesnt have the support for ordereddict obj, its supported in python 3.x onwards
 
+                PyObject* py_axis_tuple = PyTuple_New(axes_lengths.size());
+                int axis_tuple_len = 2;
                 for (size_t i = 0; i < axes_lengths.size(); ++i)
                 {
                     PyObject* tmp_length = Py_BuildValue("i", axes_lengths[i]);
                     PyObject* axes_name = Py_BuildValue("s", axes_names[i].c_str());
-                    PyODict_SetItem(py_axis_dict, axes_name, tmp_length);
-                    Py_DECREF(tmp_length);
+                    PyObject* py_temp_tuple = PyTuple_New(axis_tuple_len);
+
+                    if (py_temp_tuple == NULL){
+                        ERR << "Error creating new tuple";
+                        PyErr_SetString(PyExc_RuntimeError, "Error creating new tuple");
+                        return NULL;
+                    }
+
+                    // create a tuple of (axis_name, axis_length)
+                    PyTuple_SetItem(py_temp_tuple, 0 , axes_name);
+                    PyTuple_SetItem(py_temp_tuple, 1 , tmp_length);
+
+                    //add it to a tuple list
+                    int tuple_status = PyTuple_SetItem(py_axis_tuple, i, py_temp_tuple);
+                    if (tuple_status != 0){
+                        ERR << "Error building tuple of (axis_name, axis_length)";
+                        PyErr_SetString(PyExc_RuntimeError, "Error building shape tuple");
+                        return NULL;
+                    }
                 }
 
                 int set_status =
-                    PyDict_SetItemString(self->axes_info, datum_name.c_str(), py_axis_dict);
-                Py_DECREF(py_axis_dict);
+                    PyDict_SetItemString(self->axes_info, datum_name.c_str(), py_axis_tuple);
+                // NOTE: py_axis_tuple is tuple of tuples, ex: (("channel", 3), ("height", 28), ("width", 28))
+                //       so single Py_DECREF on py_axis_tuple will call Py_DECREF on all contained objects.
+                Py_DECREF(py_axis_tuple);
 
                 if (set_status < 0)
                 {
