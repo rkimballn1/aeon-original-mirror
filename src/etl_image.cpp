@@ -82,7 +82,7 @@ image::extractor::extractor(const image::config& cfg)
     }
 }
 
-shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize)
+shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize) const
 {
     cv::Mat output_img;
 
@@ -117,7 +117,7 @@ image::transformer::transformer(const image::config&)
 
 shared_ptr<image::decoded>
     image::transformer::transform(shared_ptr<augment::image::params> img_xform,
-                                  shared_ptr<image::decoded>         img)
+                                  shared_ptr<image::decoded>         img) const
 {
     vector<cv::Mat> finalImageList;
     for (int i = 0; i < img->get_image_count(); i++)
@@ -132,14 +132,28 @@ shared_ptr<image::decoded>
     }
     return rc;
 }
-
+/**
+ * rotate
+ * expand
+ * crop
+ * resize
+ * distort
+ * flip
+ */
 cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::params> img_xform,
-                                                   cv::Mat&                           single_img)
+                                                   cv::Mat&                           single_img) const
 {
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
     image::rotate(single_img, rotatedImage, img_xform->angle);
-    cv::Mat croppedImage = rotatedImage(img_xform->cropbox);
+
+    cv::Mat expandedImage;
+    if (img_xform->expand_ratio > 1.0)
+        image::expand(
+            rotatedImage, expandedImage, img_xform->expand_offset, img_xform->expand_size);
+    else
+        expandedImage    = rotatedImage;
+    cv::Mat croppedImage = expandedImage(img_xform->cropbox);
     image::add_padding(croppedImage, img_xform->padding, img_xform->padding_crop_offset);
 
     cv::Mat resizedImage;
@@ -175,7 +189,7 @@ image::loader::loader(const image::config& cfg, bool fixed_aspect_ratio)
 {
 }
 
-void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::decoded> input)
+void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::decoded> input) const
 {
     char* outbuf = (char*)outlist[0];
     // TODO: Generalize this to also handle multi_crop case

@@ -85,7 +85,7 @@ public:
     }
 
     ~extractor() {}
-    std::shared_ptr<label::decoded> extract(const void* buf, size_t bufSize) override
+    std::shared_ptr<label::decoded> extract(const void* buf, size_t bufSize) const override
     {
         int lbl;
         if (_binary)
@@ -131,9 +131,9 @@ public:
     {
     }
     ~loader() {}
-    void load(const std::vector<void*>& buflist, std::shared_ptr<label::decoded> mp) override
+    void load(const std::vector<void*>& buflist, std::shared_ptr<label::decoded> mp) const override
     {
-        char* buf   = (char*)buflist[0];
+        char* buf   = reinterpret_cast<char*>(buflist[0]);
         int   index = mp->get_index();
         memcpy(buf, &index, _cfg.get_shape_type().get_otype().get_size());
     }

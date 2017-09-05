@@ -45,8 +45,8 @@ class nervana::encoded_record
     friend class encoded_record_list;
 
 public:
-    variable_record_field& element(size_t index) { return m_elements[index]; }
-    const variable_record_field& element(size_t index) const { return m_elements[index]; }
+    variable_record_field& element(size_t index);
+    const variable_record_field& element(size_t index) const;
     size_t                                      size() const { return m_elements.size(); }
     void add_element(const void* data, size_t size)
     {
@@ -121,6 +121,8 @@ public:
     void                                  clear() { m_records.clear(); }
     std::vector<encoded_record>::iterator begin() { return m_records.begin(); }
     std::vector<encoded_record>::iterator end() { return m_records.end(); }
+    std::vector<encoded_record>::const_iterator begin() const{ return m_records.begin(); }
+    std::vector<encoded_record>::const_iterator end() const{ return m_records.end(); }
     void shuffle(uint32_t random_seed)
     {
         std::minstd_rand0 rand_items(random_seed);
