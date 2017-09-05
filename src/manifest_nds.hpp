@@ -140,7 +140,8 @@ private:
                  size_t             elements_per_record,
                  size_t             shard_count,
                  size_t             shard_index,
-                 bool               shuffle);
+                 bool               shuffle,
+                 uint32_t           seed = 0);
 
     static size_t write_data(void* ptr, size_t size, size_t nmemb, void* stream);
 };

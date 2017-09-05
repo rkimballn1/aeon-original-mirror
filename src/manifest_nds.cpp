@@ -205,7 +205,8 @@ manifest_nds::manifest_nds(const std::string& base_url,
                            size_t             elements_per_record,
                            size_t             shard_count,
                            size_t             shard_index,
-                           bool               enable_shuffle)
+                           bool               enable_shuffle,
+                           uint32_t           seed)
     : m_base_url(base_url)
     , m_token(token)
     , m_collection_id(collection_id)
@@ -216,7 +217,7 @@ manifest_nds::manifest_nds(const std::string& base_url,
     , m_network_client{base_url, token, collection_id, block_size, shard_count, shard_index}
     , m_current_block_number{0}
     , m_shuffle{enable_shuffle}
-    , m_rnd{get_global_random_seed()}
+    , m_rnd{seed ? seed : random_device{}()}
 {
     load_metadata();
 

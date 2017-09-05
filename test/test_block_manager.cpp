@@ -455,13 +455,14 @@ TEST(block_manager, file_shuffle_no_cache)
 {
     manifest_builder mb;
 
-    string cache_root     = "";
-    size_t record_count   = 12;
-    size_t block_size     = 4;
-    size_t object_size    = 16;
-    size_t target_size    = 16;
-    size_t block_count    = record_count / block_size;
-    bool   enable_shuffle = true;
+    string         cache_root     = "";
+    size_t         record_count   = 12;
+    size_t         block_size     = 4;
+    size_t         object_size    = 16;
+    size_t         target_size    = 16;
+    size_t         block_count    = record_count / block_size;
+    bool           enable_shuffle = true;
+    const uint32_t seed           = 1234;
     ASSERT_EQ(0, record_count % block_size);
     ASSERT_EQ(0, object_size % sizeof(uint32_t));
     ASSERT_EQ(0, target_size % sizeof(uint32_t));
@@ -471,9 +472,9 @@ TEST(block_manager, file_shuffle_no_cache)
 
     stringstream& manifest_stream =
         mb.sizes({object_size, target_size}).record_count(record_count).create();
-    manifest_file     manifest(manifest_stream, enable_shuffle, "", 1.0, block_size);
+    manifest_file     manifest(manifest_stream, enable_shuffle, "", 1.0, block_size, seed);
     block_loader_file reader(&manifest, block_size);
-    block_manager     manager(&reader, block_size, cache_root, enable_shuffle);
+    block_manager     manager(&reader, block_size, cache_root, enable_shuffle, seed);
 
     vector<size_t> first_pass;
     vector<size_t> second_pass;
@@ -509,10 +510,8 @@ TEST(block_manager, file_shuffle_no_cache)
     }
     EXPECT_TRUE(is_permutation(second_pass.begin(), second_pass.end(), sorted_record_list.begin()));
     EXPECT_TRUE(is_permutation(second_pass.begin(), second_pass.end(), first_pass.begin()));
-#ifdef DETERMINISTIC_MODE
     EXPECT_FALSE(equal(second_pass.begin(), second_pass.end(), first_pass.begin()));
     EXPECT_FALSE(equal(second_pass.begin(), second_pass.end(), sorted_record_list.begin()));
-#endif
 }
 
 TEST(block_manager, nds_no_shuffle_cache)
