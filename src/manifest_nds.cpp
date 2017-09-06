@@ -55,7 +55,6 @@ size_t network_client::callback(void* ptr, size_t size, size_t nmemb, void* stre
     stringstream& ss = *(stringstream*)stream;
     // callback used by curl.  writes data from ptr into the
     // stringstream passed in to `stream`.
-
     ss.write((const char*)ptr, size * nmemb);
     return size * nmemb;
 }
@@ -169,6 +168,12 @@ manifest_nds_builder& manifest_nds_builder::shuffle(bool enable)
     return *this;
 }
 
+manifest_nds_builder& manifest_nds_builder::seed(uint32_t seed)
+{
+    m_seed = seed;
+    return *this;
+}
+
 manifest_nds manifest_nds_builder::create()
 {
     if (m_base_url == "")
@@ -195,7 +200,8 @@ manifest_nds manifest_nds_builder::create()
                         m_elements_per_record,
                         m_shard_count,
                         m_shard_index,
-                        m_shuffle);
+                        m_shuffle,
+                        m_seed);
 }
 
 manifest_nds::manifest_nds(const std::string& base_url,
