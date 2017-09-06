@@ -649,7 +649,7 @@ TEST(block_manager, nds_shuffle_cache)
     size_t elements_per_record = 2;
     size_t block_count         = record_count / block_size;
     bool   enable_shuffle      = true;
-    cosnt uint32_t seed        = 1234;
+    const uint32_t seed        = 1234;
     ASSERT_EQ(0, record_count % block_size);
 
     vector<size_t> sorted_record_list(record_count);
