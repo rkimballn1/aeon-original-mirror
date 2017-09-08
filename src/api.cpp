@@ -122,15 +122,25 @@ static PyObject* DataLoader_iternext(PyObject* self)
         const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
         auto                    names = DL_get_loader(self)->get_buffer_names();
 
-        result = PyDict_New();
-
+        result = PyTuple_New(names.size());
+        cout << "tuple_len: " << names.size() << endl;
+        int buf_tuple_len = 2;
+        int tuple_pos = 0;
         for (auto&& nm : names)
         {
             PyObject* wrapped_buf = wrap_buffer_as_np_array(d[nm]);
+            PyObject* buf_name = Py_BuildValue("s", nm.c_str());
+            PyObject* named_buf_tuple = PyTuple_New(buf_tuple_len);
 
-            int set_status = PyDict_SetItemString(result, nm.c_str(), wrapped_buf);
-            Py_DECREF(wrapped_buf); // DECREF is because SetItemString increments
+            // build tuple of (name, buffer) ex: ('image', buf)
+            PyTuple_SetItem(named_buf_tuple, 0, buf_name);
+            PyTuple_SetItem(named_buf_tuple, 1, wrapped_buf);
 
+            int set_status = PyTuple_SetItem(result, tuple_pos, named_buf_tuple);
+            tuple_pos++;
+ 
+            // Fix me: do i need call Py_DECREF on named_buf_tuple?
+            // Note: PyTuple_SetItem steals the reference.
             if (set_status < 0)
             {
                 ERR << "Error building shape string";
