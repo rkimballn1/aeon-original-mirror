@@ -262,9 +262,11 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
             auto name_shape_list = self->m_loader->get_names_and_shapes();
 
+            // axes_info is represented as a tuple of tuples.
+            // A single entry in axes_info is represented as 
+            // a tuple of datum_name and j tuples (axis_name, axis_length).
             self->axes_info         = PyTuple_New(name_shape_list.size());
 
-//            for (auto&& name_shape : name_shape_list)
             for (size_t i = 0; i < name_shape_list.size(); ++i)
             {
                 auto datum_name   = name_shape_list[i].first;
@@ -303,13 +305,13 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
                 int datum_tuple_len = 2;
                 // The tuple holds a pair that maps datum name to axis tuple
-                auto py_datum_tuple = PyTuple_New(datum_tuple_len);
+                PyObject* py_datum_tuple = PyTuple_New(datum_tuple_len);
+                PyObject* py_datum_name = Py_BuildValue("s", datum_name.c_str());
 
-                PyTuple_SetItem(py_datum_tuple, 0, datum_name.c_str());
+                PyTuple_SetItem(py_datum_tuple, 0, py_datum_name);
                 PyTuple_SetItem(py_datum_tuple, 1, py_axis_tuple);
 
                 int tuple_status = PyTuple_SetItem(self->axes_info, i, py_datum_tuple);
-//                    PyDict_SetItemString(self->axes_info, datum_name.c_str(), py_axis_tuple);
                 // NOTE: py_axis_tuple is tuple of tuples, ex: (("channel", 3), ("height", 28), ("width", 28))
                 //       so single Py_DECREF on py_axis_tuple will call Py_DECREF on all contained objects.
                 Py_DECREF(py_axis_tuple);
