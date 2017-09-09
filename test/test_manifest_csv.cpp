@@ -597,7 +597,7 @@ TEST(manifest, manifest_shuffle)
     nervana::manifest_file manifest2{
         manifest_builder.manifest_file(), false, manifest_root, subset_fraction, block_size, seed};
 
-    EXPECT_NE(manifest1.get_crc(), manifest2.get_crc());
+    EXPECT_EQ(manifest1.get_crc(), manifest2.get_crc());
 }
 
 TEST(manifest, manifest_shuffle_repeatable)
@@ -611,14 +611,11 @@ TEST(manifest, manifest_shuffle_repeatable)
     string manifest_root;
 
     nervana::manifest_file manifest1{
-        manifest_builder.manifest_file(), false, manifest_root, subset_fraction, block_size, seed};
+        manifest_builder.manifest_file(), true, manifest_root, subset_fraction, block_size, seed};
     nervana::manifest_file manifest2{
         manifest_builder.manifest_file(), true, manifest_root, subset_fraction, block_size, seed};
-    nervana::manifest_file manifest3{
-        manifest_builder.manifest_file(), true, manifest_root, subset_fraction, block_size, seed};
 
-    EXPECT_NE(manifest1.get_crc(), manifest2.get_crc());
-    EXPECT_EQ(manifest2.get_crc(), manifest3.get_crc());
+    EXPECT_EQ(manifest1.get_crc(), manifest2.get_crc());
 }
 
 TEST(manifest, subset_fraction)
