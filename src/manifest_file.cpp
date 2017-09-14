@@ -47,7 +47,7 @@ manifest_file::manifest_file(const string& filename,
     : m_source_filename(filename)
     , m_record_count{0}
     , m_shuffle{shuffle}
-    , m_rnd{get_global_random_seed()}
+    , m_rnd{0}//get_global_random_seed()}
 {
     // for now parse the entire manifest on creation
     ifstream infile(m_source_filename);
@@ -67,7 +67,7 @@ manifest_file::manifest_file(std::istream&      stream,
                              size_t             block_size)
     : m_record_count{0}
     , m_shuffle{shuffle}
-    , m_rnd{get_global_random_seed()}
+    , m_rnd{0}//get_global_random_seed()}
 {
     initialize(stream, block_size, root, subset_fraction);
 }
@@ -98,6 +98,7 @@ void manifest_file::initialize(std::istream&      stream,
     size_t                 line_number   = 0;
     string                 line;
     vector<vector<string>> record_list;
+    
 
     // read in each line, then from that istringstream, break into
     // tab-separated elements.
@@ -187,11 +188,6 @@ void manifest_file::initialize(std::istream&      stream,
            "subset_fraction must be >= 0 and <= 1");
     generate_subset(record_list, subset_fraction);
 
-    if (m_shuffle)
-    {
-        std::shuffle(record_list.begin(), record_list.end(), std::mt19937(0));
-    }
-
     m_record_count = record_list.size();
 
     // At this point the manifest is complete and ready to use
@@ -205,6 +201,9 @@ void manifest_file::initialize(std::istream&      stream,
         }
     }
     m_crc_engine.TruncatedFinal((uint8_t*)&m_computed_crc, sizeof(m_computed_crc));
+
+    if (m_shuffle)
+        std::shuffle(record_list.begin(), record_list.end(), std::mt19937(get_global_random_seed()));
 
     if (!root.empty())
     {
@@ -269,7 +268,7 @@ void manifest_file::generate_subset(vector<vector<string>>& record_list, float s
     if (subset_fraction < 1.0)
     {
         std::bernoulli_distribution distribution(subset_fraction);
-        std::default_random_engine  generator(get_global_random_seed());
+        std::default_random_engine  generator(0);//get_global_random_seed());
         vector<record>              tmp;
         tmp.swap(record_list);
         size_t expected_count = tmp.size() * subset_fraction;

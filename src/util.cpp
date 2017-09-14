@@ -25,6 +25,9 @@
 
 using namespace std;
 
+// we use int as opencv uses it in its interface
+static_assert(sizeof(int) == 4, "int size is not 4 bytes");
+
 map<string, nervana::stopwatch*> nervana::stopwatch_statistics;
 
 static string multibyte_conversion_error_message =
@@ -235,6 +238,21 @@ size_t nervana::unbiased_round(float x)
     return rc;
 }
 
+bool nervana::almost_equal(float a, float b)
+{
+    return fabs(a - b) < epsilon;
+};
+
+bool nervana::almost_equal_or_less(float a, float b)
+{
+    return a <= b + epsilon;
+};
+
+bool nervana::almost_equal_or_greater(float a, float b)
+{
+    return a >= b - epsilon;
+};
+
 void nervana::affirm(bool cond, const std::string& msg)
 {
     if (!cond)
@@ -249,8 +267,22 @@ void nervana::set_global_random_seed(uint32_t newval)
 }
 uint32_t nervana::get_global_random_seed()
 {
+#ifdef DETERMINISTIC_MODE
     return nervana::global_random_seed;
+#else
+    return random_device{}();
+#endif
 }
+
+namespace nervana
+{
+    thread_local static std::default_random_engine local_random_engine{get_global_random_seed()};
+}
+std::default_random_engine& nervana::get_thread_local_random_engine()
+{
+    return local_random_engine;
+}
+
 cv::Mat nervana::read_audio_from_mem(const char* item, int itemSize)
 {
     SOX_SAMPLE_LOCALS;

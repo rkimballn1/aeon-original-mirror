@@ -1,5 +1,5 @@
 .. ---------------------------------------------------------------------------
-.. Copyright 2015 Nervana Systems Inc.
+.. Copyright 2017 Nervana Systems Inc.
 .. Licensed under the Apache License, Version 2.0 (the "License");
 .. you may not use this file except in compliance with the License.
 .. You may obtain a copy of the License at
@@ -158,6 +158,7 @@ Importantly, the ``type`` key indicates to the dataloader which input data type 
    label||
    audio|audio|
    localization|image|
+   localization_ssd|image|
    pixelmask|image|
    boundingbox|image|
    blob||
@@ -183,7 +184,7 @@ The possible base loader configurations are the following (configurations withou
    subset_fraction (float)| 1.0 | Fraction of the dataset to iterate over. Useful when testing code on smaller data samples.
    shuffle_enable (bool) | False | Shuffles the dataset order for every epoch
    shuffle_manifest (bool) | False | Shuffles manifest file contents
-   single_thread (bool)| False | Execute on a single thread
+   decode_thread_count (int)| 0 | Number of threads to use. If default value 0 is set, Aeon automatically chooses number of threads to logical number of cores diminished by two. To execute on a single thread, use value of 1
    pinned (bool)| False |
    random_seed (int)| 0 | Set the random seed.
    iteration_mode (string)|"ONCE"| Can be "ONCE", "COUNT", or "INFINITE"

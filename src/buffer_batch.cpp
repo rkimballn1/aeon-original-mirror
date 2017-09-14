@@ -22,6 +22,24 @@
 using namespace std;
 using namespace nervana;
 
+variable_record_field& encoded_record::element(size_t index)
+{
+    if (m_elements.size() <= index)
+    {
+        throw out_of_range("encoded_record element out of range access");
+    }
+    return m_elements[index];
+}
+
+const variable_record_field& encoded_record::element(size_t index) const
+{
+    if (m_elements.size() <= index)
+    {
+        throw out_of_range("encoded_record element out of range access");
+    }
+    return m_elements[index];
+}
+
 buffer_fixed_size_elements::buffer_fixed_size_elements(const shape_type& shp_tp,
                                                        size_t            batch_size,
                                                        bool              pinned)
@@ -135,7 +153,7 @@ void fixed_buffer_map::copy(fixed_buffer_map& src, size_t src_index, size_t dst_
     for (auto name: m_names)
     {
         buffer_fixed_size_elements* src_fbm =    src[name];
-        buffer_fixed_size_elements* dst_fbm = m_data[name];
+        buffer_fixed_size_elements* dst_fbm = operator[](name);
         char* p_src = src_fbm->get_item(src_index);
         char* p_dst = dst_fbm->get_item(dst_index);
 

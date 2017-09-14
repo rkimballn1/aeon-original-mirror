@@ -28,6 +28,8 @@
 
 namespace nervana
 {
+    const float epsilon = 0.00001;
+
     class stopwatch;
     extern std::map<std::string, stopwatch*> stopwatch_statistics;
 
@@ -89,6 +91,9 @@ namespace nervana
     size_t wstring_length(const std::string& s);
 
     size_t unbiased_round(float f);
+    bool almost_equal(float a, float b);
+    bool almost_equal_or_less(float a, float b);
+    bool almost_equal_or_greater(float a, float b);
     int LevenshteinDistance(const std::string& s1, const std::string& s2);
 
     template <typename CharT, typename TraitsT = std::char_traits<CharT>>
@@ -141,6 +146,9 @@ namespace nervana
 
     void set_global_random_seed(uint32_t newval);
     uint32_t get_global_random_seed();
+
+    std::default_random_engine& get_thread_local_random_engine();
+
     cv::Mat read_audio_from_mem(const char* item, int itemSize);
 
     std::vector<char> string2vector(const std::string& s);
