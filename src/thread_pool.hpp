@@ -93,7 +93,6 @@ public:
                        std::min(m_max_count_of_free_threads,
                                 static_cast<int>(std::thread::hardware_concurrency() /
                                                  m_free_threads_ratio));
-            nthreads = std::min(nthreads, m_task_count);
         }
         else
         {
