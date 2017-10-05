@@ -1,0 +1,49 @@
+{
+  "object": [
+    {
+      "bndbox": {
+        "xmax": 200,
+        "xmin": 100,
+        "ymax": 200,
+        "ymin": 100
+      },
+      "name": "wheel",
+      "difficult": false
+    },
+    {
+      "bndbox": {
+        "xmax": 500,
+        "xmin": 400,
+        "ymax": 200,
+        "ymin": 100
+      },
+      "name": "square",
+      "difficult": false
+    },
+    {
+      "bndbox": {
+        "xmax": 200,
+        "xmin": 100,
+        "ymax": 500,
+        "ymin": 400
+      },
+      "name": "triangle",
+      "difficult": false
+    },
+    {
+      "bndbox": {
+        "xmax": 500,
+        "xmin": 400,
+        "ymax": 500,
+        "ymin": 400
+      },
+      "name": "arrow",
+      "difficult": false
+    }
+  ],
+  "size": {
+    "depth": 3,
+    "height": 600,
+    "width": 600
+  }
+}
