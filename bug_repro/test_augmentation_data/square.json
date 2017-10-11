@@ -1,0 +1,19 @@
+{
+  "object": [
+    {
+      "bndbox": {
+        "xmax": 200,
+        "xmin": 100,
+        "ymax": 200,
+        "ymin": 100
+      },
+      "name": "square",
+      "difficult": false
+    }
+  ],
+  "size": {
+    "depth": 3,
+    "height": 300,
+    "width": 300
+  }
+}
