@@ -42,7 +42,6 @@
 bin/
 *.log
 output/
-*.png
 *.jpg
 *.mp2
 *.mpg
