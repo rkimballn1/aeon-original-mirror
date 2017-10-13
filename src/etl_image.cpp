@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
+#include <Python.h>
 
 #include "etl_image.hpp"
 #include "conversion.h"
@@ -19,7 +20,6 @@
 #include <atomic>
 #include <fstream>
 
-#include <Python.h>
 
 using namespace std;
 using namespace nervana;
@@ -136,7 +136,7 @@ shared_ptr<image::decoded>
     return rc;
 }
 
-cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img)
+cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
 {
     Py_Initialize();
 
@@ -145,7 +145,11 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img)
     PyObject* plugin_func;
     PyObject* ret_val;
 
-    plugin_module_name = PyString_FromString(plugin_name.c_str());
+    plugin_module_name = PyString_FromString("rotate");
+
+    if (plugin_module_name != NULL)
+        PyErr_Print();
+
     plugin_module = PyImport_Import(plugin_module_name);
 
     cv::Mat m;
@@ -156,12 +160,14 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img)
     if (plugin_module != NULL) {
         plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
 
-        PyObject* arg_tuple = PyTuple_New(1);
+        PyObject* arg_tuple = PyTuple_New(2);
 
         NDArrayConverter cvt;
         PyObject* img_mat = cvt.toNDArray(img);
+        PyObject* angle_obj = PyLong_FromLong(angle);
 
         PyTuple_SetItem(arg_tuple, 0, img_mat);
+        PyTuple_SetItem(arg_tuple, 1, angle_obj);
 
         ret_val = PyObject_CallObject(plugin_func, arg_tuple);
 
@@ -194,7 +200,7 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     image::rotate(single_img, rotatedImage, img_xform->angle);
     */
 
-    cv::Mat rotatedImage = execute_plugin("rotate", single_img);
+    cv::Mat rotatedImage = execute_plugin("rotate", single_img, img_xform->angle);
 
     cv::Mat expandedImage;
     if (img_xform->expand_ratio > 1.0)
