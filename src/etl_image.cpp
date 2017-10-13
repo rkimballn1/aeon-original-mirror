@@ -147,7 +147,7 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
 
     plugin_module_name = PyString_FromString("rotate");
 
-    if (plugin_module_name != NULL)
+    if (!plugin_module_name)
         PyErr_Print();
 
     plugin_module = PyImport_Import(plugin_module_name);
