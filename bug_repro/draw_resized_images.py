@@ -13,7 +13,7 @@ def draw_augmented(aeon_config, output_dir):
 def draw_single_augmented(aeon_config, file_name, output_dir):
     image_set = DataLoader(aeon_config)
     images = next(image_set)
-    dt.draw_image(images[5][1][0], _file_name=file_name, _directory=output_dir)
+    dt.draw_image(images, _file_name=file_name, _directory=output_dir)
 
 if __name__ == '__main__':
 
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     test_file_dir = os.path.dirname(os.path.realpath(__file__))
     test_dir = test_file_dir + '/sample_images/'
     output_dir = test_file_dir + '/resized/'
-    manifest_filename = 'manifest_four_figures_wsta.tsv'
+    manifest_filename = 'manifest_four_figures_wsta_no_bboxes.tsv'
 
     image_config = {
         'type': 'image',
@@ -51,8 +51,8 @@ if __name__ == '__main__':
         'batch_size': batch_size,
         'manifest_root': test_dir,
         'manifest_filename': test_dir+manifest_filename,
-        'etl': [localization_config, image_config],  # localization_config must be first.
-       # 'etl': [image_config],
+#        'etl': [localization_config, image_config],  # localization_config must be first.
+        'etl': [image_config],
         'augmentation': [augmentation_config]
     }
     draw_augmented(aeon_config, output_dir)
