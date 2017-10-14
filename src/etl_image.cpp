@@ -136,25 +136,87 @@ shared_ptr<image::decoded>
     return rc;
 }
 
-cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
-{
-    Py_Initialize();
+extern int gil_init = 0;
 
+cv::Mat execute_flip_plugin(const cv::Mat& img)
+{
     PyObject* plugin_module_name;
     PyObject* plugin_module;
     PyObject* plugin_func;
     PyObject* ret_val;
 
-    plugin_module_name = PyString_FromString("rotate");
+    if (!gil_init) {
+        gil_init = 1;
+        PyEval_InitThreads();
+        PyEval_SaveThread();
+    }
 
-    if (!plugin_module_name)
-        PyErr_Print();
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
 
+    plugin_module_name = PyString_FromString("flip");
     plugin_module = PyImport_Import(plugin_module_name);
+
+    if (!plugin_module)
+        PyErr_Print();
 
     cv::Mat m;
     std::string plugin_func_name = "execute";
+    
+    Py_DECREF(plugin_module_name);
 
+    if (plugin_module != NULL) {
+        plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
+
+        PyObject* arg_tuple = PyTuple_New(1);
+
+        NDArrayConverter cvt;
+        PyObject* img_mat = cvt.toNDArray(img);
+
+        PyTuple_SetItem(arg_tuple, 0, img_mat);
+
+        std::cout << "Calling" << std::endl;
+        
+        ret_val = PyObject_CallObject(plugin_func, arg_tuple);
+
+        std::cout << "Works" << std::endl;
+
+        if (ret_val != NULL) {
+            m = cvt.toMat(ret_val);
+        }
+    } else {
+        PyErr_Print();
+    }
+    
+    PyGILState_Release(gstate);
+    return m;
+}
+
+cv::Mat execute_plugin(std::string plugin_name, const cv::Mat& img, int angle)
+{
+    PyObject* plugin_module_name;
+    PyObject* plugin_module;
+    PyObject* plugin_func;
+    PyObject* ret_val;
+
+    if (!gil_init) {
+        gil_init = 1;
+        PyEval_InitThreads();
+        PyEval_SaveThread();
+    }
+
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
+
+    plugin_module_name = PyString_FromString("rotate");
+    plugin_module = PyImport_Import(plugin_module_name);
+
+    if (!plugin_module)
+        PyErr_Print();
+
+    cv::Mat m;
+    std::string plugin_func_name = "execute";
+    
     Py_DECREF(plugin_module_name);
 
     if (plugin_module != NULL) {
@@ -169,7 +231,12 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
         PyTuple_SetItem(arg_tuple, 0, img_mat);
         PyTuple_SetItem(arg_tuple, 1, angle_obj);
 
+        std::cout << "Calling" << std::endl;
+        
         ret_val = PyObject_CallObject(plugin_func, arg_tuple);
+
+        Py_INCREF(ret_val);
+        std::cout << "Works" << std::endl;
 
         if (ret_val != NULL) {
             m = cvt.toMat(ret_val);
@@ -177,9 +244,8 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
     } else {
         PyErr_Print();
     }
-
-    Py_Finalize();
-
+    
+    PyGILState_Release(gstate);
     return m;
 }
 
@@ -191,14 +257,14 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img, int angle)
  * distort
  * flip
  */
+
+extern int calls_no = 0;
 cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::params> img_xform,
                                                    cv::Mat& single_img) const
 {
     // img_xform->dump(cout);
-    /*
-    cv::Mat rotatedImage;
-    image::rotate(single_img, rotatedImage, img_xform->angle);
-    */
+//    cv::Mat rotatedImage;
+//    image::rotate(single_img, rotatedImage, img_xform->angle);
 
     cv::Mat rotatedImage = execute_plugin("rotate", single_img, img_xform->angle);
 
@@ -224,7 +290,10 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     cv::Mat  flippedImage;
     if (img_xform->flip)
     {
-        cv::flip(resizedImage, flippedImage, 1);
+        std::cout << "Calls no: " << calls_no << std::endl;
+        calls_no++;
+//        cv::flip(resizedImage, flippedImage, 1);
+        flippedImage = execute_flip_plugin(resizedImage);
         finalImage = &flippedImage;
     }
 
