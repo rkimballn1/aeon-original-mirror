@@ -14,9 +14,12 @@
 */
 
 #include "etl_image.hpp"
+#include "conversion.h"
 
 #include <atomic>
 #include <fstream>
+
+#include <Python.h>
 
 using namespace std;
 using namespace nervana;
@@ -132,6 +135,48 @@ shared_ptr<image::decoded>
     }
     return rc;
 }
+
+cv::Mat execute_plugin(std::string plugin_name, const cv::Mat img)
+{
+    Py_Initialize();
+
+    PyObject* plugin_module_name;
+    PyObject* plugin_module;
+    PyObject* plugin_func;
+    PyObject* ret_val;
+
+    plugin_module_name = PyString_FromString(plugin_name.c_str());
+    plugin_module = PyImport_Import(plugin_module_name);
+
+    cv::Mat m;
+    std::string plugin_func_name = "execute";
+
+    Py_DECREF(plugin_module_name);
+
+    if (plugin_module != NULL) {
+        plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
+
+        PyObject* arg_tuple = PyTuple_New(1);
+
+        NDArrayConverter cvt;
+        PyObject* img_mat = cvt.toNDArray(img);
+
+        PyTuple_SetItem(arg_tuple, 0, img_mat);
+
+        ret_val = PyObject_CallObject(plugin_func, arg_tuple);
+
+        if (ret_val != NULL) {
+            m = cvt.toMat(ret_val);
+        }
+    } else {
+        PyErr_Print();
+    }
+
+    Py_Finalize();
+
+    return m;
+}
+
 /**
  * rotate
  * expand
@@ -144,8 +189,12 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
                                                    cv::Mat& single_img) const
 {
     // img_xform->dump(cout);
+    /*
     cv::Mat rotatedImage;
     image::rotate(single_img, rotatedImage, img_xform->angle);
+    */
+
+    cv::Mat rotatedImage = execute_plugin("rotate", single_img);
 
     cv::Mat expandedImage;
     if (img_xform->expand_ratio > 1.0)
@@ -172,6 +221,7 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
         cv::flip(resizedImage, flippedImage, 1);
         finalImage = &flippedImage;
     }
+
     if (!img_xform->debug_output_directory.empty())
     {
         string id       = get_debug_file_id();
