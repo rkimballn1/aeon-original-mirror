@@ -46,6 +46,7 @@ set (SRC
     web_server.cpp
     event.cpp
     raw_image.cpp
+    conversion.cpp
 )
 
 file(GLOB DEPLOY_HEADERS_ABS *.hpp)
