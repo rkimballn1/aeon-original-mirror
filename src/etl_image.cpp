@@ -114,32 +114,43 @@ shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t i
     randomly sampled contrast, brightness, saturation, lighting values (based on params->cbs, lighting bounds)
 
 */
+#include <cstdlib>
+
+#define NP_NO_DEPRACATED_API NPY_1_7_API_VERSION
 
 extern void call_finalize()
 {
-    if (Py_IsInitialized()) {
+/*    if (Py_IsInitialized())*/ {
         std::cout << "Finalize called" << std::endl;
+        PyGILState_Ensure();
         Py_Finalize();
     }
 }
 
-#include <cstdlib>
+struct call_initialize
+{
+    call_initialize()
+    {
+        std::cout << "Is initialized" << std::endl;
+        Py_Initialize();
+        std::atexit(call_finalize);
+    }
+};
+
+static call_initialize x;
 
 image::transformer::transformer(const image::config&)
-{
+{/*
     if (!Py_IsInitialized()) {
         std::cout << "Needs initialization" << std::endl;
         Py_Initialize();
         std::atexit(call_finalize);
     }
+    */
 }
 
 image::transformer::~transformer() 
 { 
-/*   if (py_init) {
-        Py_Finalize(); 
-    }
-    */
 }
 
 shared_ptr<image::decoded>
@@ -186,7 +197,7 @@ cv::Mat execute_flip_plugin(const cv::Mat& img)
     cv::Mat m;
     std::string plugin_func_name = "execute";
     
-    Py_DECREF(plugin_module_name);
+//    Py_DECREF(plugin_module_name);
 
     if (plugin_module != NULL) {
         plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
@@ -210,7 +221,8 @@ cv::Mat execute_flip_plugin(const cv::Mat& img)
     } else {
         PyErr_Print();
     }
-    
+
+    Py_DECREF(plugin_module);
     PyGILState_Release(gstate);
     return m;
 }
@@ -240,7 +252,7 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat& img, int angle)
     cv::Mat m;
     std::string plugin_func_name = "execute";
     
-    Py_DECREF(plugin_module_name);
+//    Py_DECREF(plugin_module_name);
 
     if (plugin_module != NULL) {
         plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
@@ -257,22 +269,23 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat& img, int angle)
 //        std::cout << "Calling" << std::endl;
         
         ret_val = PyObject_CallObject(plugin_func, arg_tuple);
-        Py_DECREF(plugin_func);
-        Py_DECREF(arg_tuple);
-        Py_DECREF(plugin_module);
+//        Py_DECREF(plugin_func);
+//        Py_DECREF(arg_tuple);
+//        Py_DECREF(plugin_module);
 
 //        Py_INCREF(ret_val);
 //        std::cout << "Works" << std::endl;
 
         if (ret_val != NULL) {
             m = cvt.toMat(ret_val);
-            Py_DECREF(ret_val);
+//            Py_DECREF(ret_val);
 
         }
     } else {
         PyErr_Print();
     }
 
+    Py_DECREF(plugin_module);
     PyGILState_Release(gstate);
     return m;
 }
@@ -319,8 +332,8 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     if (img_xform->flip)
     {
         cv::flip(resizedImage, flippedImage, 1);
-//        flippedImage = execute_flip_plugin(resizedImage);
-        finalImage = &flippedImage;
+        flippedImage = execute_flip_plugin(resizedImage);
+//        finalImage = &flippedImage;
     }
 
     if (!img_xform->debug_output_directory.empty())
