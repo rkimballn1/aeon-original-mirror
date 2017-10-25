@@ -32,6 +32,7 @@ namespace
                                    shared_ptr<augment::image::params> img_xform);
 }
 
+
 image::config::config(nlohmann::json js)
 {
     if (js.is_null())
@@ -114,8 +115,31 @@ shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t i
 
 */
 
+extern void call_finalize()
+{
+    if (Py_IsInitialized()) {
+        std::cout << "Finalize called" << std::endl;
+        Py_Finalize();
+    }
+}
+
+#include <cstdlib>
+
 image::transformer::transformer(const image::config&)
 {
+    if (!Py_IsInitialized()) {
+        std::cout << "Needs initialization" << std::endl;
+        Py_Initialize();
+        std::atexit(call_finalize);
+    }
+}
+
+image::transformer::~transformer() 
+{ 
+/*   if (py_init) {
+        Py_Finalize(); 
+    }
+    */
 }
 
 shared_ptr<image::decoded>
@@ -150,7 +174,6 @@ cv::Mat execute_flip_plugin(const cv::Mat& img)
         PyEval_InitThreads();
         PyEval_SaveThread();
     }
-
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
 
@@ -231,20 +254,25 @@ cv::Mat execute_plugin(std::string plugin_name, const cv::Mat& img, int angle)
         PyTuple_SetItem(arg_tuple, 0, img_mat);
         PyTuple_SetItem(arg_tuple, 1, angle_obj);
 
-        std::cout << "Calling" << std::endl;
+//        std::cout << "Calling" << std::endl;
         
         ret_val = PyObject_CallObject(plugin_func, arg_tuple);
+        Py_DECREF(plugin_func);
+        Py_DECREF(arg_tuple);
+        Py_DECREF(plugin_module);
 
-        Py_INCREF(ret_val);
-        std::cout << "Works" << std::endl;
+//        Py_INCREF(ret_val);
+//        std::cout << "Works" << std::endl;
 
         if (ret_val != NULL) {
             m = cvt.toMat(ret_val);
+            Py_DECREF(ret_val);
+
         }
     } else {
         PyErr_Print();
     }
-    
+
     PyGILState_Release(gstate);
     return m;
 }
@@ -290,10 +318,8 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     cv::Mat  flippedImage;
     if (img_xform->flip)
     {
-        std::cout << "Calls no: " << calls_no << std::endl;
-        calls_no++;
-//        cv::flip(resizedImage, flippedImage, 1);
-        flippedImage = execute_flip_plugin(resizedImage);
+        cv::flip(resizedImage, flippedImage, 1);
+//        flippedImage = execute_flip_plugin(resizedImage);
         finalImage = &flippedImage;
     }
 
