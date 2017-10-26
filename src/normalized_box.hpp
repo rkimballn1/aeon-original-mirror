@@ -58,7 +58,7 @@ public:
     nervana::boundingbox::box unnormalize(float width, float height)
     {
         return nervana::boundingbox::box(
-            xmin() * width, ymin() * height, xmax() * width - 1, ymax() * height - 1);
+            xmin() * width, ymin() * height, xmax() * width, ymax() * height);
     }
     bool is_properly_normalized() const;
 

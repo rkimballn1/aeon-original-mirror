@@ -151,7 +151,7 @@ nervana::normalized_box::box bbox::normalize(float width, float height) const
     try
     {
         return nervana::normalized_box::box(
-            xmin() / width, ymin() / height, (xmax() + 1) / width, (ymax() + 1) / height);
+            xmin() / width, ymin() / height, xmax() / width, ymax() / height);
     }
     catch (std::exception&)
     {

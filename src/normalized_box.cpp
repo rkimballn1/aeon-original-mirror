@@ -89,7 +89,7 @@ nbox nbox::intersect(const nbox& second_nbox) const
 bool nbox::is_properly_normalized() const
 {
     auto is_value_normalized = [](float x) {
-        return almost_equal_or_greater(x, 0.0f) && almost_equal_or_less(x, 1.0);
+        return almost_equal_or_greater(x, 0.0f) && x < 1.0;
     };
     return is_value_normalized(m_xmin) && is_value_normalized(m_xmax) &&
            is_value_normalized(m_ymin) && is_value_normalized(m_ymax);
