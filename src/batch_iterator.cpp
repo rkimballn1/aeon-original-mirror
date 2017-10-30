@@ -80,6 +80,7 @@ encoded_record_list* batch_iterator::filler()
     }
 
     m_state = async_state::idle;
+    
     return rc;
 }
 
@@ -147,5 +148,8 @@ fixed_buffer_map* batch_iterator_fbm::filler()
         }
     }
     m_state = async_state::idle;
+
+    rc->transpose(128);
+    
     return rc;
 }

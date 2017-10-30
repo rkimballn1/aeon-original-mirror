@@ -278,7 +278,7 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
     //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
     //cout << endl;
     //cout << "batch_size " << batch_size << " cols " << cols << endl;
-
+/*
     char* buf2 = new char[batch_size*cols*sizeof(float)];
     int lda = ROUND_UP(cols, 16);
     int ldb = ROUND_UP(batch_size, 16);
@@ -296,7 +296,7 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
         if(cols == 1) buf2 = (char*)transpose32((uint32_t*)buf->data(), batch_size, cols);
         else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
     }
-
+*/
     //cout << "* batch_size " << batch_size << " cols " << cols << endl;
     //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
     //cout << endl;
@@ -307,8 +307,8 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
     dims.push_back(cols);
     dims.push_back(batch_size);
 
-    //PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf->data()));
-    PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf2));
+    PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf->data()));
+    //PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf2));
 
     if (p_array == NULL)
     {

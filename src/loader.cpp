@@ -146,7 +146,8 @@ void loader::initialize(nlohmann::json& config_json)
     unsigned int threads_num = lcfg.decode_thread_count != 0 ? lcfg.decode_thread_count
                                                              : std::thread::hardware_concurrency();
 
-    if (lcfg.batch_size > threads_num * m_increase_input_size_coefficient)
+    //if (lcfg.batch_size > threads_num * m_increase_input_size_coefficient)
+    if(false)
     {
         m_batch_iterator = make_shared<batch_iterator>(m_block_manager.get(), lcfg.batch_size);
         m_final_stage    = make_shared<batch_decoder>(m_batch_iterator.get(),

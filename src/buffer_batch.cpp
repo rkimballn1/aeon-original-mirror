@@ -164,3 +164,42 @@ void fixed_buffer_map::copy(fixed_buffer_map& src, size_t src_index, size_t dst_
         memcpy(p_dst, p_src, count * src_fbm->get_stride());
     }
 }
+
+// Naive
+template<typename T>
+T *transpose_naive(const T *src, int rows, int cols) {
+    int prod = rows*cols;
+    T* dest = new T [prod];
+
+    for(int m = 0; m<prod; m++) {
+        int i = m/rows;
+        int j = m%rows;
+        dest[m] = src[i + cols*j];
+    }
+    
+    delete[] dest;
+
+    return dest;
+}
+
+void fixed_buffer_map::transpose(int batch_size)
+{
+    //cout << m_names.size() << endl;
+    //cout << this->operator []("image")->size() << endl;
+    //cout << this->operator []("image")->data() << endl;
+
+    for (auto name : m_names)
+    {
+        char* buf = this->operator[](name)->data();
+        int cols = this->operator[](name)->size() / batch_size;
+        //cout << cols << " " << endl;
+        if(name == "image")
+        {
+            if(buf) transpose_naive<uint8_t>((uint8_t*)buf, batch_size, cols);
+        }
+        else
+        {
+            if(buf) transpose_naive<uint32_t>((uint32_t*)buf, batch_size, cols/sizeof(uint32_t));
+        }
+    }
+}
