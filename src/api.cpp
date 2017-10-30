@@ -20,6 +20,7 @@
 #include "json_parser.hpp"
 #include <numpy/arrayobject.h>
 #include "structmember.h"
+#include <xmmintrin.h>
 using namespace nervana;
 using namespace std;
 
@@ -51,6 +52,8 @@ struct aeon_state
 #define GETSTATE(m) (&_state)
 static struct aeon_state _state;
 #endif
+
+#define ROUND_UP(x, s) (((x)+((s)-1)) & -(s))
 
 static PyObject* error_out(PyObject* m)
 {
@@ -196,7 +199,7 @@ uint8_t *transpose8(const uint8_t *src, int rows, int cols) {
     int prod = rows*cols;
     uint8_t* dest = new uint8_t [prod];
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int m = 0; m<prod; m++) {
         int i = m/rows;
         int j = m%rows;
@@ -210,7 +213,7 @@ uint16_t *transpose16(const uint16_t *src, int rows, int cols) {
     int prod = rows*cols;
     uint16_t* dest = new uint16_t [prod];
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int m = 0; m<prod; m++) {
         int i = m/rows;
         int j = m%rows;
@@ -224,7 +227,7 @@ uint32_t *transpose32(const uint32_t *src, int rows, int cols) {
     int prod = rows*cols;
     uint32_t* dest = new uint32_t [prod];
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int m = 0; m<prod; m++) {
         int i = m/rows;
         int j = m%rows;
@@ -276,15 +279,22 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
     //cout << endl;
     //cout << "batch_size " << batch_size << " cols " << cols << endl;
 
-    char* buf2 = NULL;
+    char* buf2 = new char[batch_size*cols*sizeof(float)];
+    int lda = ROUND_UP(cols, 16);
+    int ldb = ROUND_UP(batch_size, 16);
+    int block_size = 64;
+    //cout << batch_size << " " << cols << endl;
     if(nptype == NPY_UINT8) {
-        buf2 = (char*)transpose8((uint8_t*)buf->data(), batch_size, cols);
+        if(cols == 1) buf2 = (char*)transpose8((uint8_t*)buf->data(), batch_size, cols);
+        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
     }
     else if(nptype == NPY_UINT16) {
-        buf2 = (char*)transpose16((uint16_t*)buf->data(), batch_size, cols);
+        if(cols == 1) buf2 = (char*)transpose16((uint16_t*)buf->data(), batch_size, cols);
+        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
     }
     else if(nptype == NPY_UINT32) {
-        buf2 = (char*)transpose32((uint32_t*)buf->data(), batch_size, cols);
+        if(cols == 1) buf2 = (char*)transpose32((uint32_t*)buf->data(), batch_size, cols);
+        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
     }
 
     //cout << "* batch_size " << batch_size << " cols " << cols << endl;
