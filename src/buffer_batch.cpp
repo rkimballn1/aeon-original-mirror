@@ -191,14 +191,25 @@ void fixed_buffer_map::transpose(int batch_size)
         int cols = size / batch_size;
         char* dest = new char [size];
 
-        if(name == "image")
+        int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
+        cout << element_size << endl;
+        switch(element_size)
         {
-            transpose_regular<uint8_t>((uint8_t*)dest, (uint8_t*)src, batch_size, cols);
-        }
-        else
-        {
-            transpose_regular<uint32_t>((uint32_t*)dest, (uint32_t*)src, batch_size, cols/sizeof(uint32_t));
-        }
+            case 1:
+                transpose_regular<uint8_t>((uint8_t*)dest, (uint8_t*)src, batch_size, cols);
+                break;
+            case 2:
+                transpose_regular<uint16_t>((uint16_t*)dest, (uint16_t*)src, batch_size, cols/2);
+                break;
+            case 4:
+                transpose_regular<uint32_t>((uint32_t*)dest, (uint32_t*)src, batch_size, cols/4);
+                break;
+            case 8:
+                transpose_regular<uint64_t>((uint64_t*)dest, (uint64_t*)src, batch_size, cols/8);
+                break;
+            default:
+                throw "unsupported type";
+        }        
         
         memcpy(src, dest, size);
         

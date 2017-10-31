@@ -556,6 +556,7 @@ web::tcp::connection::connection(uint16_t port)
     , m_is_server{true}
     , m_listening_port{port}
 {
+        return;
     char* end = &m_char_buffer.front() + m_char_buffer.size();
     setg(end, end, end);
 

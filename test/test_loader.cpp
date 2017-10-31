@@ -480,7 +480,6 @@ TEST(benchmark, imagenet)
                                  {"iteration_mode", "INFINITE"},
                                  {"cache_directory", cache_root},
                                  {"decode_thread_count", 0},
-                                 {"web_server_port", 8086},
                                  {"etl", {image_config, label_config}},
                                  {"augmentation", aug_config}};
 

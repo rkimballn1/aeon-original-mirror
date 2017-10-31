@@ -127,8 +127,8 @@ static PyObject* DataLoader_iternext(PyObject* self)
         int tuple_pos     = 0;
         for (auto&& nm : names)
         {
-            PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm]);
-            //PyObject* wrapped_buf     = wrap_buffer_as_np_array_with_transpose(d[nm]);
+            //PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm]);
+            PyObject* wrapped_buf     = wrap_buffer_as_np_array_with_transpose(d[nm]);
             PyObject* buf_name        = Py_BuildValue("s", nm.c_str());
             PyObject* named_buf_tuple = PyTuple_New(buf_tuple_len);
 
