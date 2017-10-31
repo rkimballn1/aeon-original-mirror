@@ -16,7 +16,6 @@
 
 #include "etl_image.hpp"
 #include "conversion.h"
-#include "numpy/ndarrayobject.h"
 
 #include <atomic>
 #include <fstream>
@@ -160,119 +159,6 @@ shared_ptr<image::decoded>
     return rc;
 }
 
-/*
-cv::Mat execute_flip_plugin(const cv::Mat& img)
-{
-    PyObject* plugin_module_name;
-    PyObject* plugin_module;
-    PyObject* plugin_func;
-    PyObject* ret_val;
-
-    if (!gil_init) {
-        gil_init = 1;
-        PyEval_InitThreads();
-        PyEval_SaveThread();
-    }
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
-
-    plugin_module_name = PyString_FromString("flip");
-    plugin_module = PyImport_Import(plugin_module_name);
-
-    if (!plugin_module)
-        PyErr_Print();
-
-    cv::Mat m;
-    std::string plugin_func_name = "execute";
-    
-//    Py_DECREF(plugin_module_name);
-
-    if (plugin_module != NULL) {
-        plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
-
-        PyObject* arg_tuple = PyTuple_New(1);
-
-        NDArrayConverter cvt;
-        PyObject* img_mat = cvt.toNDArray(img);
-
-        PyTuple_SetItem(arg_tuple, 0, img_mat);
-        ret_val = PyObject_CallObject(plugin_func, arg_tuple);
-
-        if (ret_val != NULL) {
-            m = cvt.toMat(ret_val);
-        }
-    } else {
-        PyErr_Print();
-    }
-
-    PyGILState_Release(gstate);
-    return m;
-}
-*/
-/*
-cv::Mat execute_plugin(std::string plugin_name, const cv::Mat& img, int angle)
-{
-    PyObject* plugin_module_name;
-    PyObject* plugin_module;
-    PyObject* plugin_func;
-    PyObject* ret_val;
-
-    if (!gil_init) {
-        gil_init = 1;
-        PyEval_InitThreads();
-        PyEval_SaveThread();
-    }
-
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
-
-    plugin_module_name = PyString_FromString("rotate");
-    plugin_module = PyImport_Import(plugin_module_name);
-
-    if (!plugin_module)
-        PyErr_Print();
-
-    cv::Mat m;
-    std::string plugin_func_name = "execute";
-    
-//    Py_DECREF(plugin_module_name);
-
-    if (plugin_module != NULL) {
-        plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
-
-        PyObject* arg_tuple = PyTuple_New(2);
-
-        NDArrayConverter cvt;
-        PyObject* img_mat = cvt.toNDArray(img);
-        PyObject* angle_obj = PyLong_FromLong(angle);
-
-        PyTuple_SetItem(arg_tuple, 0, img_mat);
-        PyTuple_SetItem(arg_tuple, 1, angle_obj);
-
-//        std::cout << "Calling" << std::endl;
-        
-        ret_val = PyObject_CallObject(plugin_func, arg_tuple);
-//        Py_DECREF(plugin_func);
-//        Py_DECREF(arg_tuple);
-//        Py_DECREF(plugin_module);
-
-        Py_INCREF(ret_val);
-//        std::cout << "Works" << std::endl;
-
-        if (ret_val != NULL) {
-            m = cvt.toMat(ret_val);
-//            Py_DECREF(ret_val);
-
-        }
-    } else {
-        PyErr_Print();
-    }
-
-    PyGILState_Release(gstate);
-    return m;
-}
-*/
-
 template<typename T>
 PyObject* convert(T& a);
 /*
@@ -286,16 +172,6 @@ PyObject* convert<int>(int& a)
     PyObject* p = PyLong_FromLong(a);
     return p;
 }
-
-/*
-struct imp_arr
-{
-    imp_arr()
-    {
-        import_array();
-    }
-};
-*/
 
 template<>
 PyObject* convert<cv::Mat>(cv::Mat& img)
@@ -334,8 +210,6 @@ std::vector<PyObject*> convert_arguments(Args... args)
 
     return converted_args;
 }
-
-//int gil_init = 0;
 
 struct gil_lock
 {
