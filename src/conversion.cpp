@@ -72,6 +72,8 @@ public:
     {
         PyEnsureGIL gil;
 
+        import_array();
+
         int depth = CV_MAT_DEPTH(type);
         int cn = CV_MAT_CN(type);
         const int f = (int)(sizeof(size_t)/8);
@@ -122,7 +124,7 @@ NDArrayConverter::NDArrayConverter() { init(); }
 
 void NDArrayConverter::init()
 {
-    import_array();
+//    import_array();
 }
 
 cv::Mat NDArrayConverter::toMat(const PyObject *o)
@@ -227,5 +229,6 @@ PyObject* NDArrayConverter::toNDArray(const cv::Mat& m)
         p = &temp;
     }
     p->addref();
+
     return pyObjectFromRefcount(p->refcount);
 }
