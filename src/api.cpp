@@ -275,6 +275,7 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
     int cols = shape[0];
     for(int i=1; i<shape.size(); i++) cols *= shape[i];
 
+    // TODO: to remove
     //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
     //cout << endl;
     //cout << "batch_size " << batch_size << " cols " << cols << endl;
@@ -300,7 +301,7 @@ static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_
     //cout << "* batch_size " << batch_size << " cols " << cols << endl;
     //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
     //cout << endl;
-    
+
     std::vector<npy_intp> dims;
     //dims.push_back(buf->get_item_count());
     //dims.insert(dims.end(), shape.begin(), shape.end());

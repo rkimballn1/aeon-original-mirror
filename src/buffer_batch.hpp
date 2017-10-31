@@ -249,4 +249,7 @@ private:
     buffer_fixed_size_elements* operator[](int)             = delete;
     std::vector<std::string> m_names;
     std::vector<std::pair<std::string, buffer_fixed_size_elements*>> m_data;
+
+    template<typename T>
+    void transpose_regular(T* dest, const T *src, int rows, int cols);
 };

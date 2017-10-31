@@ -149,7 +149,7 @@ fixed_buffer_map* batch_iterator_fbm::filler()
     }
     m_state = async_state::idle;
 
-    rc->transpose(128);
+    rc->transpose(m_batch_size);
     
     return rc;
 }

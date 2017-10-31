@@ -165,41 +165,43 @@ void fixed_buffer_map::copy(fixed_buffer_map& src, size_t src_index, size_t dst_
     }
 }
 
-// Naive
+// Transposes the rows and columns of a matrix.
 template<typename T>
-T *transpose_naive(const T *src, int rows, int cols) {
+void fixed_buffer_map::transpose_regular(T* dest, const T *src, int rows, int cols) {
     int prod = rows*cols;
-    T* dest = new T [prod];
 
-    for(int m = 0; m<prod; m++) {
-        int i = m/rows;
-        int j = m%rows;
+    for(int m = 0; m < prod; ++m) {
+        int i = m / rows;
+        int j = m % rows;
         dest[m] = src[i + cols*j];
     }
-    
-    delete[] dest;
-
-    return dest;
 }
 
 void fixed_buffer_map::transpose(int batch_size)
 {
-    //cout << m_names.size() << endl;
-    //cout << this->operator []("image")->size() << endl;
-    //cout << this->operator []("image")->data() << endl;
+    if(batch_size <= 0)
+    {
+        throw invalid_argument("batch_size: batch size must be greater than 0");
+    }
 
     for (auto name : m_names)
     {
-        char* buf = this->operator[](name)->data();
-        int cols = this->operator[](name)->size() / batch_size;
-        //cout << cols << " " << endl;
+        char* src = this->operator[](name)->data();
+        int size = this->operator[](name)->size();
+        int cols = size / batch_size;
+        char* dest = new char [size];
+
         if(name == "image")
         {
-            if(buf) transpose_naive<uint8_t>((uint8_t*)buf, batch_size, cols);
+            transpose_regular<uint8_t>((uint8_t*)dest, (uint8_t*)src, batch_size, cols);
         }
         else
         {
-            if(buf) transpose_naive<uint32_t>((uint32_t*)buf, batch_size, cols/sizeof(uint32_t));
+            transpose_regular<uint32_t>((uint32_t*)dest, (uint32_t*)src, batch_size, cols/sizeof(uint32_t));
         }
+        
+        memcpy(src, dest, size);
+        
+        delete[] dest;
     }
 }
