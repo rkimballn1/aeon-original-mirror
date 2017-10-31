@@ -530,7 +530,6 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
     //image::rotate(single_img, rotatedImage, img_xform->angle);
-//    rotatedImage = execute_rotate_plugin(single_img, img_xform->angle);
     rotatedImage = execute_plugin("rotate", single_img, img_xform->angle);    
     
     cv::Mat expandedImage;
@@ -556,12 +555,8 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     cv::Mat  flippedImage;
     if (img_xform->flip)
     {
- //       cv::Mat img = finalImage->clone();
- //       cv::Mat out = flippedImage.clone();
-    //    cv::flip(resizedImage, flippedImage, 1);
+//        cv::flip(resizedImage, flippedImage, 1);
         flippedImage = execute_plugin("flip", resizedImage);
-//        *finalImage = img.clone();
-//        flippedImage = out.clone();
 
         finalImage = &flippedImage;
     }
