@@ -81,6 +81,8 @@ encoded_record_list* batch_iterator::filler()
 
     m_state = async_state::idle;
     
+    //rc->transpose(m_batch_size);
+
     return rc;
 }
 
@@ -147,9 +149,9 @@ fixed_buffer_map* batch_iterator_fbm::filler()
             m_state     = async_state::processing;
         }
     }
+//    rc->transpose(m_batch_size);
+    
     m_state = async_state::idle;
 
-    rc->transpose(m_batch_size);
-    
     return rc;
 }

@@ -165,9 +165,9 @@ void fixed_buffer_map::copy(fixed_buffer_map& src, size_t src_index, size_t dst_
     }
 }
 
-// Transposes the rows and columns of a matrix.
+// Transposes the rows and columns of a matrix
 template<typename T>
-void fixed_buffer_map::transpose_regular(T* dest, const T *src, int rows, int cols) {
+static void transpose_regular(T* dest, const T *src, int rows, int cols) {
     int prod = rows*cols;
 
     for(int m = 0; m < prod; ++m) {
@@ -203,5 +203,19 @@ void fixed_buffer_map::transpose(int batch_size)
         memcpy(src, dest, size);
         
         delete[] dest;
+    }
+}
+
+void encoded_record_list::transpose(int batch_size)
+{
+    if(batch_size <= 0)
+    {
+        throw invalid_argument("batch_size: batch size must be greater than 0");
+    }
+    
+    for(int i=0; i<m_records.size(); ++i)
+    {
+        //variable_record_field& rc = m_records[i].size(i);
+        //cout << rc.size() << endl;
     }
 }

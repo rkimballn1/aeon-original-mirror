@@ -129,6 +129,7 @@ public:
         std::minstd_rand0 rand_items(random_seed);
         std::shuffle(m_records.begin(), m_records.end(), rand_items);
     }
+    void transpose(int batch_size);
 
 private:
     void verify(const encoded_record& buffer)
@@ -249,7 +250,4 @@ private:
     buffer_fixed_size_elements* operator[](int)             = delete;
     std::vector<std::string> m_names;
     std::vector<std::pair<std::string, buffer_fixed_size_elements*>> m_data;
-
-    template<typename T>
-    void transpose_regular(T* dest, const T *src, int rows, int cols);
 };
