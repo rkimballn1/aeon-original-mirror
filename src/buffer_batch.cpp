@@ -18,6 +18,9 @@
 
 #include "buffer_batch.hpp"
 #include "log.hpp"
+#include <xmmintrin.h>
+
+#define ROUND_UP(x, s) (((x)+((s)-1)) & -(s))
 
 using namespace std;
 using namespace nervana;
@@ -170,10 +173,39 @@ template<typename T>
 static void transpose_regular(T* dest, const T *src, int rows, int cols) {
     int prod = rows*cols;
 
+    #pragma omp parallel for
     for(int m = 0; m < prod; ++m) {
         int i = m / rows;
         int j = m % rows;
         dest[m] = src[i + cols*j];
+    }
+}
+
+inline void transpose4x4_SSE(float *A, float *B, const int lda, const int ldb) {
+    __m128 row1 = _mm_load_ps(&A[0*lda]);
+    __m128 row2 = _mm_load_ps(&A[1*lda]);
+    __m128 row3 = _mm_load_ps(&A[2*lda]);
+    __m128 row4 = _mm_load_ps(&A[3*lda]);
+     _MM_TRANSPOSE4_PS(row1, row2, row3, row4);
+     _mm_store_ps(&B[0*ldb], row1);
+     _mm_store_ps(&B[1*ldb], row2);
+     _mm_store_ps(&B[2*ldb], row3);
+     _mm_store_ps(&B[3*ldb], row4);
+}
+
+// Intrinsics + parallel
+inline void transpose_block_SSE4x4(float *A, float *B, const int n, const int m, const int lda, const int ldb ,const int block_size) {
+    #pragma omp parallel for
+    for(int i=0; i<n; i+=block_size) {
+        for(int j=0; j<m; j+=block_size) {
+            int max_i2 = i+block_size < n ? i + block_size : n;
+            int max_j2 = j+block_size < m ? j + block_size : m;
+            for(int i2=i; i2<max_i2; i2+=4) {
+                for(int j2=j; j2<max_j2; j2+=4) {
+                    transpose4x4_SSE(&A[i2*lda +j2], &B[j2*ldb + i2], lda, ldb);
+                }
+            }
+        }
     }
 }
 
@@ -186,34 +218,47 @@ void fixed_buffer_map::transpose(int batch_size)
 
     for (auto name : m_names)
     {
-        char* src = this->operator[](name)->data();
+        //char* src = this->operator[](name)->data();
+        buffer_fixed_size_elements* bfse = this->operator[](name);
+        char* src = bfse->data();
         int size = this->operator[](name)->size();
         int cols = size / batch_size;
         char* dest = new char [size];
 
         int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
-        cout << element_size << endl;
         switch(element_size)
         {
             case 1:
+            {
                 transpose_regular<uint8_t>((uint8_t*)dest, (uint8_t*)src, batch_size, cols);
+//                int lda = ROUND_UP(cols, 16);
+//                int ldb = ROUND_UP(batch_size, 16);
+//                int block_size = 16;
+//                cout << batch_size << " " << cols << " " << block_size << endl;
+//                transpose_block_SSE4x4((float*)dest, (float*)src, batch_size, cols, lda, ldb, block_size);
                 break;
+            }
             case 2:
                 transpose_regular<uint16_t>((uint16_t*)dest, (uint16_t*)src, batch_size, cols/2);
                 break;
             case 4:
+            {
                 transpose_regular<uint32_t>((uint32_t*)dest, (uint32_t*)src, batch_size, cols/4);
                 break;
+            }
             case 8:
                 transpose_regular<uint64_t>((uint64_t*)dest, (uint64_t*)src, batch_size, cols/8);
                 break;
             default:
                 throw "unsupported type";
-        }        
+        }
         
-        memcpy(src, dest, size);
+        //transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
         
-        delete[] dest;
+        //memcpy(src, dest, size);
+        bfse->swap(dest);
+        
+        //delete[] dest;
     }
 }
 

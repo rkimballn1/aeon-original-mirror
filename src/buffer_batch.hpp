@@ -171,6 +171,14 @@ public:
     size_t            size() const { return m_size; }
     size_t            get_stride() const { return m_stride; }
     const shape_type& get_shape_type() const { return m_shape_type; }
+
+    void swap(char *dest)
+    {
+        char* tmp = m_data;
+        m_data = dest;
+        delete[] tmp;
+    }
+    
 protected:
     buffer_fixed_size_elements() = delete;
 
