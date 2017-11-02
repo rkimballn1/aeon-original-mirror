@@ -79,7 +79,7 @@ namespace
 
 #endif
 }
-
+/*
 TEST(loader, syntax)
 {
     int    height        = 32;
@@ -106,7 +106,7 @@ TEST(loader, syntax)
     loader_factory factory;
     auto           train_set = factory.get_loader(js);
 }
-
+*/
 TEST(loader, iterator)
 {
     int    height            = 32;
