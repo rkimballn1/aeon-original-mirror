@@ -1,133 +1,120 @@
-# include "conversion.h"
+#include "conversion.hpp"
+#include "python_utils.hpp"
+
 /*
  * The following conversion functions are taken/adapted from OpenCV's cv2.cpp file
  * inside modules/python/src2 folder.
  */
 
-static void init()
+void python::import_numpy()
 {
     import_array();
 }
 
-static int failmsg(const char *fmt, ...)
+namespace
 {
-    char str[1000];
+    static PyObject* opencv_error = 0;
 
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(str, sizeof(str), fmt, ap);
-    va_end(ap);
+    static int failmsg(const char *fmt, ...);
 
-    PyErr_SetString(PyExc_TypeError, str);
-    return 0;
-}
-
-class PyAllowThreads
-{
-public:
-    PyAllowThreads() : _state(PyEval_SaveThread()) {}
-    ~PyAllowThreads()
+    static int failmsg(const char *fmt, ...)
     {
-        PyEval_RestoreThread(_state);
+        char str[1000];
+
+        va_list ap;
+        va_start(ap, fmt);
+        vsnprintf(str, sizeof(str), fmt, ap);
+        va_end(ap);
+
+        PyErr_SetString(PyExc_TypeError, str);
+        return 0;
     }
-private:
-    PyThreadState* _state;
-};
 
-class PyEnsureGIL
-{
-public:
-    PyEnsureGIL() : _state(PyGILState_Ensure()) {}
-    ~PyEnsureGIL()
+    static PyObject* failmsgp(const char *fmt, ...)
     {
-        PyGILState_Release(_state);
+      char str[1000];
+
+      va_list ap;
+      va_start(ap, fmt);
+      vsnprintf(str, sizeof(str), fmt, ap);
+      va_end(ap);
+
+      PyErr_SetString(PyExc_TypeError, str);
+      return 0;
     }
-private:
-    PyGILState_STATE _state;
-};
 
-using namespace cv;
+    static size_t REFCOUNT_OFFSET = (size_t)&(((PyObject*)0)->ob_refcnt) +
+        (0x12345678 != *(const size_t*)"\x78\x56\x34\x12\0\0\0\0\0")*sizeof(int);
 
-static PyObject* failmsgp(const char *fmt, ...)
-{
-  char str[1000];
-
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(str, sizeof(str), fmt, ap);
-  va_end(ap);
-
-  PyErr_SetString(PyExc_TypeError, str);
-  return 0;
-}
-
-class NumpyAllocator : public MatAllocator
-{
-public:
-    NumpyAllocator() {}
-    ~NumpyAllocator() {}
-
-    void allocate(int dims, const int* sizes, int type, int*& refcount,
-                  uchar*& datastart, uchar*& data, size_t* step)
+    static inline PyObject* pyObjectFromRefcount(const int* refcount)
     {
-        PyEnsureGIL gil;
+        return (PyObject*)((size_t)refcount - REFCOUNT_OFFSET);
+    }
 
-        import_array();
+    static inline int* refcountFromPyObject(const PyObject* obj)
+    {
+        return (int*)((size_t)obj + REFCOUNT_OFFSET);
+    }
 
-        int depth = CV_MAT_DEPTH(type);
-        int cn = CV_MAT_CN(type);
-        const int f = (int)(sizeof(size_t)/8);
-        int typenum = depth == CV_8U ? NPY_UBYTE : depth == CV_8S ? NPY_BYTE :
-                      depth == CV_16U ? NPY_USHORT : depth == CV_16S ? NPY_SHORT :
-                      depth == CV_32S ? NPY_INT : depth == CV_32F ? NPY_FLOAT :
-                      depth == CV_64F ? NPY_DOUBLE : f*NPY_ULONGLONG + (f^1)*NPY_UINT;
-        int i;
-        npy_intp _sizes[CV_MAX_DIM+1];
-        for( i = 0; i < dims; i++ )
+    class NumpyAllocator : public cv::MatAllocator
+    {
+    public:
+        NumpyAllocator() {}
+        ~NumpyAllocator() {}
+
+        void allocate(int dims, const int* sizes, int type, int*& refcount,
+                      uchar*& datastart, uchar*& data, size_t* step)
         {
-            _sizes[i] = sizes[i];
+            python::ensure_gil gil;
+
+            int depth = CV_MAT_DEPTH(type);
+            int cn = CV_MAT_CN(type);
+            const int f = (int)(sizeof(size_t)/8);
+            int typenum = depth == CV_8U ? NPY_UBYTE : depth == CV_8S ? NPY_BYTE :
+                          depth == CV_16U ? NPY_USHORT : depth == CV_16S ? NPY_SHORT :
+                          depth == CV_32S ? NPY_INT : depth == CV_32F ? NPY_FLOAT :
+                          depth == CV_64F ? NPY_DOUBLE : f*NPY_ULONGLONG + (f^1)*NPY_UINT;
+            int i;
+            npy_intp _sizes[CV_MAX_DIM+1];
+            for( i = 0; i < dims; i++ )
+            {
+                _sizes[i] = sizes[i];
+            }
+
+            if( cn > 1 )
+            {
+                _sizes[dims++] = cn;
+            }
+
+            PyObject* o = PyArray_SimpleNew(dims, _sizes, typenum);
+
+            if(!o)
+            {
+                CV_Error_(CV_StsError, ("The numpy array of typenum=%d, ndims=%d can not be created", typenum, dims));
+            }
+
+            refcount = refcountFromPyObject(o);
+
+            npy_intp* _strides = PyArray_STRIDES(o);
+            for( i = 0; i < dims - (cn > 1); i++ )
+                step[i] = (size_t)_strides[i];
+            datastart = data = (uchar*)PyArray_DATA(o);
         }
 
-        if( cn > 1 )
+        void deallocate(int* refcount, uchar*, uchar*)
         {
-            _sizes[dims++] = cn;
+            python::ensure_gil gil;
+            if( !refcount )
+                return;
+            PyObject* o = pyObjectFromRefcount(refcount);
+            Py_INCREF(o);
+            Py_DECREF(o);
         }
+    };
 
-        PyObject* o = PyArray_SimpleNew(dims, _sizes, typenum);
-
-        if(!o)
-        {
-            CV_Error_(CV_StsError, ("The numpy array of typenum=%d, ndims=%d can not be created", typenum, dims));
-        }
-        refcount = refcountFromPyObject(o);
-
-        npy_intp* _strides = PyArray_STRIDES(o);
-        for( i = 0; i < dims - (cn > 1); i++ )
-            step[i] = (size_t)_strides[i];
-        datastart = data = (uchar*)PyArray_DATA(o);
-    }
-
-    void deallocate(int* refcount, uchar*, uchar*)
-    {
-        PyEnsureGIL gil;
-        if( !refcount )
-            return;
-        PyObject* o = pyObjectFromRefcount(refcount);
-        Py_INCREF(o);
-        Py_DECREF(o);
-    }
-};
-
-NumpyAllocator g_numpyAllocator;
-
-NDArrayConverter::NDArrayConverter() { init(); }
-
-void NDArrayConverter::init()
-{
-//    import_array();
+    NumpyAllocator g_numpyAllocator;
 }
-
-cv::Mat NDArrayConverter::toMat(const PyObject *o)
+cv::Mat python::conversion::detail::to_mat(const PyObject *o)
 {
     cv::Mat m;
 
@@ -197,7 +184,7 @@ cv::Mat NDArrayConverter::toMat(const PyObject *o)
         failmsg("toMat: Object has more than 2 dimensions");
     }
 
-    m = Mat(ndims, size, type, PyArray_DATA(o), step);
+    m = cv::Mat(ndims, size, type, PyArray_DATA(o), step);
 
     if( m.data )
     {
@@ -209,7 +196,7 @@ cv::Mat NDArrayConverter::toMat(const PyObject *o)
 
     if( transposed )
     {
-        Mat tmp;
+        cv::Mat tmp;
         tmp.allocator = &g_numpyAllocator;
         transpose(m, tmp);
         m = tmp;
@@ -217,11 +204,12 @@ cv::Mat NDArrayConverter::toMat(const PyObject *o)
     return m;
 }
 
-PyObject* NDArrayConverter::toNDArray(const cv::Mat& m)
+PyObject* python::conversion::detail::to_ndarray(const cv::Mat& m)
 {
     if( !m.data )
         Py_RETURN_NONE;
-    Mat temp, *p = (Mat*)&m;
+
+    cv::Mat temp, *p = (cv::Mat*)&m;
     if(!p->refcount || p->allocator != &g_numpyAllocator)
     {
         temp.allocator = &g_numpyAllocator;
@@ -232,3 +220,24 @@ PyObject* NDArrayConverter::toNDArray(const cv::Mat& m)
 
     return pyObjectFromRefcount(p->refcount);
 }
+
+cv::Mat python::conversion::convert(PyObject* o)
+{
+    return detail::to_mat(o);
+}
+
+PyObject* python::conversion::convert(int& a)
+{
+    PyObject* p = PyLong_FromLong(a);
+    return p;
+}
+
+PyObject* python::conversion::convert(cv::Mat& img)
+{
+    cv::Mat to_convert = img.clone();
+    python::import_numpy();
+    PyObject* m = detail::to_ndarray(to_convert);
+
+    return m;
+}
+
