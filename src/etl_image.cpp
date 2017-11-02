@@ -12,25 +12,22 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-#include <Python.h>
-
 #include "etl_image.hpp"
-#include "conversion.h"
+#include "conversion.hpp"
+#include "python_plugin.hpp"
 
 #include <atomic>
 #include <fstream>
 
-using namespace std;
 using namespace nervana;
 
 namespace
 {
-    string get_debug_file_id();
-    void write_image_with_settings(const string&                      filename,
+    std::string get_debug_file_id();
+    void write_image_with_settings(const std::string&                 filename,
                                    const cv::Mat&                     image,
-                                   shared_ptr<augment::image::params> img_xform);
+                                   std::shared_ptr<augment::image::params> img_xform);
 }
-
 
 image::config::config(nlohmann::json js)
 {
@@ -85,7 +82,7 @@ image::extractor::extractor(const image::config& cfg)
     }
 }
 
-shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize) const
+std::shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize) const
 {
     cv::Mat output_img;
 
@@ -94,7 +91,7 @@ shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t i
     cv::Mat input_img(1, insize, _pixel_type, (char*)inbuf);
     cv::imdecode(input_img, _color_mode, &output_img);
 
-    auto rc = make_shared<image::decoded>();
+    auto rc = std::make_shared<image::decoded>();
     rc->add(output_img); // don't need to check return for single image
     return rc;
 }
@@ -113,26 +110,6 @@ shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t i
     randomly sampled contrast, brightness, saturation, lighting values (based on params->cbs, lighting bounds)
 
 */
-#include <cstdlib>
-
-#define NP_NO_DEPRACATED_API NPY_1_7_API_VERSION
-
-extern void call_finalize()
-{
-    PyGILState_Ensure();
-    Py_Finalize();
-}
-
-struct call_initialize
-{
-    call_initialize()
-    {
-        Py_Initialize();
-        std::atexit(call_finalize);
-    }
-};
-static call_initialize x;
-
 image::transformer::transformer(const image::config&)
 {
 }
@@ -141,154 +118,22 @@ image::transformer::~transformer()
 { 
 }
 
-shared_ptr<image::decoded>
-    image::transformer::transform(shared_ptr<augment::image::params> img_xform,
-                                  shared_ptr<image::decoded>         img) const
+std::shared_ptr<image::decoded>
+    image::transformer::transform(std::shared_ptr<augment::image::params> img_xform,
+                                  std::shared_ptr<image::decoded>         img) const
 {
-    vector<cv::Mat> finalImageList;
+    std::vector<cv::Mat> finalImageList;
     for (int i = 0; i < img->get_image_count(); i++)
     {
         finalImageList.push_back(transform_single_image(img_xform, img->get_image(i)));
     }
 
-    auto rc = make_shared<image::decoded>();
+    auto rc = std::make_shared<image::decoded>();
     if (rc->add(finalImageList) == false)
     {
         rc = nullptr;
     }
     return rc;
-}
-
-template<typename T>
-PyObject* convert(T& a);
-/*
-{
-    return nullptr;   
-}
-*/
-template<>
-PyObject* convert<int>(int& a)
-{
-    PyObject* p = PyLong_FromLong(a);
-    return p;
-}
-
-template<>
-PyObject* convert<cv::Mat>(cv::Mat& img)
-{
-    cv::Mat to_convert = img.clone();
-    NDArrayConverter cvt;
-    PyObject* m = cvt.toNDArray(to_convert);
-
-    return m;
-}
-
-template<typename H, typename... T>
-void convert_arguments_aux(std::vector<PyObject*>& converted_args, H& head, T... tail)
-{
-    converted_args.push_back(convert(head));
-    convert_arguments_aux<T...>(converted_args, tail...);
-}
-
-template<typename H>
-void convert_arguments_aux(std::vector<PyObject*>& converted_args, H& head)
-{
-    converted_args.push_back(convert(head));
-}
-/*
-template<>
-void convert_arguments_aux<>(std::vector<PyObject*>&)
-{
-    return;
-}
-*/
-template<typename... Args>
-std::vector<PyObject*> convert_arguments(Args... args)
-{
-    std::vector<PyObject*> converted_args;
-    convert_arguments_aux<Args...>(converted_args, args...);
-
-    return converted_args;
-}
-
-struct gil_lock
-{
-private:
-    PyGILState_STATE gstate;
-    static int gil_init;
-
-public:
-    gil_lock()
-    {
-        if (!gil_lock::gil_init) {
-            gil_lock::gil_init = 1;
-            PyEval_InitThreads();
-            PyEval_SaveThread();
-        }
-        gstate = PyGILState_Ensure();
-    }
-
-    ~gil_lock()
-    {
-        PyGILState_Release(gstate);
-    }
-};
-
-int gil_lock::gil_init = 0;
-
-template<typename... Args>
-cv::Mat execute_plugin(std::string plugin_name, Args... args)
-{
-    PyObject* plugin_module_name;
-    PyObject* plugin_module;
-    PyObject* plugin_func;
-    PyObject* ret_val;
-
-    gil_lock l;
-
-    plugin_module_name = PyString_FromString(plugin_name.c_str());
-    plugin_module = PyImport_Import(plugin_module_name);
-
-    if (!plugin_module)
-    {
-        PyErr_Print();
-    }
-
-    cv::Mat m;
-    std::string plugin_func_name = "execute";
-    
-    if (plugin_module != NULL) {
-        plugin_func = PyObject_GetAttrString(plugin_module, plugin_func_name.c_str());
-
-        if (plugin_func != NULL)
-            PyErr_Print();
-
-        PyObject* arg_tuple = PyTuple_New(sizeof...(args));
-
-        auto py_args = convert_arguments(args...);
-
-        int idx = 0;
-
-        for (auto a : py_args) {
-            PyTuple_SetItem(arg_tuple, idx, a);
-            idx++;
-        }
-
-        NDArrayConverter c;
-        cv::Mat t = c.toMat(PyTuple_GetItem(arg_tuple, 0));
-        cv::Mat z = c.toMat(py_args[0]);
-
-        ret_val = PyObject_CallObject(plugin_func, arg_tuple);
-
-        if (ret_val != NULL) {
-            NDArrayConverter cvt;
-            m = cvt.toMat(ret_val);
-        } 
-    } else {
-        PyErr_Print();
-    }
-
-    return m;
 }
 
 /**
@@ -299,13 +144,13 @@ cv::Mat execute_plugin(std::string plugin_name, Args... args)
  * distort
  * flip
  */
-cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::params> img_xform,
+cv::Mat image::transformer::transform_single_image(std::shared_ptr<augment::image::params> img_xform,
                                                    cv::Mat& single_img) const
 {
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
     //image::rotate(single_img, rotatedImage, img_xform->angle);
-    rotatedImage = execute_plugin("rotate", single_img, img_xform->angle);    
+    rotatedImage = python::execute<cv::Mat>("rotate", single_img, img_xform->angle);    
     
     cv::Mat expandedImage;
     if (img_xform->expand_ratio > 1.0)
@@ -331,15 +176,15 @@ cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::pa
     if (img_xform->flip)
     {
 //        cv::flip(resizedImage, flippedImage, 1);
-        flippedImage = execute_plugin("flip", resizedImage);
+        flippedImage = python::execute<cv::Mat>("flip", resizedImage);
 
         finalImage = &flippedImage;
     }
 
     if (!img_xform->debug_output_directory.empty())
     {
-        string id       = get_debug_file_id();
-        string filename = img_xform->debug_output_directory + "/" + id;
+        std::string id       = get_debug_file_id();
+        std::string filename = img_xform->debug_output_directory + "/" + id;
         write_image_with_settings(filename, *finalImage, img_xform);
     }
     return *finalImage;
@@ -353,7 +198,7 @@ image::loader::loader(const image::config& cfg, bool fixed_aspect_ratio)
 {
 }
 
-void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::decoded> input) const
+void image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<image::decoded> input) const
 {
     char* outbuf = (char*)outlist[0];
     // TODO: Generalize this to also handle multi_crop case
@@ -366,9 +211,9 @@ void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::de
     {
         auto            outbuf_i    = outbuf + (i * image_size);
         auto            input_image = input->get_image(i);
-        vector<cv::Mat> source;
-        vector<cv::Mat> target;
-        vector<int>     from_to;
+        std::vector<cv::Mat> source;
+        std::vector<cv::Mat> target;
+        std::vector<int>     from_to;
 
         if (m_fixed_aspect_ratio)
         {
@@ -378,7 +223,7 @@ void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::de
                 outbuf[j] = 0;
             }
 
-            vector<size_t> shape = m_stype.get_shape();
+            std::vector<size_t> shape = m_stype.get_shape();
             // methods for image_var
             if (m_channel_major)
             {
@@ -437,7 +282,7 @@ void image::loader::load(const std::vector<void*>& outlist, shared_ptr<image::de
 
 namespace
 {
-    string get_debug_file_id()
+    std::string get_debug_file_id()
     {
         static std::atomic_uint index{0};
         unsigned int            number = index++;
@@ -445,12 +290,12 @@ namespace
         return std::to_string(number);
     }
 
-    void write_image_with_settings(const string&                      filename,
+    void write_image_with_settings(const std::string&                      filename,
                                    const cv::Mat&                     image,
-                                   shared_ptr<augment::image::params> img_xform)
+                                   std::shared_ptr<augment::image::params> img_xform)
     {
         cv::imwrite(filename + ".png", image);
-        ofstream ofs(filename + ".txt", ofstream::out);
+        std::ofstream ofs(filename + ".txt", std::ofstream::out);
         ofs << *img_xform;
         ofs.close();
     }

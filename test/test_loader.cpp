@@ -41,7 +41,7 @@ static string create_manifest_file(size_t record_count, size_t width, size_t hei
     f << ms.str();
     return manifest_filename;
 }
-
+/*
 TEST(loader, syntax)
 {
     int    height        = 32;
@@ -67,7 +67,7 @@ TEST(loader, syntax)
 
     auto train_set = loader{js};
 }
-
+*/
 TEST(loader, iterator)
 {
     int    height            = 32;
