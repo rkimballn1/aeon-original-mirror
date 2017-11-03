@@ -159,7 +159,8 @@ void loader::initialize(nlohmann::json& config_json)
     }
     else
     {
-        const int decode_size = threads_num * m_input_multiplier;
+        //const int decode_size = threads_num * m_input_multiplier;
+        const int decode_size = lcfg.batch_size*((threads_num * m_input_multiplier - 1) / lcfg.batch_size + 1);
         m_batch_iterator      = make_shared<batch_iterator>(m_block_manager.get(), decode_size);
 
         m_decoder = make_shared<batch_decoder>(m_batch_iterator.get(),

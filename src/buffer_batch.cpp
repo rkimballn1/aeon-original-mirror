@@ -19,8 +19,10 @@
 #include "buffer_batch.hpp"
 #include "log.hpp"
 #include <xmmintrin.h>
+#include <immintrin.h>
 
 #define ROUND_UP(x, s) (((x)+((s)-1)) & -(s))
+enum TransposeType { REGULAR, SSE, AVX2 };
 
 using namespace std;
 using namespace nervana;
@@ -163,7 +165,7 @@ void fixed_buffer_map::copy(fixed_buffer_map& src, size_t src_index, size_t dst_
         if ((count + src_index > src_fbm->get_item_count()) ||
             (count + dst_index > dst_fbm->get_item_count()))
             throw invalid_argument("buffer_fixed_size: count out-of-range");
-
+        
         memcpy(p_dst, p_src, count * src_fbm->get_stride());
     }
 }
@@ -181,6 +183,25 @@ static void transpose_regular(T* dest, const T *src, int rows, int cols) {
     }
 }
 
+// Transposes the rows and columns of a matrix (Adrian opitmized)
+template<typename T>
+static void transpose_regular2(T* dest, const T *src, int rows, int cols)
+{
+    //#pragma omp parallel for
+    int dst_indx = 0;
+    int src_indx = 0;
+    for(int c = 0; c < cols; ++c)
+    {
+        src_indx = c;
+        for(int r = 0; r < rows; ++r)
+        {
+            dest[dst_indx] = src[src_indx];
+            dst_indx++;
+            src_indx += cols;
+        }
+    }
+}
+
 inline void transpose4x4_SSE(float *A, float *B, const int lda, const int ldb) {
     __m128 row1 = _mm_load_ps(&A[0*lda]);
     __m128 row2 = _mm_load_ps(&A[1*lda]);
@@ -193,9 +214,9 @@ inline void transpose4x4_SSE(float *A, float *B, const int lda, const int ldb) {
      _mm_store_ps(&B[3*ldb], row4);
 }
 
-// Intrinsics + parallel
+// SSE 128
 inline void transpose_block_SSE4x4(float *A, float *B, const int n, const int m, const int lda, const int ldb ,const int block_size) {
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int i=0; i<n; i+=block_size) {
         for(int j=0; j<m; j+=block_size) {
             int max_i2 = i+block_size < n ? i + block_size : n;
@@ -209,7 +230,105 @@ inline void transpose_block_SSE4x4(float *A, float *B, const int n, const int m,
     }
 }
 
-void fixed_buffer_map::transpose(int batch_size)
+// AVX2 256
+/*
+inline void transpose8_ps(__m256 &row0, __m256 &row1, __m256 &row2, __m256 &row3, __m256 &row4, __m256 &row5, __m256 &row6, __m256 &row7) {
+    __m256 __t0, __t1, __t2, __t3, __t4, __t5, __t6, __t7;
+    __m256 __tt0, __tt1, __tt2, __tt3, __tt4, __tt5, __tt6, __tt7;
+    __t0 = _mm256_unpacklo_ps(row0, row1);
+    __t1 = _mm256_unpackhi_ps(row0, row1);
+    __t2 = _mm256_unpacklo_ps(row2, row3);
+    __t3 = _mm256_unpackhi_ps(row2, row3);
+    __t4 = _mm256_unpacklo_ps(row4, row5);
+    __t5 = _mm256_unpackhi_ps(row4, row5);
+    __t6 = _mm256_unpacklo_ps(row6, row7);
+    __t7 = _mm256_unpackhi_ps(row6, row7);
+    __tt0 = _mm256_shuffle_ps(__t0,__t2,_MM_SHUFFLE(1,0,1,0));
+    __tt1 = _mm256_shuffle_ps(__t0,__t2,_MM_SHUFFLE(3,2,3,2));
+    __tt2 = _mm256_shuffle_ps(__t1,__t3,_MM_SHUFFLE(1,0,1,0));
+    __tt3 = _mm256_shuffle_ps(__t1,__t3,_MM_SHUFFLE(3,2,3,2));
+    __tt4 = _mm256_shuffle_ps(__t4,__t6,_MM_SHUFFLE(1,0,1,0));
+    __tt5 = _mm256_shuffle_ps(__t4,__t6,_MM_SHUFFLE(3,2,3,2));
+    __tt6 = _mm256_shuffle_ps(__t5,__t7,_MM_SHUFFLE(1,0,1,0));
+    __tt7 = _mm256_shuffle_ps(__t5,__t7,_MM_SHUFFLE(3,2,3,2));
+    row0 = _mm256_permute2f128_ps(__tt0, __tt4, 0x20);
+    row1 = _mm256_permute2f128_ps(__tt1, __tt5, 0x20);
+    row2 = _mm256_permute2f128_ps(__tt2, __tt6, 0x20);
+    row3 = _mm256_permute2f128_ps(__tt3, __tt7, 0x20);
+    row4 = _mm256_permute2f128_ps(__tt0, __tt4, 0x31);
+    row5 = _mm256_permute2f128_ps(__tt1, __tt5, 0x31);
+    row6 = _mm256_permute2f128_ps(__tt2, __tt6, 0x31);
+    row7 = _mm256_permute2f128_ps(__tt3, __tt7, 0x31);
+}
+
+inline void transpose8x8_AVX2(float *A, float *B, const int lda, const int ldb) {
+    __m256 row0 = _mm256_load_ps(&A[0*lda]);
+    __m256 row1 = _mm256_load_ps(&A[1*lda]);
+    __m256 row2 = _mm256_load_ps(&A[2*lda]);
+    __m256 row3 = _mm256_load_ps(&A[3*lda]);
+    __m256 row4 = _mm256_load_ps(&A[4*lda]);
+    __m256 row5 = _mm256_load_ps(&A[5*lda]);
+    __m256 row6 = _mm256_load_ps(&A[6*lda]);
+    __m256 row7 = _mm256_load_ps(&A[7*lda]);    
+    transpose8_ps(row0, row1, row2, row3, row4, row5, row6, row7);
+    _mm256_store_ps(&B[0*ldb], row0);
+    _mm256_store_ps(&B[1*ldb], row1);
+    _mm256_store_ps(&B[2*ldb], row2);
+    _mm256_store_ps(&B[3*ldb], row3);
+    _mm256_store_ps(&B[4*ldb], row4);
+    _mm256_store_ps(&B[5*ldb], row5);
+    _mm256_store_ps(&B[6*ldb], row6);
+    _mm256_store_ps(&B[7*ldb], row7);
+}
+
+inline void transpose_block_AVX2(float *A, float *B, const int n, const int m, const int lda, const int ldb ,const int block_size) {
+    //#pragma omp parallel for
+    for(int i=0; i<n; i+=block_size) {
+        for(int j=0; j<m; j+=block_size) {
+            int max_i2 = i+block_size < n ? i + block_size : n;
+            int max_j2 = j+block_size < m ? j + block_size : m;
+            for(int i2=i; i2<max_i2; i2+=4) {
+                for(int j2=j; j2<max_j2; j2+=4) {
+                    transpose8x8_AVX2(&A[i2*lda +j2], &B[j2*ldb + i2], lda, ldb);
+                }
+            }
+        }
+    }
+}
+*/
+
+static void transpose_buf(char* dest, char* src, size_t rows, size_t cols, size_t element_size, TransposeType type)
+{
+    int lda = ROUND_UP(cols, 16);
+    int ldb = ROUND_UP(rows, 16);
+    int block_size = 64;
+    
+    switch(element_size)
+    {
+        case 1:
+        {
+            if(type == TransposeType::REGULAR) transpose_regular<uint8_t>(reinterpret_cast<uint8_t*>(dest), reinterpret_cast<uint8_t*>(src), rows, cols);
+            else if(type == TransposeType::SSE) transpose_block_SSE4x4(reinterpret_cast<float*>(src), reinterpret_cast<float*>(dest), rows/4, cols/4, lda, ldb, block_size);
+            //else if(type == TransposeType::AVX2) transpose_block_AVX2(reinterpret_cast<float*>(src), reinterpret_cast<float*>(dest), rows/4, cols/4, lda, ldb, block_size);
+            break;
+        }
+        case 2:
+            transpose_regular<uint16_t>(reinterpret_cast<uint16_t*>(dest), reinterpret_cast<uint16_t*>(src), rows, cols/2);
+            break;
+        case 4:
+        {
+            transpose_regular<uint32_t>(reinterpret_cast<uint32_t*>(dest), reinterpret_cast<uint32_t*>(src), rows, cols/4);
+            break;
+        }
+        case 8:
+            transpose_regular<uint64_t>(reinterpret_cast<uint64_t*>(dest), reinterpret_cast<uint64_t*>(src), rows, cols/8);
+            break;
+        default:
+            throw "unsupported type";
+    }
+}
+
+void fixed_buffer_map::transpose(size_t batch_size)
 {
     if(batch_size <= 0)
     {
@@ -218,7 +337,6 @@ void fixed_buffer_map::transpose(int batch_size)
 
     for (auto name : m_names)
     {
-        //char* src = this->operator[](name)->data();
         buffer_fixed_size_elements* bfse = this->operator[](name);
         char* src = bfse->data();
         int size = this->operator[](name)->size();
@@ -226,52 +344,33 @@ void fixed_buffer_map::transpose(int batch_size)
         char* dest = new char [size];
 
         int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
-        switch(element_size)
-        {
-            case 1:
-            {
-                transpose_regular<uint8_t>((uint8_t*)dest, (uint8_t*)src, batch_size, cols);
-//                int lda = ROUND_UP(cols, 16);
-//                int ldb = ROUND_UP(batch_size, 16);
-//                int block_size = 16;
-//                cout << batch_size << " " << cols << " " << block_size << endl;
-//                transpose_block_SSE4x4((float*)dest, (float*)src, batch_size, cols, lda, ldb, block_size);
-                break;
-            }
-            case 2:
-                transpose_regular<uint16_t>((uint16_t*)dest, (uint16_t*)src, batch_size, cols/2);
-                break;
-            case 4:
-            {
-                transpose_regular<uint32_t>((uint32_t*)dest, (uint32_t*)src, batch_size, cols/4);
-                break;
-            }
-            case 8:
-                transpose_regular<uint64_t>((uint64_t*)dest, (uint64_t*)src, batch_size, cols/8);
-                break;
-            default:
-                throw "unsupported type";
-        }
         
-        //transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
-        
-        //memcpy(src, dest, size);
+        transpose_buf(dest, src, batch_size, cols, element_size, TransposeType::SSE);
+
         bfse->swap(dest);
-        
-        //delete[] dest;
     }
 }
 
-void encoded_record_list::transpose(int batch_size)
+void fixed_buffer_map::copy_with_transpose(fixed_buffer_map& src, size_t src_index, size_t dst_index, size_t count, size_t batch_size)
 {
     if(batch_size <= 0)
     {
         throw invalid_argument("batch_size: batch size must be greater than 0");
     }
-    
-    for(int i=0; i<m_records.size(); ++i)
+
+    for (auto name : m_names)
     {
-        //variable_record_field& rc = m_records[i].size(i);
-        //cout << rc.size() << endl;
+        buffer_fixed_size_elements* src_fbm = src[name];
+        buffer_fixed_size_elements* dst_fbm = operator[](name);
+        char*                       p_src   = src_fbm->get_item(src_index);
+        char*                       p_dst   = dst_fbm->get_item(dst_index);
+
+        if ((count + src_index > src_fbm->get_item_count()) ||
+            (count + dst_index > dst_fbm->get_item_count()))
+            throw invalid_argument("buffer_fixed_size: count out-of-range");
+
+        int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
+        
+        transpose_buf(p_dst, p_src, batch_size, count * src_fbm->get_stride() / batch_size, element_size, TransposeType::SSE);
     }
 }

@@ -135,7 +135,8 @@ fixed_buffer_map* batch_iterator_fbm::filler()
         size_t       current_input_size = input_size - m_src_index;
         size_t move_count = (current_input_size <= remainder) ? current_input_size : remainder;
 
-        rc->copy(*m_input_ptr, m_src_index, m_dst_index, move_count);
+        //rc->copy(*m_input_ptr, m_src_index, m_dst_index, move_count);
+        rc->copy_with_transpose(*m_input_ptr, m_src_index, m_dst_index, move_count, m_batch_size);
         m_src_index += move_count;
         m_dst_index += move_count;
 
@@ -149,7 +150,7 @@ fixed_buffer_map* batch_iterator_fbm::filler()
             m_state     = async_state::processing;
         }
     }
-    rc->transpose(m_batch_size);
+    //rc->transpose(m_batch_size);
     
     m_state = async_state::idle;
 

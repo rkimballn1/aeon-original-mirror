@@ -20,7 +20,7 @@
 #include "json_parser.hpp"
 #include <numpy/arrayobject.h>
 #include "structmember.h"
-#include <xmmintrin.h>
+
 using namespace nervana;
 using namespace std;
 
@@ -53,8 +53,6 @@ struct aeon_state
 static struct aeon_state _state;
 #endif
 
-#define ROUND_UP(x, s) (((x)+((s)-1)) & -(s))
-
 static PyObject* error_out(PyObject* m)
 {
     struct aeon_state* st = GETSTATE(m);
@@ -78,8 +76,7 @@ static PyObject* dict2json(PyObject* self, PyObject* dictionary)
     }
 }
 
-static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf);
-static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_elements* buf);
+static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf, bool transposed);
 
 typedef struct
 {
@@ -127,8 +124,7 @@ static PyObject* DataLoader_iternext(PyObject* self)
         int tuple_pos     = 0;
         for (auto&& nm : names)
         {
-            //PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm]);
-            PyObject* wrapped_buf     = wrap_buffer_as_np_array_with_transpose(d[nm]);
+            PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm], true);
             PyObject* buf_name        = Py_BuildValue("s", nm.c_str());
             PyObject* named_buf_tuple = PyTuple_New(buf_tuple_len);
 
@@ -174,142 +170,28 @@ static PySequenceMethods DataLoader_sequence_methods = {aeon_DataLoader_length, 
                                                         0, /* sq_inplace_repeat */
                                                         0 /* sq_inplace_repeat */};
 
-static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf)
+static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf, bool transposed)
 {
     std::vector<npy_intp> dims;
     dims.push_back(buf->get_item_count());
-    auto shape = buf->get_shape_type().get_shape();
-    dims.insert(dims.end(), shape.begin(), shape.end());
+    auto shape  = buf->get_shape_type().get_shape();
+    int  nptype = buf->get_shape_type().get_otype().get_np_type();
+    if (transposed)
+    {
+        int shapex = 1;
 
-    int nptype = buf->get_shape_type().get_otype().get_np_type();
+        for (int i = 0; i < shape.size(); ++i)
+            shapex *= shape[i];
 
+        dims.push_back(shapex);
+        swap(dims[0], dims[1]);
+    }
+    else
+    {
+        dims.insert(dims.end(), shape.begin(), shape.end());
+    }
     PyObject* p_array =
         PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf->data()));
-
-    if (p_array == NULL)
-    {
-        ERR << "Unable to wrap buffer as npy array";
-        PyErr_SetString(PyExc_RuntimeError, "Unable to wrap buffer as npy array");
-    }
-
-    return p_array;
-}
-
-uint8_t *transpose8(const uint8_t *src, int rows, int cols) {
-    int prod = rows*cols;
-    uint8_t* dest = new uint8_t [prod];
-
-    #pragma omp parallel for
-    for(int m = 0; m<prod; m++) {
-        int i = m/rows;
-        int j = m%rows;
-        dest[m] = src[i + cols*j];
-    }
-
-    return dest;
-}
-
-uint16_t *transpose16(const uint16_t *src, int rows, int cols) {
-    int prod = rows*cols;
-    uint16_t* dest = new uint16_t [prod];
-
-    #pragma omp parallel for
-    for(int m = 0; m<prod; m++) {
-        int i = m/rows;
-        int j = m%rows;
-        dest[m] = src[i + cols*j];
-    }
-
-    return dest;
-}
-
-uint32_t *transpose32(const uint32_t *src, int rows, int cols) {
-    int prod = rows*cols;
-    uint32_t* dest = new uint32_t [prod];
-
-    #pragma omp parallel for
-    for(int m = 0; m<prod; m++) {
-        int i = m/rows;
-        int j = m%rows;
-        dest[m] = src[i + cols*j];
-    }
-
-    return dest;
-}
-
-inline void transpose4x4_SSE(float *A, float *B, const int lda, const int ldb) {
-    __m128 row1 = _mm_load_ps(&A[0*lda]);
-    __m128 row2 = _mm_load_ps(&A[1*lda]);
-    __m128 row3 = _mm_load_ps(&A[2*lda]);
-    __m128 row4 = _mm_load_ps(&A[3*lda]);
-     _MM_TRANSPOSE4_PS(row1, row2, row3, row4);
-     _mm_store_ps(&B[0*ldb], row1);
-     _mm_store_ps(&B[1*ldb], row2);
-     _mm_store_ps(&B[2*ldb], row3);
-     _mm_store_ps(&B[3*ldb], row4);
-}
-
-// Intrinsics + parallel
-inline void transpose_block_SSE4x4(float *A, float *B, const int n, const int m, const int lda, const int ldb ,const int block_size) {
-    #pragma omp parallel for
-    for(int i=0; i<n; i+=block_size) {
-        for(int j=0; j<m; j+=block_size) {
-            int max_i2 = i+block_size < n ? i + block_size : n;
-            int max_j2 = j+block_size < m ? j + block_size : m;
-            for(int i2=i; i2<max_i2; i2+=4) {
-                for(int j2=j; j2<max_j2; j2+=4) {
-                    transpose4x4_SSE(&A[i2*lda +j2], &B[j2*ldb + i2], lda, ldb);
-                }
-            }
-        }
-    }
-}
-
-// TODO: free memory
-static PyObject* wrap_buffer_as_np_array_with_transpose(const buffer_fixed_size_elements* buf)
-{
-    int nptype = buf->get_shape_type().get_otype().get_np_type();
-    int batch_size = buf->get_item_count();
-    auto shape = buf->get_shape_type().get_shape();
-    
-    int cols = shape[0];
-    for(int i=1; i<shape.size(); i++) cols *= shape[i];
-
-    // TODO: to remove
-    //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
-    //cout << endl;
-    //cout << "batch_size " << batch_size << " cols " << cols << endl;
-/*
-    char* buf2 = new char[batch_size*cols*sizeof(float)];
-    int lda = ROUND_UP(cols, 16);
-    int ldb = ROUND_UP(batch_size, 16);
-    int block_size = 64;
-    //cout << batch_size << " " << cols << endl;
-    if(nptype == NPY_UINT8) {
-        if(cols == 1) buf2 = (char*)transpose8((uint8_t*)buf->data(), batch_size, cols);
-        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
-    }
-    else if(nptype == NPY_UINT16) {
-        if(cols == 1) buf2 = (char*)transpose16((uint16_t*)buf->data(), batch_size, cols);
-        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
-    }
-    else if(nptype == NPY_UINT32) {
-        if(cols == 1) buf2 = (char*)transpose32((uint32_t*)buf->data(), batch_size, cols);
-        else transpose_block_SSE4x4((float*)buf->data(), (float*)buf2, batch_size, cols, lda, ldb, block_size);
-    }
-*/
-    //cout << "* batch_size " << batch_size << " cols " << cols << endl;
-    //for(int i=0; i<30; i++) cout << (int)buf->data()[i] << " ";
-    //cout << endl;
-
-    std::vector<npy_intp> dims;
-    //dims.push_back(buf->get_item_count());
-    //dims.insert(dims.end(), shape.begin(), shape.end());
-    dims.push_back(cols);
-    dims.push_back(batch_size);
-
-    PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf->data()));
-    //PyObject* p_array = PyArray_SimpleNewFromData(dims.size(), &dims[0], nptype, const_cast<char*>(buf2));
 
     if (p_array == NULL)
     {
