@@ -19,7 +19,8 @@
 #include "buffer_batch.hpp"
 #include "log.hpp"
 #include <xmmintrin.h>
-#include <immintrin.h>
+//#include <immintrin.h>
+#include "transpose.hpp"
 
 #define ROUND_UP(x, s) (((x)+((s)-1)) & -(s))
 enum TransposeType { REGULAR, SSE, AVX2 };
@@ -175,7 +176,7 @@ template<typename T>
 static void transpose_regular(T* dest, const T *src, int rows, int cols) {
     int prod = rows*cols;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int m = 0; m < prod; ++m) {
         int i = m / rows;
         int j = m % rows;
@@ -308,8 +309,27 @@ static void transpose_buf(char* dest, char* src, size_t rows, size_t cols, size_
         case 1:
         {
             if(type == TransposeType::REGULAR) transpose_regular<uint8_t>(reinterpret_cast<uint8_t*>(dest), reinterpret_cast<uint8_t*>(src), rows, cols);
-            else if(type == TransposeType::SSE) transpose_block_SSE4x4(reinterpret_cast<float*>(src), reinterpret_cast<float*>(dest), rows/4, cols/4, lda, ldb, block_size);
+            //else if(type == TransposeType::SSE) transpose_block_SSE4x4(reinterpret_cast<float*>(src), reinterpret_cast<float*>(dest), rows/4, cols/4, lda, ldb, block_size);
             //else if(type == TransposeType::AVX2) transpose_block_AVX2(reinterpret_cast<float*>(src), reinterpret_cast<float*>(dest), rows/4, cols/4, lda, ldb, block_size);
+            else if(type == TransposeType::SSE) transpose::sse::transpose(reinterpret_cast<uint8_t*>(dest), reinterpret_cast<uint8_t*>(src), rows, cols);
+            
+//            FILE *pfile = fopen("/home/kbinias/pycharm/private-neon/in.txt", "w");
+//            for(int c=0; c<rows*cols; c++)
+//            {
+//                fprintf(pfile, "%d ", (int)src[c]);
+//                if(!((c+1) % rows)) fprintf(pfile, "\n");
+//            }
+//            fclose(pfile);
+//            pfile = fopen("/home/kbinias/pycharm/private-neon/out.txt", "w");
+//            for(int c=0; c<rows*cols; c++)
+//            {
+//                fprintf(pfile, "%d ", (int)dest[c]);
+//                if(!((c+1) % rows)) fprintf(pfile, "\n");
+//            }
+//            fclose(pfile);
+//            cout << "aaa" << endl;
+//            exit(1);
+
             break;
         }
         case 2:
@@ -345,7 +365,7 @@ void fixed_buffer_map::transpose(size_t batch_size)
 
         int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
         
-        transpose_buf(dest, src, batch_size, cols, element_size, TransposeType::SSE);
+        transpose_buf(dest, src, batch_size, cols, element_size, TransposeType::REGULAR);
 
         bfse->swap(dest);
     }
