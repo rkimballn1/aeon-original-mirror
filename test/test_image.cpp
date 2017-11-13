@@ -344,15 +344,15 @@ TEST(image, transform_expand_crop_flip_resize)
             auto pixel = image.at<cv::Vec3b>(i, j);
             if (j >= output_width / 2 + blurred_bias && i < output_height / 2 - blurred_bias)
             {
-                EXPECT_EQ(pixel[0], 0xFF);
-                EXPECT_EQ(pixel[1], 0x0);
-                EXPECT_EQ(pixel[2], 0x0);
+                ASSERT_EQ(pixel[0], 0xFF);
+                ASSERT_EQ(pixel[1], 0x0);
+                ASSERT_EQ(pixel[2], 0x0);
             }
             else if (j < output_width / 2 - blurred_bias || i >= output_height / 2 + blurred_bias)
             {
-                EXPECT_EQ(pixel[0], 0x0);
-                EXPECT_EQ(pixel[1], 0x0);
-                EXPECT_EQ(pixel[2], 0x0);
+                ASSERT_EQ(pixel[0], 0x0);
+                ASSERT_EQ(pixel[1], 0x0);
+                ASSERT_EQ(pixel[2], 0x0);
             }
         }
     }

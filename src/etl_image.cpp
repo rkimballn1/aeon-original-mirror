@@ -14,7 +14,7 @@
 */
 #include "etl_image.hpp"
 #include "conversion.hpp"
-#include "python_plugin.hpp"
+#include "python_plugin2.hpp"
 
 #include <atomic>
 #include <fstream>
@@ -24,8 +24,8 @@ using namespace nervana;
 namespace
 {
     std::string get_debug_file_id();
-    void write_image_with_settings(const std::string&                 filename,
-                                   const cv::Mat&                     image,
+    void write_image_with_settings(const std::string&                      filename,
+                                   const cv::Mat&                          image,
                                    std::shared_ptr<augment::image::params> img_xform);
 }
 
@@ -114,8 +114,8 @@ image::transformer::transformer(const image::config&)
 {
 }
 
-image::transformer::~transformer() 
-{ 
+image::transformer::~transformer()
+{
 }
 
 std::shared_ptr<image::decoded>
@@ -144,20 +144,24 @@ std::shared_ptr<image::decoded>
  * distort
  * flip
  */
-cv::Mat image::transformer::transform_single_image(std::shared_ptr<augment::image::params> img_xform,
-                                                   cv::Mat& single_img) const
+cv::Mat
+    image::transformer::transform_single_image(std::shared_ptr<augment::image::params> img_xform,
+                                               cv::Mat& single_img) const
 {
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
     //image::rotate(single_img, rotatedImage, img_xform->angle);
-    rotatedImage = python::execute<cv::Mat>("rotate", single_img, img_xform->angle);    
-    
+    if (img_xform->rotate_plugin)
+        rotatedImage = img_xform->rotate_plugin->augment_image(single_img);
+    else
+        rotatedImage = single_img;
+
     cv::Mat expandedImage;
     if (img_xform->expand_ratio > 1.0)
         image::expand(
             rotatedImage, expandedImage, img_xform->expand_offset, img_xform->expand_size);
     else
-        expandedImage    = rotatedImage;
+        expandedImage = rotatedImage;
 
     cv::Mat croppedImage = expandedImage(img_xform->cropbox);
     image::add_padding(croppedImage, img_xform->padding, img_xform->padding_crop_offset);
@@ -175,8 +179,14 @@ cv::Mat image::transformer::transform_single_image(std::shared_ptr<augment::imag
     cv::Mat  flippedImage;
     if (img_xform->flip)
     {
-//        cv::flip(resizedImage, flippedImage, 1);
-        flippedImage = python::execute<cv::Mat>("flip", resizedImage);
+        //        cv::flip(resizedImage, flippedImage, 1);
+        //flippedImage = python::execute<cv::Mat>("flip", resizedImage);
+
+        auto fp = img_xform->flip_plugin;
+        if (fp)
+            flippedImage = fp->augment_image(resizedImage);
+        else
+            flippedImage = resizedImage;
 
         finalImage = &flippedImage;
     }
@@ -198,7 +208,8 @@ image::loader::loader(const image::config& cfg, bool fixed_aspect_ratio)
 {
 }
 
-void image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<image::decoded> input) const
+void image::loader::load(const std::vector<void*>&       outlist,
+                         std::shared_ptr<image::decoded> input) const
 {
     char* outbuf = (char*)outlist[0];
     // TODO: Generalize this to also handle multi_crop case
@@ -209,8 +220,8 @@ void image::loader::load(const std::vector<void*>& outlist, std::shared_ptr<imag
 
     for (int i = 0; i < input->get_image_count(); i++)
     {
-        auto            outbuf_i    = outbuf + (i * image_size);
-        auto            input_image = input->get_image(i);
+        auto                 outbuf_i    = outbuf + (i * image_size);
+        auto                 input_image = input->get_image(i);
         std::vector<cv::Mat> source;
         std::vector<cv::Mat> target;
         std::vector<int>     from_to;
@@ -291,7 +302,7 @@ namespace
     }
 
     void write_image_with_settings(const std::string&                      filename,
-                                   const cv::Mat&                     image,
+                                   const cv::Mat&                          image,
                                    std::shared_ptr<augment::image::params> img_xform)
     {
         cv::imwrite(filename + ".png", image);

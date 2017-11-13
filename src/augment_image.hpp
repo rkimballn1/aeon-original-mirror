@@ -29,6 +29,7 @@
 #include "json.hpp"
 #include "interface.hpp"
 #include "box.hpp"
+#include "python_plugin2.hpp"
 
 namespace nervana
 {
@@ -94,25 +95,27 @@ public:
         return out;
     }
 
-    float              expand_ratio = 1.0;
-    cv::Size2i         expand_offset;
-    cv::Size2i         expand_size;
-    emit_type          emit_constraint_type = emit_type::undefined;
-    float              emit_min_overlap     = 0.f;
-    cv::Rect           cropbox;
-    cv::Size2i         output_size;
-    int                angle = 0;
-    bool               flip  = false;
-    int                padding;
-    cv::Size2i         padding_crop_offset;
-    std::vector<float> lighting; // pixelwise random values
-    float              color_noise_std        = 0;
-    float              contrast               = 1.0;
-    float              brightness             = 1.0;
-    float              saturation             = 1.0;
-    int                hue                    = 0;
-    bool               debug_deterministic    = false;
-    std::string        debug_output_directory = "";
+    float                   expand_ratio = 1.0;
+    cv::Size2i              expand_offset;
+    cv::Size2i              expand_size;
+    emit_type               emit_constraint_type = emit_type::undefined;
+    float                   emit_min_overlap     = 0.f;
+    cv::Rect                cropbox;
+    cv::Size2i              output_size;
+    int                     angle = 0;
+    bool                    flip  = false;
+    int                     padding;
+    cv::Size2i              padding_crop_offset;
+    std::vector<float>      lighting; // pixelwise random values
+    float                   color_noise_std        = 0;
+    float                   contrast               = 1.0;
+    float                   brightness             = 1.0;
+    float                   saturation             = 1.0;
+    int                     hue                    = 0;
+    bool                    debug_deterministic    = false;
+    std::string             debug_output_directory = "";
+    std::shared_ptr<plugin> rotate_plugin          = nullptr;
+    std::shared_ptr<plugin> flip_plugin            = nullptr;
 
 private:
     params() {}
@@ -134,13 +137,16 @@ public:
                         size_t                                        output_height,
                         const std::vector<nervana::boundingbox::box>& object_bboxes) const;
 
-    bool        do_area_scale                 = false;
-    bool        crop_enable                   = true;
-    bool        fixed_aspect_ratio            = false;
-    float       expand_probability            = 0.;
-    float       fixed_scaling_factor          = -1;
-    std::string m_emit_constraint_type        = "";
-    float       m_emit_constraint_min_overlap = 0.0;
+    bool                    do_area_scale                 = false;
+    bool                    crop_enable                   = true;
+    bool                    fixed_aspect_ratio            = false;
+    float                   expand_probability            = 0.;
+    float                   fixed_scaling_factor          = -1;
+    std::string             m_emit_constraint_type        = "";
+    float                   m_emit_constraint_min_overlap = 0.0;
+    std::string             plugin_filename;
+    std::string             plugin_params;
+    std::shared_ptr<plugin> rotate_plugin = nullptr;
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
@@ -231,7 +237,9 @@ private:
                          mode::OPTIONAL,
                          [](decltype(expand_ratio) v) { return v.a() >= 1 && v.a() <= v.b(); }),
         ADD_DISTRIBUTION(hue, mode::OPTIONAL, [](decltype(hue) v) { return v.a() <= v.b(); }),
-        ADD_OBJECT(batch_samplers, mode::OPTIONAL)};
+        ADD_OBJECT(batch_samplers, mode::OPTIONAL),
+        ADD_SCALAR(plugin_filename, mode::OPTIONAL),
+        ADD_SCALAR(plugin_params, mode::OPTIONAL)};
 
     emit_type get_emit_constraint_type();
 };

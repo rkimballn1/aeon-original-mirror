@@ -1,8 +1,10 @@
 #pragma once
 
-namespace python
+namespace nervana
 {
-/*
+    namespace python
+    {
+        /*
 struct gil_lock
 {
 private:
@@ -29,33 +31,30 @@ public:
 int gil_lock::gil_init = 0;
 */
 
-class allow_threads
-{
-public:
-    allow_threads() : _state(PyEval_SaveThread()) 
-    {
-    }
+        class allow_threads
+        {
+        public:
+            allow_threads()
+                : _state(PyEval_SaveThread())
+            {
+            }
 
-    ~allow_threads()
-    {
-        PyEval_RestoreThread(_state);
-    }
-private:
-    PyThreadState* _state;
-};
+            ~allow_threads() { PyEval_RestoreThread(_state); }
+        private:
+            PyThreadState* _state;
+        };
 
-class ensure_gil
-{
-public:
-    ensure_gil() : _state(PyGILState_Ensure())
-    {
-    }
+        class ensure_gil
+        {
+        public:
+            ensure_gil()
+                : _state(PyGILState_Ensure())
+            {
+            }
 
-    ~ensure_gil()
-    {
-        PyGILState_Release(_state);
+            ~ensure_gil() { PyGILState_Release(_state); }
+        private:
+            PyGILState_STATE _state;
+        };
     }
-private:
-    PyGILState_STATE _state;
-};
 }
