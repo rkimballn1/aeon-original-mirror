@@ -82,6 +82,9 @@ augment::image::param_factory::param_factory(nlohmann::json js)
                 padding_crop_offset_distribution =
                     std::uniform_int_distribution<int>(0, padding * 2);
             }
+
+            if (!plugin_filename.empty())
+                rotate_plugin = make_shared<plugin>(plugin_filename, plugin_params);
         }
     }
     m_emit_type = get_emit_constraint_type();
@@ -110,6 +113,13 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // since the params default ctor is private and factory is friend
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
+
+    settings->flip_plugin = std::make_shared<plugin>("flip", "");
+    settings->flip_plugin->prepare();
+
+    settings->rotate_plugin = rotate_plugin;
+    if (settings->rotate_plugin)
+        settings->rotate_plugin->prepare();
 
     auto& random = get_thread_local_random_engine();
 
