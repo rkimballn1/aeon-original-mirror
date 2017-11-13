@@ -15,6 +15,7 @@ namespace {
         call_initialize()
         {
             Py_Initialize();
+            PyRun_SimpleString("import threading");
             std::atexit(call_finalize);
         }
     };
