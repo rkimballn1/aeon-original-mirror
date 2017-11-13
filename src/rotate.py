@@ -1,16 +1,34 @@
 import numpy as np
 import cv2
+from plugin import Plugin
+import json
 
-def execute(mat, angle):
-    if angle == 0:
-        return mat
 
-    cols, rows = mat.shape()
-    rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), angle, 1.0)
-    dst = cv2.warpAffine(mat, rotation_matrix, (cols, rows))
+class plugin(Plugin):
+    angle = 0
+    angle_min = 0
+    angle_max = 0
 
-    print dst
-    return dst
+    def __init__(self, param_string):
+        params = json.loads(param_string)
+        angle_min = params["angle"][0]
+        angle_max = params["angle"][1]
+
+    def prepare(self):
+        angle = random.randint(angle_min, angle_max)
+
+    def augment_image(self, mat):
+        if angle == 0:
+            return mat
+
+        cols, rows = mat.shape()
+        rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), angle,
+                                                  1.0)
+        dst = cv2.warpAffine(mat, rotation_matrix, (cols, rows))
+
+        #print dst
+        return dst
+
 
 #img = cv2.imread("dickbutt.jpg", 0)
 #new = execute(img, 45)
