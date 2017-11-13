@@ -84,7 +84,7 @@ TEST(loader, iterator)
     nlohmann::json label        = {{"type", "label"}, {"name", "label1"}, {"binary", false}};
     nlohmann::json augmentation = {{{"type", "image"}, {"flip_enable", true}}};
     nlohmann::json js           = {{"manifest_filename", manifest_filename},
-                         {"batch_size", batch_size},
+                         {"batch_size", batch_size},{"decode_thread_count",1},
                          {"iteration_mode", "ONCE"},
                          {"etl", {image, label}},
                          {"augmentation", augmentation}};
