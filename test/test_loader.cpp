@@ -41,7 +41,7 @@ static string create_manifest_file(size_t record_count, size_t width, size_t hei
     f << ms.str();
     return manifest_filename;
 }
-/*
+
 TEST(loader, syntax)
 {
     int    height        = 32;
@@ -67,7 +67,7 @@ TEST(loader, syntax)
 
     auto train_set = loader{js};
 }
-*/
+
 TEST(loader, iterator)
 {
     int    height            = 32;
@@ -84,7 +84,7 @@ TEST(loader, iterator)
     nlohmann::json label        = {{"type", "label"}, {"name", "label1"}, {"binary", false}};
     nlohmann::json augmentation = {{{"type", "image"}, {"flip_enable", true}}};
     nlohmann::json js           = {{"manifest_filename", manifest_filename},
-                         {"batch_size", batch_size},{"decode_thread_count",1},
+                         {"batch_size", batch_size},
                          {"iteration_mode", "ONCE"},
                          {"etl", {image, label}},
                          {"augmentation", augmentation}};
@@ -556,6 +556,8 @@ TEST(benchmark, read_jpeg)
     size_t       manifest_size = 10000;
     string       image_path    = file_util::path_join(CURDIR, "test_data/img_2112_70.jpg");
     stringstream manifest_stream;
+    manifest_stream << "@FILE"
+                    << "\n";
     for (size_t i = 0; i < manifest_size; i++)
     {
         manifest_stream << image_path << "\n";
@@ -607,6 +609,8 @@ TEST(benchmark, load_jpeg_manifest)
     size_t       manifest_size = 10000;
     string       image_path    = file_util::path_join(CURDIR, "test_data/img_2112_70.jpg");
     stringstream manifest_stream;
+    manifest_stream << "@FILE"
+                    << "\n";
     for (size_t i = 0; i < manifest_size; i++)
     {
         manifest_stream << image_path << "\n";
@@ -629,13 +633,16 @@ TEST(benchmark, load_jpeg_manifest)
 TEST(benchmark, load_block_manager)
 {
     stopwatch timer;
-    string    cache_directory = "/scratch/bob/aeon_cache";
+    string    home            = getenv("HOME");
+    string    cache_directory = home + "/aeon_cache";
     bool      shuffle         = false;
     size_t    block_size      = 5000;
 
     size_t       manifest_size = 30000;
     string       image_path    = file_util::path_join(CURDIR, "test_data/img_2112_70.jpg");
     stringstream manifest_stream;
+    manifest_stream << "@FILE"
+                    << "\n";
     for (size_t i = 0; i < manifest_size; i++)
     {
         manifest_stream << image_path << "\n";
