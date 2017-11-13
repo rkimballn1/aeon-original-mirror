@@ -5,130 +5,169 @@
 
 namespace nervana
 {
-    class plugin
+    struct module
     {
-        std::string m_filename{""};
-        PyObject*   func_image{nullptr};
-        PyObject*   func_boundingbox{nullptr};
-        PyObject*   func_prepare{nullptr};
-        PyObject*   ret_val{nullptr};
-        PyObject*   module_name{nullptr};
-        PyObject*   module{nullptr};
-        PyObject*   instance{nullptr};
-        PyObject*   klass{nullptr};
-
-    public:
-        plugin() { std::cout << "constructor of empty plugin" << std::endl; }
-        ~plugin()
+        module(std::string path)
+            : filename(path)
         {
-            std::cout << "destructor of plugin " << m_filename << " id "
-                      << std::this_thread::get_id() << std::endl;
+#ifdef DISPLAY
+            std::cout << "module " << filename << " created" << std::endl;
+#endif
+            name   = PyString_FromString(filename.c_str());
+            handle = PyImport_Import(name);
 
-            std::cout << func_image->ob_refcnt << std::endl;
-            std::cout << func_boundingbox->ob_refcnt << std::endl;
-            std::cout << func_prepare->ob_refcnt << std::endl;
-            if (ret_val)
-                std::cout << ret_val->ob_refcnt << std::endl;
-        }
-        plugin(std::string filename, std::string params)
-            : m_filename(filename)
-        {
-            python::ensure_gil gil;
-            //nervana::python::allow_threads;
-
-            std::cout << "constructor of plugin " << m_filename << " id "
-                      << std::this_thread::get_id() << std::endl;
-
-            module_name = PyString_FromString(m_filename.c_str());
-            module      = PyImport_Import(module_name);
-
-            if (!module)
+            if (!handle)
             {
                 PyErr_Print();
                 throw std::runtime_error("python module not loaded");
             }
 
-            if (module != NULL)
-            {
-                klass = PyObject_GetAttrString(module, "plugin");
+            klass = PyObject_GetAttrString(handle, "plugin");
 
-                if (!klass)
+            if (!klass)
+            {
+                PyErr_Print();
+                throw std::runtime_error("python class not loaded");
+            }
+        }
+        bool operator==(const module& other) { return filename == other.filename; }
+        std::string                   filename{""};
+        PyObject*                     name{nullptr};
+        PyObject*                     handle{nullptr};
+        PyObject*                     klass{nullptr};
+    };
+
+    class plugin
+    {
+        static std::vector<std::shared_ptr<module>> loaded_modules;
+        static std::mutex                           mtx;
+
+        PyObject*               ret_val{nullptr};
+        PyObject*               instance{nullptr};
+        PyObject*               func_image{nullptr};
+        PyObject*               func_boundingbox{nullptr};
+        PyObject*               func_prepare{nullptr};
+        std::shared_ptr<module> module_ptr;
+
+    public:
+        plugin()
+        {
+#ifdef DISPLAY
+            std::cout << "constructor of empty plugin" << std::endl;
+#endif
+        }
+        ~plugin()
+        {
+#ifdef DISPLAY
+            std::cout << "destructor of plugin " << module_ptr->filename << " id "
+                      << std::this_thread::get_id() << std::endl;
+#endif
+            /*
+            std::lock_guard<std::mutex> lock(mtx);
+            auto it = std::find(loaded_modules.begin(), loaded_modules.end(), module_ptr);
+            if (it != loaded_modules.end())
+            {
+                loaded_modules.erase(it);
+            }
+            */
+        }
+
+        plugin(std::string filename, std::string params)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+//python::ensure_gil gil;
+//nervana::python::allow_threads;
+#ifdef DISPLAY
+            std::cout << "constructor of plugin " << filename << " id "
+                      << std::this_thread::get_id() << std::endl;
+#endif
+
+            auto it = std::find_if(loaded_modules.begin(),
+                                   loaded_modules.end(),
+                                   [&filename](const std::shared_ptr<module> obj) {
+                                       return obj->filename == filename;
+                                   });
+            if (it == loaded_modules.end())
+            {
+                module_ptr = std::make_shared<module>(filename);
+                loaded_modules.push_back(module_ptr);
+            }
+            else
+            {
+                module_ptr = *it;
+            }
+
+            PyObject* arg_tuple = PyTuple_New(1);
+
+            PyTuple_SetItem(arg_tuple, 0, PyString_FromString(params.c_str()));
+            instance = PyInstance_New(module_ptr->klass, arg_tuple, NULL);
+            if (!instance)
+            {
+                PyErr_Print();
+                throw std::runtime_error("python instance not loaded");
+            }
+
+#ifdef DISPLAY
+            std::cout << "constructor succesfully returned " << instance << std::endl;
+#endif
+
+            if (instance != NULL)
+            {
+                func_image = PyObject_GetAttrString(instance, "augment_image");
+                if (!func_image)
                 {
                     PyErr_Print();
-                    throw std::runtime_error("python class not loaded");
+                    throw std::runtime_error("python function not loaded");
                 }
 
-                if (klass != NULL)
+                func_boundingbox = PyObject_GetAttrString(instance, "augment_boundingbox");
+                if (!func_boundingbox)
                 {
-                    PyObject* arg_tuple = PyTuple_New(1);
+                    PyErr_Print();
+                    throw std::runtime_error("python function not loaded");
+                }
 
-                    PyTuple_SetItem(arg_tuple, 0, PyString_FromString(params.c_str()));
-                    instance = PyInstance_New(klass, arg_tuple, NULL);
-                    if (!instance)
-                    {
-                        PyErr_Print();
-                        throw std::runtime_error("python instance not loaded");
-                    }
-
-                    std::cout << "constructor succesfully returned " << instance << std::endl;
-
-                    if (instance != NULL)
-                    {
-                        func_image = PyObject_GetAttrString(instance, "augment_image");
-                        if (!func_image)
-                        {
-                            PyErr_Print();
-                            throw std::runtime_error("python function not loaded");
-                        }
-
-                        func_boundingbox = PyObject_GetAttrString(instance, "augment_boundingbox");
-                        if (!func_boundingbox)
-                        {
-                            PyErr_Print();
-                            throw std::runtime_error("python function not loaded");
-                        }
-
-                        func_prepare = PyObject_GetAttrString(instance, "prepare");
-                        if (!func_prepare)
-                        {
-                            PyErr_Print();
-                            throw std::runtime_error("python function not loaded");
-                        }
-                    }
-                    std::cout << "functions succesfully loaded " << instance << std::endl;
+                func_prepare = PyObject_GetAttrString(instance, "prepare");
+                if (!func_prepare)
+                {
+                    PyErr_Print();
+                    throw std::runtime_error("python function not loaded");
                 }
             }
+#ifdef DISPLAY
+            std::cout << "functions succesfully loaded " << instance << std::endl;
+#endif
         }
 
         void prepare()
         {
-            nervana::python::ensure_gil gil;
-            //nervana::python::allow_threads;
+            std::lock_guard<std::mutex> lock(mtx);
+//nervana::python::ensure_gil gil;
+//nervana::python::allow_threads;
 
-            std::cout << "prepare " << m_filename << std::endl;
+#ifdef DISPLAY
+            std::cout << "prepare " << module_ptr->filename << std::endl;
+#endif
 
             PyObject* arg_tuple = PyTuple_New(0);
-            //PyTuple_SetItem(arg_tuple, 0, nullptr);
-
-            std::cout << func_image->ob_refcnt << std::endl;
-            std::cout << func_boundingbox->ob_refcnt << std::endl;
-            std::cout << func_prepare->ob_refcnt << std::endl;
-            if (ret_val)
-                std::cout << ret_val->ob_refcnt << std::endl;
 
             PyObject_CallObject(func_prepare, arg_tuple);
         }
         cv::Mat augment_image(cv::Mat image)
         {
-            nervana::python::ensure_gil gil;
-            //nervana::python::allow_threads;
+            std::lock_guard<std::mutex> lock(mtx);
+//nervana::python::ensure_gil gil;
+//nervana::python::allow_threads;
 
-            std::cout << "augment image " << m_filename << std::endl;
+#ifdef DISPLAY
+            std::cout << "augment image " << module_ptr->filename << std::endl;
+#endif
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(image));
 
             Py_XDECREF(ret_val);
+            ret_val = NULL;
             ret_val = PyObject_CallObject(func_image, arg_tuple);
 
             cv::Mat out;
@@ -145,14 +184,19 @@ namespace nervana
 
         std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box> boxes)
         {
-            nervana::python::ensure_gil gil;
-            //nervana::python::allow_threads;
+            std::lock_guard<std::mutex> lock(mtx);
+//nervana::python::ensure_gil gil;
+//nervana::python::allow_threads;
 
-            std::cout << "augment boundingbox " << m_filename << std::endl;
+#ifdef DISPLAY
+            std::cout << "augment boundingbox " << module_ptr->filename << std::endl;
+#endif
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(boxes));
 
+            Py_XDECREF(ret_val);
+            ret_val = NULL;
             ret_val = PyObject_CallObject(func_boundingbox, arg_tuple);
 
             std::vector<boundingbox::box> out;
