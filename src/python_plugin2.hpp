@@ -10,9 +10,6 @@ namespace nervana
         module(std::string path)
             : filename(path)
         {
-#ifdef DISPLAY
-            std::cout << "module " << filename << " created" << std::endl;
-#endif
             name   = PyString_FromString(filename.c_str());
             handle = PyImport_Import(name);
 
@@ -50,18 +47,9 @@ namespace nervana
         std::shared_ptr<module> module_ptr;
 
     public:
-        plugin()
-        {
-#ifdef DISPLAY
-            std::cout << "constructor of empty plugin" << std::endl;
-#endif
-        }
+        plugin() {}
         ~plugin()
         {
-#ifdef DISPLAY
-            std::cout << "destructor of plugin " << module_ptr->filename << " id "
-                      << std::this_thread::get_id() << std::endl;
-#endif
             /*
             std::lock_guard<std::mutex> lock(mtx);
             auto it = std::find(loaded_modules.begin(), loaded_modules.end(), module_ptr);
@@ -75,12 +63,6 @@ namespace nervana
         plugin(std::string filename, std::string params)
         {
             std::lock_guard<std::mutex> lock(mtx);
-//python::ensure_gil gil;
-//nervana::python::allow_threads;
-#ifdef DISPLAY
-            std::cout << "constructor of plugin " << filename << " id "
-                      << std::this_thread::get_id() << std::endl;
-#endif
 
             auto it = std::find_if(loaded_modules.begin(),
                                    loaded_modules.end(),
@@ -107,10 +89,6 @@ namespace nervana
                 throw std::runtime_error("python instance not loaded");
             }
 
-#ifdef DISPLAY
-            std::cout << "constructor succesfully returned " << instance << std::endl;
-#endif
-
             if (instance != NULL)
             {
                 func_image = PyObject_GetAttrString(instance, "augment_image");
@@ -134,20 +112,11 @@ namespace nervana
                     throw std::runtime_error("python function not loaded");
                 }
             }
-#ifdef DISPLAY
-            std::cout << "functions succesfully loaded " << instance << std::endl;
-#endif
         }
 
         void prepare()
         {
             std::lock_guard<std::mutex> lock(mtx);
-//nervana::python::ensure_gil gil;
-//nervana::python::allow_threads;
-
-#ifdef DISPLAY
-            std::cout << "prepare " << module_ptr->filename << std::endl;
-#endif
 
             PyObject* arg_tuple = PyTuple_New(0);
 
@@ -156,12 +125,6 @@ namespace nervana
         cv::Mat augment_image(cv::Mat image)
         {
             std::lock_guard<std::mutex> lock(mtx);
-//nervana::python::ensure_gil gil;
-//nervana::python::allow_threads;
-
-#ifdef DISPLAY
-            std::cout << "augment image " << module_ptr->filename << std::endl;
-#endif
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(image));
@@ -185,12 +148,6 @@ namespace nervana
         std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box> boxes)
         {
             std::lock_guard<std::mutex> lock(mtx);
-//nervana::python::ensure_gil gil;
-//nervana::python::allow_threads;
-
-#ifdef DISPLAY
-            std::cout << "augment boundingbox " << module_ptr->filename << std::endl;
-#endif
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(boxes));
