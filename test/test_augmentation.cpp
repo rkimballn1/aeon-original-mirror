@@ -450,7 +450,7 @@ TEST(image_augmentation, padding_with_crop_enabled)
     EXPECT_THROW(config.make_params(10, 10, 10, 10), std::invalid_argument);
 }
 
-TEST(image_augmentation, plugin_example_rotate)
+TEST(image_augmentation, plugin_example_rotate_config)
 {
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
@@ -459,4 +459,26 @@ TEST(image_augmentation, plugin_example_rotate)
 
     augment::image::param_factory config(js);
     config.make_params(10, 10, 10, 10);
+}
+
+TEST(image_augmentation, plugin_example_flip_config)
+{
+    nlohmann::json js = {{"type", "image"},
+                         {"crop_enable", false},
+                         {"plugin_filename", "flip"},
+                         {"plugin_params", ""}};
+
+    augment::image::param_factory config(js);
+    config.make_params(10, 10, 10, 10);
+}
+
+TEST(image_augmentation, plugin_base_class)
+{
+    nlohmann::json js = {{"type", "image"},
+                         {"crop_enable", false},
+                         {"plugin_filename", "plugin"},
+                         {"plugin_params", ""}};
+
+    std::shared_ptr<augment::image::param_factory> factory;
+    EXPECT_THROW(factory = make_shared<augment::image::param_factory>(js), std::runtime_error);
 }
