@@ -449,3 +449,14 @@ TEST(image_augmentation, padding_with_crop_enabled)
     augment::image::param_factory config(js);
     EXPECT_THROW(config.make_params(10, 10, 10, 10), std::invalid_argument);
 }
+
+TEST(image_augmentation, plugin_example_rotate)
+{
+    nlohmann::json js = {{"type", "image"},
+                         {"crop_enable", false},
+                         {"plugin_filename", "rotate"},
+                         {"plugin_params", "{\"angle\": [-20,20]}"}};
+
+    augment::image::param_factory config(js);
+    config.make_params(10, 10, 10, 10);
+}
