@@ -84,7 +84,7 @@ augment::image::param_factory::param_factory(nlohmann::json js)
             }
 
             if (!plugin_filename.empty())
-                rotate_plugin = make_shared<plugin>(plugin_filename, plugin_params);
+                user_plugin = make_shared<plugin>(plugin_filename, plugin_params);
         }
     }
     m_emit_type = get_emit_constraint_type();
@@ -114,12 +114,9 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
 
-    settings->flip_plugin = std::make_shared<plugin>("flip", "");
-    settings->flip_plugin->prepare();
-
-    settings->rotate_plugin = rotate_plugin;
-    if (settings->rotate_plugin)
-        settings->rotate_plugin->prepare();
+    settings->user_plugin = user_plugin;
+    if (settings->user_plugin)
+        settings->user_plugin->prepare();
 
     auto& random = get_thread_local_random_engine();
 

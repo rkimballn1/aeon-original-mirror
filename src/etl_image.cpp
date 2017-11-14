@@ -150,11 +150,7 @@ cv::Mat
 {
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
-    //image::rotate(single_img, rotatedImage, img_xform->angle);
-    if (img_xform->rotate_plugin)
-        rotatedImage = img_xform->rotate_plugin->augment_image(single_img);
-    else
-        rotatedImage = single_img;
+    image::rotate(single_img, rotatedImage, img_xform->angle);
 
     cv::Mat expandedImage;
     if (img_xform->expand_ratio > 1.0)
@@ -175,20 +171,20 @@ cv::Mat
                     img_xform->hue);
     photo.lighting(resizedImage, img_xform->lighting, img_xform->color_noise_std);
 
-    cv::Mat* finalImage = &resizedImage;
-    cv::Mat  flippedImage;
+    cv::Mat flippedImage;
     if (img_xform->flip)
     {
-        //        cv::flip(resizedImage, flippedImage, 1);
-        //flippedImage = python::execute<cv::Mat>("flip", resizedImage);
+        cv::flip(resizedImage, flippedImage, 1);
+    }
+    else
+        flippedImage = resizedImage;
 
-        auto fp = img_xform->flip_plugin;
-        if (fp)
-            flippedImage = fp->augment_image(resizedImage);
-        else
-            flippedImage = resizedImage;
-
-        finalImage = &flippedImage;
+    cv::Mat* finalImage = &flippedImage;
+    cv::Mat  pluginImage;
+    if (img_xform->user_plugin)
+    {
+        pluginImage = img_xform->user_plugin->augment_image(flippedImage);
+        finalImage  = &pluginImage;
     }
 
     if (!img_xform->debug_output_directory.empty())
