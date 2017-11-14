@@ -54,7 +54,7 @@ set (SRC
     provider.cpp
     provider_factory.cpp
     python_init.cpp
-    python_plugin2.cpp
+    python_plugin.cpp
     specgram.cpp
     typemap.cpp
     util.cpp

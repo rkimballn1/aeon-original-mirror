@@ -14,7 +14,7 @@
 */
 #include "etl_image.hpp"
 #include "conversion.hpp"
-#include "python_plugin2.hpp"
+#include "python_plugin.hpp"
 
 #include <atomic>
 #include <fstream>
