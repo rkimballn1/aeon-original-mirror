@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from plugin import Plugin
 import json
+import random
 
 
 class plugin(Plugin):
@@ -11,11 +12,11 @@ class plugin(Plugin):
 
     def __init__(self, param_string):
         params = json.loads(param_string)
-        angle_min = params["angle"][0]
-        angle_max = params["angle"][1]
+        self.angle_min = params["angle"][0]
+        self.angle_max = params["angle"][1]
 
     def prepare(self):
-        angle = random.randint(angle_min, angle_max)
+        angle = random.randint(self.angle_min, self.angle_max)
 
     def augment_image(self, mat):
         if angle == 0:
