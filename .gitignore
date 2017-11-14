@@ -69,3 +69,6 @@ config_args.txt
 .nfs*
 venv/
 .vscode/
+
+# Vim
+tags
