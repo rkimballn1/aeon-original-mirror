@@ -307,6 +307,8 @@ TEST(image_augmentation, make_ssd_params_transformations)
     EXPECT_EQ(params->saturation, 1.0);
     EXPECT_EQ(params->output_size, cv::Size2i(20, 30));
     EXPECT_EQ(params->debug_deterministic, false);
+    EXPECT_EQ(params->debug_output_directory,"");
+    EXPECT_EQ(params->user_plugin, nullptr);
 }
 
 TEST(image_augmentation, batch_sampler_ratio_scale)
