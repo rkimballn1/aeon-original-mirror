@@ -29,7 +29,7 @@
 #include "json.hpp"
 #include "interface.hpp"
 #include "box.hpp"
-#include "python_plugin2.hpp"
+#include "python_plugin.hpp"
 
 namespace nervana
 {
