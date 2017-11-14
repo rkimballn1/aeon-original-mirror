@@ -115,8 +115,7 @@ public:
     int                     hue                    = 0;
     bool                    debug_deterministic    = false;
     std::string             debug_output_directory = "";
-    std::shared_ptr<plugin> rotate_plugin          = nullptr;
-    std::shared_ptr<plugin> flip_plugin            = nullptr;
+    std::shared_ptr<plugin> user_plugin            = nullptr;
 
 private:
     params() {}
@@ -147,7 +146,7 @@ public:
     float                   m_emit_constraint_min_overlap = 0.0;
     std::string             plugin_filename;
     std::string             plugin_params;
-    std::shared_ptr<plugin> rotate_plugin = nullptr;
+    std::shared_ptr<plugin> user_plugin = nullptr;
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
