@@ -235,7 +235,22 @@ cv::Mat python::conversion::detail::to_mat(const PyObject* o)
 
 std::vector<nervana::boundingbox::box> python::conversion::detail::to_boxes(const PyObject* o)
 {
-    throw std::runtime_error("Not yet implemented");
+    std::vector<nervana::boundingbox::box> boxes;
+    size_t                                 size = PyList_Size(const_cast<PyObject*>(o));
+    boxes.reserve(size);
+    for (size_t i = 0; i < size; i++)
+    {
+        PyObject* dict      = PyList_GetItem(const_cast<PyObject*>(o), i);
+        float     xmin      = PyFloat_AsDouble(PyDict_GetItemString(dict, "xmin"));
+        float     ymin      = PyFloat_AsDouble(PyDict_GetItemString(dict, "ymin"));
+        float     xmax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "xmax"));
+        float     ymax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "ymax"));
+        int       label     = PyInt_AsLong(PyDict_GetItemString(dict, "label"));
+        bool      difficult = PyBool_Check(PyDict_GetItemString(dict, "difficult"));
+        bool      truncated = PyBool_Check(PyDict_GetItemString(dict, "truncated"));
+        boxes.emplace_back(xmin, ymin, xmax, ymax, label, difficult, truncated);
+    }
+    return boxes;
 }
 
 PyObject* python::conversion::detail::to_ndarray(const cv::Mat& m)
@@ -253,6 +268,28 @@ PyObject* python::conversion::detail::to_ndarray(const cv::Mat& m)
     p->addref();
 
     return pyObjectFromRefcount(p->refcount);
+}
+
+PyObject* python::conversion::detail::to_list(const std::vector<nervana::boundingbox::box>& boxes)
+{
+    if (boxes.empty())
+        Py_RETURN_NONE;
+
+    PyObject* list = PyList_New(boxes.size());
+    for (size_t i = 0; i < boxes.size(); i++)
+    {
+        PyObject* item = PyDict_New();
+        assert(PyDict_SetItemString(item, "xmin", PyFloat_FromDouble(boxes[i].xmin())) == 0);
+        assert(PyDict_SetItemString(item, "ymin", PyFloat_FromDouble(boxes[i].ymin())) == 0);
+        assert(PyDict_SetItemString(item, "xmax", PyFloat_FromDouble(boxes[i].xmax())) == 0);
+        assert(PyDict_SetItemString(item, "ymax", PyFloat_FromDouble(boxes[i].ymax())) == 0);
+        assert(PyDict_SetItemString(item, "label", PyInt_FromLong(boxes[i].label())) == 0);
+        assert(PyDict_SetItemString(item, "difficult", PyBool_FromLong(boxes[i].difficult())) == 0);
+        assert(PyDict_SetItemString(item, "truncated", PyBool_FromLong(boxes[i].truncated())) == 0);
+        PyList_SetItem(list, i, item);
+    }
+
+    return list;
 }
 
 cv::Mat python::conversion::convert_to_mat(PyObject* o)
@@ -276,6 +313,14 @@ PyObject* python::conversion::convert(cv::Mat& img)
     cv::Mat to_convert = img.clone();
     python::import_numpy();
     PyObject* m = detail::to_ndarray(to_convert);
+
+    return m;
+}
+
+PyObject* python::conversion::convert(std::vector<nervana::boundingbox::box>& boxes)
+{
+    python::import_numpy();
+    PyObject* m = detail::to_list(boxes);
 
     return m;
 }
