@@ -474,7 +474,7 @@ TEST(image_augmentation, plugin_example_flip_config)
     config.make_params(10, 10, 10, 10);
 }
 
-TEST(image_augmentation, plugin_base_class)
+TEST(image_augmentation, plugin_base_class_config)
 {
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
