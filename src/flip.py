@@ -7,11 +7,15 @@ from plugin import Plugin
 class plugin(Plugin):
     probability = 0.5
     do_flip = False
+    width = 0
 
     def __init__(self, param_string):
-        if len(param_string)>0:
+        if len(param_string) > 0:
             params = json.loads(param_string)
-            self.probability = params["probability"]
+            if params.has_key("probability"):
+                self.probability = params["probability"]
+            if params.has_key("width"):
+                self.width = params["width"]
 
     def prepare(self):
         self.do_flip = np.random.uniform() < self.probability
@@ -22,3 +26,11 @@ class plugin(Plugin):
         else:
             dst = mat
         return dst
+
+    def augment_boundingbox(self, boxes):
+        if self.do_flip:
+            for i in xrange(len(boxes)):
+                xmax = boxes[i]["xmax"]
+                boxes[i]["xmax"] = self.width - boxes[i]["xmin"] - 1
+                boxes[i]["xmin"] = self.width - xmax - 1
+        return boxes
