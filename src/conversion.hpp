@@ -18,14 +18,15 @@ namespace python
         namespace detail
         {
             cv::Mat to_mat(const PyObject* o);
-            PyObject* to_ndarray(const cv::Mat& mat);
             std::vector<nervana::boundingbox::box> to_boxes(const PyObject* o);
+            PyObject* to_ndarray(const cv::Mat& mat);
+            PyObject* to_list(const std::vector<nervana::boundingbox::box>& boxes);
         }
 
         cv::Mat convert_to_mat(PyObject* o);
         std::vector<nervana::boundingbox::box> convert_to_boxes(PyObject* o);
         PyObject* convert(int& a);
         PyObject* convert(cv::Mat& img);
-        PyObject* convert(std::vector<nervana::boundingbox::box> boxes);
+        PyObject* convert(std::vector<nervana::boundingbox::box>& boxes);
     }
 }
