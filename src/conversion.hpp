@@ -25,6 +25,16 @@ namespace python
 
         cv::Mat convert_to_mat(PyObject* o);
         std::vector<nervana::boundingbox::box> convert_to_boxes(PyObject* o);
+
+        template<typename T>
+        T convert_to(PyObject* o)
+        {
+            if constexpr (std::is_same<T, cv::Mat>::value)
+                return convert_to_mat(o);
+            else if constexpr (std::is_same<T, std::vector<nervana::boundingbox::box>>::value)
+                return convert_to_boxes(o);
+        }
+
         PyObject* convert(int& a);
         PyObject* convert(cv::Mat& img);
         PyObject* convert(std::vector<nervana::boundingbox::box>& boxes);
