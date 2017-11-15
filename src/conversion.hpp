@@ -38,5 +38,40 @@ namespace python
         PyObject* convert(const int& a);
         PyObject* convert(const cv::Mat& img);
         PyObject* convert(const std::vector<nervana::boundingbox::box>& boxes);
+
+        template<typename T>
+        struct convert
+        {
+            static T from_pyobject(const PyObject* from);
+            static PyObject* to_pyobject(const T& t);
+        };
+
+        template<>
+        struct convert<cv::Mat>
+        {
+            static cv::Mat from_pyobject(const PyObject* from)
+            {
+                return detail::to_mat(from);      
+            }
+
+            static PyObject* to_pyobject(const cv::Mat& from)
+            {
+                return detail::to_ndarray(from);
+            }
+        };
+
+        template<>
+        struct convert<std::vector<nervana::boundingbox>
+        {
+            static std::vector<nervana::boundingbox> from_pyobject(const PyObject* from)
+            {
+                return detail::to_mat(from);
+            }
+
+            static PyObject* to_pyobject(const cv::Mat& from)
+            {
+                return detail::to_ndarray(from);
+            }
+        };
     }
 }
