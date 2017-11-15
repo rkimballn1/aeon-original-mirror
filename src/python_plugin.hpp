@@ -58,7 +58,7 @@ namespace nervana
 
             PyObject* func = PyObject_GetAttrString(instance, func_name.c_str());
 
-            PyObject* ret_val = PyObject_CallObject(func, arg_tuple);
+            ret_val = PyObject_CallObject(func, arg_tuple);
 
             T out;
             if (ret_val != NULL)
@@ -73,7 +73,8 @@ namespace nervana
         }
 
     public:
-        plugin() {}
+        plugin()
+        { }
         ~plugin()
         {
             std::lock_guard<std::mutex> lock(mtx);
@@ -111,6 +112,14 @@ namespace nervana
             {
                 PyErr_Print();
                 throw std::runtime_error("python instance not loaded");
+
+            }
+
+            func_prepare = PyObject_GetAttrString(instance, "prepare");
+            if (!func_prepare)
+            {
+                PyErr_Print();
+                throw std::runtime_error("Plugin prepare function not loaded");
             }
 
             func_image = PyObject_GetAttrString(instance, "augment_image");
