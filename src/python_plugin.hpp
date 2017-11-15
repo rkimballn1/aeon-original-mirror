@@ -39,7 +39,6 @@ namespace nervana
         static std::vector<std::shared_ptr<module>> loaded_modules;
         static std::mutex                           mtx;
 
-        PyObject*               ret_val{nullptr};
         PyObject*               instance{nullptr};
         PyObject*               func_image{nullptr};
         PyObject*               func_pixel_mask{nullptr};
@@ -48,6 +47,30 @@ namespace nervana
         PyObject*               func_boundingbox{nullptr};
         PyObject*               func_prepare{nullptr};
         std::shared_ptr<module> module_ptr;
+
+        template<typename T>
+        T augment(std::string func_name, T& in_data)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            PyObject* arg_tuple = PyTuple_New(1);
+            PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(in_data));
+
+            PyObject* func = PyObject_GetAttrString(instance, func_name.c_str());
+
+            PyObject* ret_val = PyObject_CallObject(func, arg_tuple);
+
+            T out;
+            if (ret_val != NULL)
+            {
+                out = ::python::conversion::convert_to<T>(ret_val);
+            }
+            else
+            {
+                PyErr_Print();
+            }
+            return out;
+        }
 
     public:
         plugin() {}
@@ -138,63 +161,17 @@ namespace nervana
             std::lock_guard<std::mutex> lock(mtx);
 
             PyObject* arg_tuple = PyTuple_New(0);
-
             PyObject_CallObject(func_prepare, arg_tuple);
         }
-        cv::Mat augment_image(cv::Mat& image)
+
+        cv::Mat augment_image(cv::Mat& m)
         {
-            std::lock_guard<std::mutex> lock(mtx);
-
-            PyObject* arg_tuple = PyTuple_New(1);
-            PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(image));
-
-            Py_XDECREF(ret_val);
-            ret_val = NULL;
-            ret_val = PyObject_CallObject(func_image, arg_tuple);
-
-            cv::Mat out;
-            if (ret_val != NULL)
-            {
-                out = ::python::conversion::convert_to_mat(ret_val);
-            }
-            else
-            {
-                PyObject *ptype, *pvalue, *ptraceback;
-                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-                char*             pStrErrorMessage = PyString_AsString(pvalue);
-                std::stringstream ss;
-                ss << "Python has failed with error message: " << pStrErrorMessage << std::endl;
-                throw std::runtime_error(ss.str());
-            }
-            return out;
+            return augment("augment_image", m);
         }
 
         std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box>& boxes)
         {
-            std::lock_guard<std::mutex> lock(mtx);
-
-            PyObject* arg_tuple = PyTuple_New(1);
-            PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(boxes));
-
-            Py_XDECREF(ret_val);
-            ret_val = NULL;
-            ret_val = PyObject_CallObject(func_boundingbox, arg_tuple);
-
-            std::vector<boundingbox::box> out;
-            if (ret_val != NULL)
-            {
-                out = ::python::conversion::convert_to_boxes(ret_val);
-            }
-            else
-            {
-                PyObject *ptype, *pvalue, *ptraceback;
-                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-                char*             pStrErrorMessage = PyString_AsString(pvalue);
-                std::stringstream ss;
-                ss << "Python has failed with error message: " << pStrErrorMessage << std::endl;
-                throw std::runtime_error(ss.str());
-            }
-            return out;
+            return augment("augment_boundingbox", boxes);
         }
         cv::Mat augment_pixel_mask(cv::Mat& pixel_mask)
         {
