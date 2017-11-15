@@ -50,14 +50,12 @@ namespace nervana
         plugin() {}
         ~plugin()
         {
-            /*
             std::lock_guard<std::mutex> lock(mtx);
             auto it = std::find(loaded_modules.begin(), loaded_modules.end(), module_ptr);
             if (it != loaded_modules.end())
             {
                 loaded_modules.erase(it);
             }
-            */
         }
 
         plugin(std::string filename, std::string params)
@@ -95,21 +93,21 @@ namespace nervana
                 if (!func_image)
                 {
                     PyErr_Print();
-                    throw std::runtime_error("python function not loaded");
+                    throw std::runtime_error("python augment_image function not loaded");
                 }
 
                 func_boundingbox = PyObject_GetAttrString(instance, "augment_boundingbox");
                 if (!func_boundingbox)
                 {
                     PyErr_Print();
-                    throw std::runtime_error("python function not loaded");
+                    throw std::runtime_error("python augment_boundingbox function not loaded");
                 }
 
                 func_prepare = PyObject_GetAttrString(instance, "prepare");
                 if (!func_prepare)
                 {
                     PyErr_Print();
-                    throw std::runtime_error("python function not loaded");
+                    throw std::runtime_error("python prepare function not loaded");
                 }
             }
         }
@@ -140,7 +138,12 @@ namespace nervana
             }
             else
             {
-                PyErr_Print();
+                PyObject *ptype, *pvalue, *ptraceback;
+                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+                char*             pStrErrorMessage = PyString_AsString(pvalue);
+                std::stringstream ss;
+                ss << "Python has failed with error message: " << pStrErrorMessage << std::endl;
+                throw std::runtime_error(ss.str());
             }
             return out;
         }
@@ -163,7 +166,12 @@ namespace nervana
             }
             else
             {
-                PyErr_Print();
+                PyObject *ptype, *pvalue, *ptraceback;
+                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+                char*             pStrErrorMessage = PyString_AsString(pvalue);
+                std::stringstream ss;
+                ss << "Python has failed with error message: " << pStrErrorMessage << std::endl;
+                throw std::runtime_error(ss.str());
             }
             return out;
         }
