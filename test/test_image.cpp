@@ -1462,7 +1462,7 @@ TEST(photometric, hue)
     }
 }
 
-TEST(plugin, example_rotate)
+TEST(plugin, image_example_rotate)
 {
     auto                  indexed = generate_indexed_image(256, 256);
     vector<unsigned char> img;
@@ -1513,7 +1513,7 @@ TEST(plugin, example_rotate)
     EXPECT_TRUE(isEqual);
 }
 
-TEST(plugin, example_flip)
+TEST(plugin, image_example_flip)
 {
     auto                  indexed = generate_indexed_image(256, 256);
     vector<unsigned char> img;
