@@ -49,21 +49,23 @@ namespace nervana
         std::shared_ptr<module> module_ptr;
 
         template<typename T>
-        T augment(std::string func_name, T& in_data)
+        T augment(std::string func_name, const T& in_data)
         {
+            using convert = typename ::python::conversion::convert<T>;
+
             std::lock_guard<std::mutex> lock(mtx);
 
             PyObject* arg_tuple = PyTuple_New(1);
-            PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(in_data));
+            PyTuple_SetItem(arg_tuple, 0, convert::to_pyobject(in_data));
 
             PyObject* func = PyObject_GetAttrString(instance, func_name.c_str());
 
-            ret_val = PyObject_CallObject(func, arg_tuple);
+            PyObject* ret_val = PyObject_CallObject(func, arg_tuple);
 
             T out;
             if (ret_val != NULL)
             {
-                out = ::python::conversion::convert_to<T>(ret_val);
+                out = convert::from_pyobject(ret_val);
             }
             else
             {
@@ -96,7 +98,7 @@ namespace nervana
                                    });
             if (it == loaded_modules.end())
             {
-                module_ptr = std::make_shared<module>(filename);
+                module_ptr = std::make_unique<module>(filename);
                 loaded_modules.push_back(module_ptr);
             }
             else
@@ -112,7 +114,6 @@ namespace nervana
             {
                 PyErr_Print();
                 throw std::runtime_error("python instance not loaded");
-
             }
 
             func_prepare = PyObject_GetAttrString(instance, "prepare");
@@ -173,12 +174,12 @@ namespace nervana
             PyObject_CallObject(func_prepare, arg_tuple);
         }
 
-        cv::Mat augment_image(cv::Mat& m)
+        cv::Mat augment_image(const cv::Mat& m)
         {
             return augment("augment_image", m);
         }
 
-        std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box>& boxes)
+        std::vector<boundingbox::box> augment_boundingbox(const std::vector<boundingbox::box>& boxes)
         {
             return augment("augment_boundingbox", boxes);
         }
