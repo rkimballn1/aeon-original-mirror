@@ -73,12 +73,20 @@ std::shared_ptr<image::decoded>
     cv::Mat resizedImage;
     image::resize(croppedImage, resizedImage, img_xform->output_size, false);
 
-    cv::Mat* finalImage = &resizedImage;
-    cv::Mat  flippedImage;
+    cv::Mat flippedImage;
     if (img_xform->flip)
     {
         cv::flip(resizedImage, flippedImage, 1);
-        finalImage = &flippedImage;
+    }
+    else
+        flippedImage = resizedImage;
+
+    cv::Mat* finalImage = &flippedImage;
+    cv::Mat  pluginImage;
+    if (img_xform->user_plugin)
+    {
+        pluginImage = img_xform->user_plugin->augment_pixel_mask(flippedImage);
+        finalImage  = &pluginImage;
     }
 
     return make_shared<image::decoded>(*finalImage);
