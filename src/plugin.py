@@ -20,3 +20,7 @@ class Plugin:
     def augment_pixel_mask(self, pixel_mask):
         print('augment pixel mask not implemented')
         raise RuntimeError('Not implemented')
+
+    def augment_depthmap(self, depthmap):
+        print('augment depthmap not implemented')
+        raise RuntimeError('Not implemented')
