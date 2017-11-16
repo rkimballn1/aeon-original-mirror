@@ -16,3 +16,7 @@ class Plugin:
     def augment_boundingbox(self, bboxes):
         print('augment boundingbox not implemented')
         raise RuntimeError('Not implemented')
+
+    def augment_pixel_mask(self, pixel_mask):
+        print('augment pixel mask not implemented')
+        raise RuntimeError('Not implemented')

@@ -34,3 +34,6 @@ class plugin(Plugin):
                 boxes[i]["xmax"] = self.width - boxes[i]["xmin"] - 1
                 boxes[i]["xmin"] = self.width - xmax - 1
         return boxes
+
+    def augment_pixel_mask(self, mat):
+        return self.augment_image(mat)

@@ -21,9 +21,13 @@ class plugin(Plugin):
         if self.angle == 0:
             return mat
 
-        cols, rows, depth = mat.shape
+        cols = mat.shape[0]
+        rows = mat.shape[1]
         rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2),
                                                   self.angle, 1.0)
         dst = cv2.warpAffine(mat, rotation_matrix, (cols, rows))
 
         return dst
+
+    def augment_pixel_mask(self, mat):
+        return self.augment_image(mat)
