@@ -49,7 +49,7 @@ namespace nervana
         std::shared_ptr<module> module_ptr;
 
         template<typename T>
-        T augment(std::string func_name, const T& in_data)
+        T augment(PyObject* func, const T& in_data)
         {
             using convert = typename ::python::conversion::convert<T>;
 
@@ -57,8 +57,6 @@ namespace nervana
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, convert::to_pyobject(in_data));
-
-            PyObject* func = PyObject_GetAttrString(instance, func_name.c_str());
 
             PyObject* ret_val = PyObject_CallObject(func, arg_tuple);
 
@@ -69,8 +67,15 @@ namespace nervana
             }
             else
             {
-                PyErr_Print();
+                PyObject *err_type, *err_value, *err_traceback;
+                PyErr_Fetch(&err_type, &err_value, &err_traceback);
+                char* err_msg = PyString_AsString(err_value);
+
+                std::stringstream ss;
+                ss << "Python has failed with error message: " << err_msg << std::endl;
+                throw std::runtime_error(ss.str());
             }
+
             return out;
         }
 
@@ -114,13 +119,6 @@ namespace nervana
             {
                 PyErr_Print();
                 throw std::runtime_error("python instance not loaded");
-            }
-
-            func_prepare = PyObject_GetAttrString(instance, "prepare");
-            if (!func_prepare)
-            {
-                PyErr_Print();
-                throw std::runtime_error("Plugin prepare function not loaded");
             }
 
             func_image = PyObject_GetAttrString(instance, "augment_image");
@@ -176,12 +174,12 @@ namespace nervana
 
         cv::Mat augment_image(const cv::Mat& m)
         {
-            return augment("augment_image", m);
+            return augment(func_image, m);
         }
 
         std::vector<boundingbox::box> augment_boundingbox(const std::vector<boundingbox::box>& boxes)
         {
-            return augment("augment_boundingbox", boxes);
+            return augment(func_boundingbox, boxes);
         }
         cv::Mat augment_pixel_mask(cv::Mat& pixel_mask)
         {

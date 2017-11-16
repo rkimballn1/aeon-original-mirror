@@ -23,25 +23,6 @@ namespace python
             PyObject* to_list(const std::vector<nervana::boundingbox::box>& boxes);
         }
 
-//        cv::Mat convert_to_mat(const PyObject* o);
-//        std::vector<nervana::boundingbox::box> convert_to_boxes(const PyObject* o);
-
-        /*
-        template<typename T>
-        T convert_to(const PyObject* o)
-        {
-            if constexpr (std::is_same<T, cv::Mat>::value)
-                return convert_to_mat(o);
-            else if constexpr (std::is_same<T, std::vector<nervana::boundingbox::box>>::value)
-                return convert_to_boxes(o);
-        }
-*/
-
-        /*
-        PyObject* convert(const int& a);
-        PyObject* convert(const cv::Mat& img);
-        PyObject* convert(const std::vector<nervana::boundingbox::box>& boxes);
-*/
         template<typename T>
         struct convert
         {
@@ -55,8 +36,11 @@ namespace python
 
             static PyObject* to_pyobject(const T& from)
             {
-                if constexpr (std::is_same<T, cv::Mat>::value)
+                if constexpr (std::is_same<T, cv::Mat>::value) {
+                    cv::Mat to_convert = from.clone();
+                    python::import_numpy();
                     return detail::to_ndarray(from);
+                }
                 else if constexpr(std::is_same<T, std::vector<nervana::boundingbox::box>>::value) {
                     python::import_numpy();
                     return detail::to_list(from);
