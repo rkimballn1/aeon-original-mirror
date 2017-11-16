@@ -103,7 +103,7 @@ namespace nervana
                                    });
             if (it == loaded_modules.end())
             {
-                module_ptr = std::make_unique<module>(filename);
+                module_ptr = std::make_shared<module>(filename);
                 loaded_modules.push_back(module_ptr);
             }
             else
