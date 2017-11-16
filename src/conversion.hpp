@@ -47,38 +47,5 @@ namespace python
                 }
             }
         };
-        
-        /*
-        template<>
-        struct convert_t<cv::Mat>
-        {
-            static cv::Mat from_pyobject(const PyObject* from)
-            {
-                return detail::to_mat(from);      
-            }
-
-            static PyObject* to_pyobject(const cv::Mat& from)
-            {
-                return detail::to_ndarray(from);
-            }
-        };
-
-        template<>
-        struct convert_t<std::vector<nervana::boundingbox::box>>
-        {
-            static std::vector<nervana::boundingbox::box> from_pyobject(const PyObject* from)
-            {
-                return detail::to_boxes(from);
-            }
-
-            static PyObject* to_pyobject(const std::vector<nervana::boundingbox::box>& from)
-            {
-                python::import_numpy();
-                PyObject* m = detail::to_list(from);
-
-                return m;
-            }
-        };
-        */
     }
 }
