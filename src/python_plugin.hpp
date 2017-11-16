@@ -87,28 +87,25 @@ namespace nervana
                 throw std::runtime_error("python instance not loaded");
             }
 
-            if (instance != NULL)
+            func_image = PyObject_GetAttrString(instance, "augment_image");
+            if (!func_image)
             {
-                func_image = PyObject_GetAttrString(instance, "augment_image");
-                if (!func_image)
-                {
-                    PyErr_Print();
-                    throw std::runtime_error("python augment_image function not loaded");
-                }
+                PyErr_Print();
+                throw std::runtime_error("python augment_image function not loaded");
+            }
 
-                func_boundingbox = PyObject_GetAttrString(instance, "augment_boundingbox");
-                if (!func_boundingbox)
-                {
-                    PyErr_Print();
-                    throw std::runtime_error("python augment_boundingbox function not loaded");
-                }
+            func_boundingbox = PyObject_GetAttrString(instance, "augment_boundingbox");
+            if (!func_boundingbox)
+            {
+                PyErr_Print();
+                throw std::runtime_error("python augment_boundingbox function not loaded");
+            }
 
-                func_prepare = PyObject_GetAttrString(instance, "prepare");
-                if (!func_prepare)
-                {
-                    PyErr_Print();
-                    throw std::runtime_error("python prepare function not loaded");
-                }
+            func_prepare = PyObject_GetAttrString(instance, "prepare");
+            if (!func_prepare)
+            {
+                PyErr_Print();
+                throw std::runtime_error("python prepare function not loaded");
             }
         }
 
@@ -120,7 +117,7 @@ namespace nervana
 
             PyObject_CallObject(func_prepare, arg_tuple);
         }
-        cv::Mat augment_image(cv::Mat image)
+        cv::Mat augment_image(cv::Mat& image)
         {
             std::lock_guard<std::mutex> lock(mtx);
 
@@ -148,7 +145,7 @@ namespace nervana
             return out;
         }
 
-        std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box> boxes)
+        std::vector<boundingbox::box> augment_boundingbox(std::vector<boundingbox::box>& boxes)
         {
             std::lock_guard<std::mutex> lock(mtx);
 
