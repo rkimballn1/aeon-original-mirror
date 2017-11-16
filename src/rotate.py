@@ -31,3 +31,6 @@ class plugin(Plugin):
 
     def augment_pixel_mask(self, mat):
         return self.augment_image(mat)
+
+    def augment_depthmap(self, mat):
+        return self.augment_image(mat)

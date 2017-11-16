@@ -43,6 +43,7 @@ namespace nervana
         PyObject*               instance{nullptr};
         PyObject*               func_image{nullptr};
         PyObject*               func_pixel_mask{nullptr};
+        PyObject*               func_depthmap{nullptr};
         PyObject*               func_boundingbox{nullptr};
         PyObject*               func_prepare{nullptr};
         std::shared_ptr<module> module_ptr;
@@ -107,6 +108,13 @@ namespace nervana
             {
                 PyErr_Print();
                 throw std::runtime_error("python augment_pixel_mask function not loaded");
+            }
+
+            func_depthmap = PyObject_GetAttrString(instance, "augment_pixel_mask");
+            if (!func_depthmap)
+            {
+                PyErr_Print();
+                throw std::runtime_error("python augment_depthmap function not loaded");
             }
 
             func_prepare = PyObject_GetAttrString(instance, "prepare");
@@ -190,6 +198,34 @@ namespace nervana
             Py_XDECREF(ret_val);
             ret_val = NULL;
             ret_val = PyObject_CallObject(func_pixel_mask, arg_tuple);
+
+            cv::Mat out;
+            if (ret_val != NULL)
+            {
+                out = ::python::conversion::convert_to_mat(ret_val);
+            }
+            else
+            {
+                PyObject *ptype, *pvalue, *ptraceback;
+                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+                char*             pStrErrorMessage = PyString_AsString(pvalue);
+                std::stringstream ss;
+                ss << "Python has failed with error message: " << pStrErrorMessage << std::endl;
+                throw std::runtime_error(ss.str());
+            }
+            return out;
+        }
+
+        cv::Mat augment_depthmap(cv::Mat& depthmap)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            PyObject* arg_tuple = PyTuple_New(1);
+            PyTuple_SetItem(arg_tuple, 0, ::python::conversion::convert(depthmap));
+
+            Py_XDECREF(ret_val);
+            ret_val = NULL;
+            ret_val = PyObject_CallObject(func_depthmap, arg_tuple);
 
             cv::Mat out;
             if (ret_val != NULL)
