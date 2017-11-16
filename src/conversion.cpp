@@ -291,37 +291,3 @@ PyObject* python::conversion::detail::to_list(const std::vector<nervana::boundin
 
     return list;
 }
-/*
-cv::Mat python::conversion::convert_to_mat(const PyObject* o)
-{
-    return detail::to_mat(o);
-}
-
-std::vector<nervana::boundingbox::box> python::conversion::convert_to_boxes(const PyObject* o)
-{
-    return detail::to_boxes(o);
-}
-
-PyObject* python::conversion::convert(const int& a)
-{
-    PyObject* p = PyLong_FromLong(a);
-    return p;
-}
-
-PyObject* python::conversion::convert(const cv::Mat& img)
-{
-    cv::Mat to_convert = img.clone();
-    python::import_numpy();
-    PyObject* m = detail::to_ndarray(to_convert);
-
-    return m;
-}
-
-PyObject* python::conversion::convert(const std::vector<nervana::boundingbox::box>& boxes)
-{
-    python::import_numpy();
-    PyObject* m = detail::to_list(boxes);
-
-    return m;
-}
-*/
