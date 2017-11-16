@@ -291,7 +291,7 @@ PyObject* python::conversion::detail::to_list(const std::vector<nervana::boundin
 
     return list;
 }
-
+/*
 cv::Mat python::conversion::convert_to_mat(const PyObject* o)
 {
     return detail::to_mat(o);
@@ -324,3 +324,4 @@ PyObject* python::conversion::convert(const std::vector<nervana::boundingbox::bo
 
     return m;
 }
+*/
