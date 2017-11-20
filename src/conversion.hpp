@@ -36,6 +36,11 @@ namespace python
 
             static PyObject* to_pyobject(const T& from)
             {
+                constexpr bool check = std::is_same<T, cv::Mat>::value
+                                       || std::is_same<T, std::vector<nervana::boundingbox::box>>::value;
+
+                static_assert(check, "Type is not convertible to PyObject. Provide converting method.");
+
                 if constexpr (std::is_same<T, cv::Mat>::value) {
                     cv::Mat to_convert = from.clone();
                     python::import_numpy();
