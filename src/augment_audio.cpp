@@ -44,6 +44,8 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 
             add_noise = std::bernoulli_distribution{add_noise_probability};
             // validate();
+            if (!plugin_filename.empty())
+                user_plugin = make_shared<plugin>(plugin_filename, plugin_params);
         }
     }
 }
@@ -51,6 +53,10 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() const
 {
     auto audio_stgs = shared_ptr<augment::audio::params>(new augment::audio::params());
+
+    audio_stgs->user_plugin = user_plugin;
+    if (audio_stgs->user_plugin)
+        audio_stgs->user_plugin->prepare();
 
     auto& random = get_thread_local_random_engine();
 
