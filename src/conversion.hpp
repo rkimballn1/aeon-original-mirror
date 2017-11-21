@@ -23,33 +23,37 @@ namespace python
             PyObject* to_list(const std::vector<nervana::boundingbox::box>& boxes);
         }
 
-        template<typename T>
+        template <typename T>
         struct convert
         {
-            static T from_pyobject(const PyObject* from)
+            static T from_pyobject(const PyObject* from);
+            static PyObject* to_pyobject(const T& from);
+        };
+
+        template <>
+        struct convert<cv::Mat>
+        {
+            static cv::Mat from_pyobject(const PyObject* from) { return detail::to_mat(from); }
+            static PyObject* to_pyobject(const cv::Mat& from)
             {
-                if constexpr (std::is_same<T, cv::Mat>::value)
-                    return detail::to_mat(from);
-                else if constexpr (std::is_same<T, std::vector<nervana::boundingbox::box>>::value)
-                    return detail::to_boxes(from);
+                cv::Mat to_convert = from.clone();
+                python::import_numpy();
+                return detail::to_ndarray(from);
+            }
+        };
+
+        template <>
+        struct convert<std::vector<nervana::boundingbox::box>>
+        {
+            static std::vector<nervana::boundingbox::box> from_pyobject(const PyObject* from)
+            {
+                return detail::to_boxes(from);
             }
 
-            static PyObject* to_pyobject(const T& from)
+            static PyObject* to_pyobject(const std::vector<nervana::boundingbox::box>& from)
             {
-                constexpr bool check = std::is_same<T, cv::Mat>::value
-                                       || std::is_same<T, std::vector<nervana::boundingbox::box>>::value;
-
-                static_assert(check, "Type is not convertible to PyObject. Provide converting method.");
-
-                if constexpr (std::is_same<T, cv::Mat>::value) {
-                    cv::Mat to_convert = from.clone();
-                    python::import_numpy();
-                    return detail::to_ndarray(from);
-                }
-                else if constexpr(std::is_same<T, std::vector<nervana::boundingbox::box>>::value) {
-                    python::import_numpy();
-                    return detail::to_list(from);
-                }
+                python::import_numpy();
+                return detail::to_list(from);
             }
         };
     }
