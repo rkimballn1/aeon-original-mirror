@@ -51,9 +51,9 @@ namespace nervana
         template<typename T>
         T augment(PyObject* func, const T& in_data)
         {
-            using convert = typename ::python::conversion::convert<T>;
-
             std::lock_guard<std::mutex> lock(mtx);
+
+            using convert = typename ::python::conversion::convert<T>;
 
             PyObject* arg_tuple = PyTuple_New(1);
             PyTuple_SetItem(arg_tuple, 0, convert::to_pyobject(in_data));
