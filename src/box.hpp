@@ -49,12 +49,8 @@ public:
     virtual ~box() {}
     virtual float    width() const { return m_xmax - m_xmin + 1; }
     virtual float    height() const { return m_ymax - m_ymin + 1; }
-    virtual cv::Rect rect() const
-    {
-        return cv::Rect(
-            std::round(m_xmin), std::round(m_ymin), std::round(width()), std::round(height()));
-    }
-    float size() const
+    virtual cv::Rect rect() const { return cv::Rect(m_xmin, m_ymin, width(), height()); }
+    float            size() const
     {
         if (xmax() < xmin() || ymax() < ymin())
         {

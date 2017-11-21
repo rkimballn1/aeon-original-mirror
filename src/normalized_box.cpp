@@ -43,49 +43,6 @@ nbox& nbox::operator=(const nbox& b)
     return *this;
 }
 
-float nbox::jaccard_overlap(const nbox& second_nbox) const
-{
-    nbox  intersect_nbox = intersect(second_nbox);
-    float intersect_size = intersect_nbox.size();
-    float nbox1_size     = size();
-    float nbox2_size     = second_nbox.size();
-
-    if (intersect_size == 0.f)
-        return 0.f;
-    return intersect_size / (nbox1_size + nbox2_size - intersect_size);
-}
-
-float nbox::coverage(const nbox& second_nbox) const
-{
-    nbox  intersect_nbox = intersect(second_nbox);
-    float intersect_size = intersect_nbox.size();
-    if (intersect_size > 0)
-    {
-        float own_size = size();
-        assert(own_size != 0.0);
-        return intersect_size / own_size;
-    }
-    else
-    {
-        return 0.;
-    }
-}
-
-nbox nbox::intersect(const nbox& second_nbox) const
-{
-    // Return [0, 0, 0, 0, true] if there is no intersection.
-    if (second_nbox.xmin() > xmax() || second_nbox.xmax() < xmin() || second_nbox.ymin() > ymax() ||
-        second_nbox.ymax() < ymin())
-    {
-        return box();
-    }
-
-    return nbox(std::max(xmin(), second_nbox.xmin()),
-                std::max(ymin(), second_nbox.ymin()),
-                std::min(xmax(), second_nbox.xmax()),
-                std::min(ymax(), second_nbox.ymax()));
-}
-
 bool nbox::is_properly_normalized() const
 {
     auto is_value_normalized = [](float x) {

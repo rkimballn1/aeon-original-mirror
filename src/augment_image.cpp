@@ -292,7 +292,7 @@ shared_ptr<augment::image::params>
     }
     if (!crop_enable)
     {
-        nbox patch = sample_patch(normalized_object_bboxes);
+        nbox patch = sample_patch(normalized_object_bboxes, settings->expand_size);
         bbox patch_bbox =
             patch.unnormalize(settings->expand_size.width, settings->expand_size.height);
         settings->cropbox = patch_bbox.rect();
@@ -301,18 +301,22 @@ shared_ptr<augment::image::params>
     return settings;
 }
 
-nbox augment::image::param_factory::sample_patch(const vector<nbox>& object_bboxes) const
+nbox augment::image::param_factory::sample_patch(const vector<nbox>& object_bboxes,
+                                                 cv::Size            max_size) const
 {
     vector<nbox> batch_samples;
 
     for (const batch_sampler& sampler : m_batch_samplers)
     {
-        sampler.sample_patches(object_bboxes, batch_samples);
+        sampler.sample_patches(object_bboxes, batch_samples, max_size);
     }
 
     if (batch_samples.empty())
     {
-        return nbox(0, 0, 1, 1);
+        return nbox(0,
+                    0,
+                    ((double)max_size.width - 1) / max_size.width,
+                    ((double)max_size.height - 1) / max_size.height);
     }
 
     std::uniform_int_distribution<int> uniform_dist(0, batch_samples.size() - 1);
@@ -348,7 +352,7 @@ void augment::image::sampler::operator=(const nlohmann::json& config)
     }
 }
 
-nbox augment::image::sampler::sample_patch() const
+nbox augment::image::sampler::sample_patch(cv::Size max_size) const
 {
     auto& random           = get_thread_local_random_engine();
     float scale            = m_scale_generator(random);
@@ -367,12 +371,16 @@ nbox augment::image::sampler::sample_patch() const
     float                                 w_off, h_off;
     std::uniform_real_distribution<float> width_generator(0.f, 1.f - bbox_width);
     std::uniform_real_distribution<float> height_generator(0.f, 1.f - bbox_height);
-    w_off = width_generator(random);
-    h_off = height_generator(random);
-
+    w_off            = width_generator(random);
+    h_off            = height_generator(random);
+    float max_width  = ((float)max_size.width - 1) / max_size.width;
+    float max_height = ((float)max_size.height - 1) / max_size.height;
     try
     {
-        return nbox(w_off, h_off, w_off + bbox_width, h_off + bbox_height);
+        return nbox(w_off * max_width,
+                    h_off * max_height,
+                    (w_off + bbox_width) * max_width,
+                    (h_off + bbox_height) * max_height);
     }
     catch (exception&)
     {
@@ -388,7 +396,8 @@ nbox augment::image::sampler::sample_patch() const
 }
 
 bool augment::image::sample_constraint::satisfies(const nbox&              sampled_bbox,
-                                                  const std::vector<nbox>& object_bboxes) const
+                                                  const std::vector<nbox>& object_bboxes,
+                                                  cv::Size                 max_size) const
 {
     bool has_jaccard_overlap = has_min_jaccard_overlap() || has_max_jaccard_overlap();
     bool has_sample_coverage = has_min_sample_coverage() || has_max_sample_coverage();
@@ -407,7 +416,8 @@ bool augment::image::sample_constraint::satisfies(const nbox&              sampl
         // Test jaccard overlap.
         if (has_jaccard_overlap)
         {
-            const float jaccard_overlap = sampled_bbox.jaccard_overlap(object_bbox);
+            const float jaccard_overlap = sampled_bbox.unnormalize(max_size).jaccard_overlap(
+                object_bbox.unnormalize(max_size));
             if (has_min_jaccard_overlap() && jaccard_overlap < get_min_jaccard_overlap())
             {
                 continue;
@@ -421,7 +431,8 @@ bool augment::image::sample_constraint::satisfies(const nbox&              sampl
         // Test sample coverage.
         if (has_sample_coverage)
         {
-            const float sample_coverage = sampled_bbox.coverage(object_bbox);
+            const float sample_coverage =
+                sampled_bbox.unnormalize(max_size).coverage(object_bbox.unnormalize(max_size));
             if (has_min_sample_coverage() && sample_coverage < get_min_sample_coverage())
             {
                 continue;
@@ -435,7 +446,8 @@ bool augment::image::sample_constraint::satisfies(const nbox&              sampl
         // Test object coverage.
         if (has_object_coverage)
         {
-            const float object_coverage = object_bbox.coverage(sampled_bbox);
+            const float object_coverage =
+                object_bbox.unnormalize(max_size).coverage(sampled_bbox.unnormalize(max_size));
             if (has_min_object_coverage() && object_coverage < get_min_object_coverage())
             {
                 continue;
@@ -558,7 +570,8 @@ augment::image::batch_sampler::batch_sampler(const nlohmann::json& config)
 }
 
 void augment::image::batch_sampler::sample_patches(const vector<nbox>& object_bboxes,
-                                                   vector<nbox>&       output) const
+                                                   vector<nbox>&       output,
+                                                   cv::Size            max_size) const
 {
     int found = 0;
     for (int i = 0; i < m_max_trials; ++i)
@@ -567,10 +580,10 @@ void augment::image::batch_sampler::sample_patches(const vector<nbox>& object_bb
         {
             break;
         }
-        // Generate sampled_bbox in the normalized space [0, 1].
-        nbox sampled_bbox = m_sampler.sample_patch();
+        // Generate sampled_bbox in the normalized space [0, 1).
+        nbox sampled_bbox = m_sampler.sample_patch(max_size);
         // Determine if the sampled nbox is positive or negative by the constraint.
-        if (m_sample_constraint.satisfies(sampled_bbox, object_bboxes))
+        if (m_sample_constraint.satisfies(sampled_bbox, object_bboxes, max_size))
         {
             ++found;
             output.push_back(sampled_bbox);

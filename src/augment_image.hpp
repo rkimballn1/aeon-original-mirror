@@ -197,8 +197,9 @@ public:
     std::vector<nlohmann::json> batch_samplers;
 
 private:
-    nervana::normalized_box::box sample_patch(
-        const std::vector<nervana::normalized_box::box>& normalized_object_bboxes) const;
+    nervana::normalized_box::box
+        sample_patch(const std::vector<nervana::normalized_box::box>& normalized_object_bboxes,
+                     cv::Size                                         max_size) const;
 
     bool      flip_enable = false;
     bool      center      = true;
@@ -274,7 +275,7 @@ public:
     explicit sampler(const nlohmann::json& config);
     void operator=(const nlohmann::json& config);
 
-    normalized_box::box sample_patch() const;
+    normalized_box::box sample_patch(cv::Size max_size) const;
 
 private:
     /** Scale of sampled box */
@@ -305,7 +306,8 @@ public:
     void operator=(const nlohmann::json& config);
 
     bool satisfies(const normalized_box::box&              normalized_sampled_bbox,
-                   const std::vector<normalized_box::box>& normalized_object_bboxes) const;
+                   const std::vector<normalized_box::box>& normalized_object_bboxes,
+                   cv::Size                                max_size) const;
 
     bool  has_min_jaccard_overlap() const { return !std::isnan(m_min_jaccard_overlap); }
     float get_min_jaccard_overlap() const;
@@ -351,7 +353,8 @@ public:
     batch_sampler(const nlohmann::json& config);
 
     void sample_patches(const std::vector<normalized_box::box>& normalized_object_bboxes,
-                        std::vector<normalized_box::box>&       normalized_output) const;
+                        std::vector<normalized_box::box>&       normalized_output,
+                        cv::Size                                max_size) const;
 
 private:
     // If provided, break when found certain number of samples satisfing the

@@ -51,15 +51,17 @@ public:
             "Called rect() on a normalized box. cv::Rect supports integers only.");
     }
 
-    float jaccard_overlap(const nervana::normalized_box::box& second_box) const;
-    float coverage(const nervana::normalized_box::box& second_box) const;
-    nervana::normalized_box::box intersect(const nervana::normalized_box::box& second_box) const;
-
-    nervana::boundingbox::box unnormalize(float width, float height)
+    nervana::boundingbox::box unnormalize(float width, float height) const
     {
         return nervana::boundingbox::box(
             xmin() * width, ymin() * height, xmax() * width, ymax() * height);
     }
+
+    nervana::boundingbox::box unnormalize(cv::Size max_size) const
+    {
+        return unnormalize(max_size.width, max_size.height);
+    }
+
     bool is_properly_normalized() const;
 
 protected:

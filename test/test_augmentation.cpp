@@ -36,6 +36,9 @@ void test_sampler(float aspect, float scale, string what = "min_jaccard_overlap"
     nlohmann::json js = {
         {"type", "image"}, {"batch_samplers", batch_samplers}, {"crop_enable", false}};
 
+    float max_width  = 99.f / 100.f;
+    float max_height = 99.f / 100.f;
+
     augment::image::param_factory factory(js);
 
     vector<normalized_box::box> object_bboxes;
@@ -43,10 +46,10 @@ void test_sampler(float aspect, float scale, string what = "min_jaccard_overlap"
     object_bboxes.emplace_back(0, 0, 0.4, 0.4);
     object_bboxes.emplace_back(0.5, 0.5, 0.6, 0.6);
     object_bboxes.emplace_back(0.2, 0.2, 0.8, 0.6);
-    object_bboxes.emplace_back(0.1, 0.0, 0.9, 1.0);
-    object_bboxes.emplace_back(0.0, 0.1, 1.0, 0.9);
-    object_bboxes.emplace_back(0.0, 0.0, 1.0, 1.0);
-    object_bboxes.emplace_back(0.0, 0.0, 1.0, 1.0);
+    object_bboxes.emplace_back(0.1, 0.0, 0.9, max_height);
+    object_bboxes.emplace_back(0.0, 0.1, max_width, 0.9);
+    object_bboxes.emplace_back(0.0, 0.0, max_width, max_height);
+    object_bboxes.emplace_back(0.0, 0.0, max_width, max_height);
     object_bboxes.emplace_back(0.345, 0.345, 0.35, 0.35);
     object_bboxes.emplace_back(0.9, 0.9, 0.91, 0.91);
     object_bboxes.emplace_back(0.1, 0.9, 0.15, 0.95);
@@ -55,14 +58,14 @@ void test_sampler(float aspect, float scale, string what = "min_jaccard_overlap"
     uint32_t non_full_samples_count = 0;
     for (int i = 0; i < 50; i++)
     {
-        normalized_box::box out = factory.sample_patch(object_bboxes);
+        normalized_box::box out = factory.sample_patch(object_bboxes, cv::Size(100, 100));
         ASSERT_GE(out.xmin(), 0);
         ASSERT_GE(out.ymin(), 0);
-        ASSERT_LE(out.xmax(), 1);
-        ASSERT_LE(out.ymax(), 1);
-        if (normalized_box::box(0, 0, 1, 1) != out)
+        ASSERT_LE(out.xmax(), max_width);
+        ASSERT_LE(out.ymax(), max_height);
+        if (normalized_box::box(0, 0, max_width, max_height) != out)
         {
-            EXPECT_FLOAT_EQ(out.width() / out.height(), aspect);
+            EXPECT_NEAR(out.width() / out.height(), aspect, 0.00001);
             EXPECT_GT(out.width(), 0);
             non_full_samples_count++;
         }
@@ -365,10 +368,10 @@ TEST(image_augmentation, max_sample)
     augment::image::param_factory factory(js);
 
     vector<normalized_box::box> object_bboxes;
-    object_bboxes.emplace_back(0, 0, 1, 1);
+    object_bboxes.emplace_back(0, 0, 99.f / 100.f, 99.f / 100.f);
     object_bboxes.emplace_back(0, 0, 0.5, 0.5);
     std::vector<normalized_box::box> output;
-    factory.m_batch_samplers[0].sample_patches(object_bboxes, output);
+    factory.m_batch_samplers[0].sample_patches(object_bboxes, output, cv::Size(100, 100));
     EXPECT_EQ(output.size(), max_sample);
 }
 
@@ -378,7 +381,7 @@ TEST(image_augmentation, max_trials)
     float                       aspect = 1;
     float                       scale  = 1;
     vector<normalized_box::box> object_bboxes;
-    object_bboxes.emplace_back(0, 0, 1, 1);
+    object_bboxes.emplace_back(0, 0, 99.f / 100.f, 99.f / 100.f);
     object_bboxes.emplace_back(0, 0, 0.5, 0.5);
     for (int i = 0; i < 10; i++)
     {
@@ -402,7 +405,7 @@ TEST(image_augmentation, max_trials)
         augment::image::param_factory factory(js);
 
         std::vector<normalized_box::box> output;
-        factory.m_batch_samplers[0].sample_patches(object_bboxes, output);
+        factory.m_batch_samplers[0].sample_patches(object_bboxes, output, cv::Size(100, 100));
         EXPECT_LE(output.size(), max_trials) << "at iteration " << i;
     }
 }
@@ -428,10 +431,10 @@ TEST(image_augmentation, default_patch)
     augment::image::param_factory factory(js);
 
     vector<normalized_box::box> object_bboxes;
-    object_bboxes.emplace_back(0, 0, 1, 1);
+    object_bboxes.emplace_back(0, 0, 99.f / 100.f, 99.f / 100.f);
     object_bboxes.emplace_back(0, 0, 0.5, 0.5);
     std::vector<normalized_box::box> output;
-    factory.m_batch_samplers[0].sample_patches(object_bboxes, output);
+    factory.m_batch_samplers[0].sample_patches(object_bboxes, output, cv::Size(100, 100));
 
     for (int i = 0; i < output.size(); i++)
     {
