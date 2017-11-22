@@ -13,6 +13,8 @@
  limitations under the License.
 */
 #pragma once
+#define NP_NO_DEPRACATED_API NPY_1_7_API_VERSION
+#define NUMPY_IMPORT_ARRAY_RETVAL
 
 #include <Python.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -20,8 +22,6 @@
 #include <opencv2/core/core.hpp>
 #include "numpy/ndarrayobject.h"
 #include "boundingbox.hpp"
-
-#define NUMPY_IMPORT_ARRAY_RETVAL
 
 namespace python
 {
