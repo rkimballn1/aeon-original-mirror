@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 
     int    height        = 32;
     int    width         = 32;
-    size_t batch_size    = 1;
+    size_t batch_size    = 20;
     std::string manifest_root = "";
     std::string manifest      = generate_manifest_file(20);
 
@@ -43,7 +43,9 @@ int main(int argc, char** argv)
     nlohmann::json label_config = {{"type", "label"},
                                {"binary", false}};
     nlohmann::json aug_config = {{"type", "image"},
-                             {"flip_enable", true}};
+                             {"flip_enable", true},
+                             {"plugin_filename", "rotate"},
+                             {"plugin_params", {{"angle", {-45,45}}}}};
     nlohmann::json config = {{"manifest_root", manifest_root},
                          {"manifest_filename", manifest},
                          {"batch_size", batch_size},
