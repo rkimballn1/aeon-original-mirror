@@ -156,7 +156,7 @@ class nervana::image::transformer
 public:
     transformer(const image::config&);
     ~transformer();
-/*    { 
+    /*    { 
         if (py_init) {
             Py_Finalize(); 
         }
