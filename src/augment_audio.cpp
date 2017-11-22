@@ -18,6 +18,8 @@
 using namespace std;
 using namespace nervana;
 
+thread_local std::shared_ptr<plugin> augment::audio::param_factory::user_plugin;
+
 nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -45,7 +47,10 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
             add_noise = std::bernoulli_distribution{add_noise_probability};
             // validate();
             if (!plugin_filename.empty())
+            {
+                // thread local variable
                 user_plugin = make_shared<plugin>(plugin_filename, plugin_params.dump());
+            }
         }
     }
 }
@@ -54,9 +59,12 @@ shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() 
 {
     auto audio_stgs = shared_ptr<augment::audio::params>(new augment::audio::params());
 
-    audio_stgs->user_plugin = user_plugin;
-    if (audio_stgs->user_plugin)
+    if (!plugin_filename.empty())
+    {
+        // thread local variable
+        audio_stgs->user_plugin = user_plugin;
         audio_stgs->user_plugin->prepare();
+    }
 
     auto& random = get_thread_local_random_engine();
 
