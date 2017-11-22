@@ -280,7 +280,7 @@ TEST(plugin, pixel_mask_example_rotate)
     cv::imencode(".png", test_image, test_data);
     ASSERT_TRUE(verify_image(test_image));
 
-    nlohmann::json js  = {{"width", 256}, {"height", 256}};
+    nlohmann::json js = {{"width", 256}, {"height", 256}};
     nlohmann::json aug;
     image::config  cfg(js);
 
@@ -310,7 +310,7 @@ TEST(plugin, pixel_mask_example_flip)
     nlohmann::json aug = {{"type", "image"},
                           {"crop_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", "{\"probability\": 1}"}};
+                          {"plugin_params", {{"probability", 1}}}};
     image::config cfg(js);
 
     pixel_mask::extractor         extractor{cfg};

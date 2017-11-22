@@ -79,12 +79,14 @@ TEST(plugin, depthmap_example_rotate)
     cv::imencode(".png", test_image, test_data);
     ASSERT_TRUE(verify_image(test_image));
 
-    nlohmann::json js  = {{"width", 256}, {"height", 256}};
+    nlohmann::json js = {{"width", 256}, {"height", 256}};
     nlohmann::json aug;
     image::config  cfg(js);
+    nlohmann::json plugin_params;
+    plugin_params["angle"] = {45, 45};
 
-    depthmap::extractor         extractor{cfg};
-    depthmap::transformer       transformer{cfg};
+    depthmap::extractor           extractor{cfg};
+    depthmap::transformer         transformer{cfg};
     image::loader                 loader{cfg, false};
     augment::image::param_factory factory{aug};
 
@@ -92,7 +94,7 @@ TEST(plugin, depthmap_example_rotate)
     auto image_size = extracted->get_image_size();
     auto params_ptr =
         factory.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
-    params_ptr->user_plugin = make_shared<nervana::plugin>("rotate", "{\"angle\": [45,45]}");
+    params_ptr->user_plugin = make_shared<nervana::plugin>("rotate", plugin_params.dump());
     shared_ptr<image::decoded> transformed = transformer.transform(params_ptr, extracted);
     cv::Mat                    tximg       = transformed->get_image(0);
     cv::imwrite("tx_depthmap_rotate_plugin.png", tximg);
@@ -109,11 +111,11 @@ TEST(plugin, depthmap_example_flip)
     nlohmann::json aug = {{"type", "image"},
                           {"crop_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", "{\"probability\": 1}"}};
+                          {"plugin_params", {{"probability", 1}}}};
     image::config cfg(js);
 
-    depthmap::extractor         extractor{cfg};
-    depthmap::transformer       transformer{cfg};
+    depthmap::extractor           extractor{cfg};
+    depthmap::transformer         transformer{cfg};
     image::loader                 loader{cfg, false};
     augment::image::param_factory factory{aug};
 

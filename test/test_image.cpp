@@ -1471,7 +1471,7 @@ TEST(plugin, image_example_rotate)
     nlohmann::json aug      = {{"type", "image"},
                           {"crop_enable", false},
                           {"plugin_filename", "rotate"},
-                          {"plugin_params", "{\"angle\": [20,20]}"}};
+                          {"plugin_params", {{"angle", {20, 20}}}}};
 
     image::config config_ptr{jsConfig};
 
@@ -1523,7 +1523,7 @@ TEST(plugin, image_example_flip)
                           {"crop_enable", false},
                           {"flip_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", "{\"probability\": 1}"}};
+                          {"plugin_params", {{"probability", 1}}}};
 
     image::config config_ptr{jsConfig};
 

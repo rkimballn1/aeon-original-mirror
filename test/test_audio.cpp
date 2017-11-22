@@ -407,8 +407,8 @@ TEST(plugin, audio_example_scale)
     auto js_aug = R"(
         {
             "type": "audio",
-	    "plugin_filename": "scale",
-            "plugin_params": "{\"probability\": 1, \"amplitude\": [0.1, 0.1]}"
+            "plugin_filename": "scale",
+            "plugin_params": {"probability": 1, "amplitude": [0.1, 0.1]}
         }
     )"_json;
 
