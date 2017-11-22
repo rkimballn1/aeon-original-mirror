@@ -24,6 +24,8 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
+thread_local std::shared_ptr<plugin> augment::image::param_factory::user_plugin;
+
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -82,12 +84,14 @@ augment::image::param_factory::param_factory(nlohmann::json js)
                 padding_crop_offset_distribution =
                     std::uniform_int_distribution<int>(0, padding * 2);
             }
-
             if (!plugin_filename.empty())
+            {
+                // thread local variable
                 user_plugin = make_shared<plugin>(plugin_filename, plugin_params.dump());
+            }
         }
+        m_emit_type = get_emit_constraint_type();
     }
-    m_emit_type = get_emit_constraint_type();
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
@@ -114,9 +118,12 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
 
-    settings->user_plugin = user_plugin;
-    if (settings->user_plugin)
+    if (!plugin_filename.empty())
+    {
+        // thread local variable
+        settings->user_plugin = user_plugin;
         settings->user_plugin->prepare();
+    }
 
     auto& random = get_thread_local_random_engine();
 
