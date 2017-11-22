@@ -28,7 +28,7 @@ class plugin(Plugin):
 
     def augment_audio(self, mat):
         if self.do_scale:
-            mat2 = (mat * self.amplitude).astype(np.int16)
+            mat2 = (mat.astype(np.float32) * self.amplitude).astype(np.int16)
             return mat2
         else:
             dst = mat
