@@ -66,7 +66,7 @@ public:
     std::shared_ptr<augment::audio::params> make_params() const;
 
     std::string             plugin_filename;
-    std::string             plugin_params;
+    nlohmann::json          plugin_params;
     std::shared_ptr<plugin> user_plugin = nullptr;
 
     // This derived distribution gets filled by parsing add_noise_probability
@@ -102,7 +102,7 @@ private:
         // ADD_SCALAR(noise_root, mode::OPTIONAL),
         ADD_SCALAR(add_noise_probability, mode::OPTIONAL),
         ADD_SCALAR(plugin_filename, mode::OPTIONAL),
-        ADD_SCALAR(plugin_params, mode::OPTIONAL),
+        ADD_JSON(plugin_params, "plugin_params", mode::OPTIONAL),
 
         ADD_DISTRIBUTION(time_scale_fraction,
                          mode::OPTIONAL,
