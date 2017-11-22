@@ -84,7 +84,7 @@ augment::image::param_factory::param_factory(nlohmann::json js)
             }
 
             if (!plugin_filename.empty())
-                user_plugin = make_shared<plugin>(plugin_filename, plugin_params);
+                user_plugin = make_shared<plugin>(plugin_filename, plugin_params.dump());
         }
     }
     m_emit_type = get_emit_constraint_type();
