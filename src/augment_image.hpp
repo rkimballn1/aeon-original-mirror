@@ -144,7 +144,7 @@ public:
     std::string             m_emit_constraint_type        = "";
     float                   m_emit_constraint_min_overlap = 0.0;
     std::string             plugin_filename;
-    std::string             plugin_params;
+    nlohmann::json          plugin_params;
     std::shared_ptr<plugin> user_plugin = nullptr;
 
     /** Scale the crop box (width, height) */
@@ -238,7 +238,7 @@ private:
         ADD_DISTRIBUTION(hue, mode::OPTIONAL, [](decltype(hue) v) { return v.a() <= v.b(); }),
         ADD_OBJECT(batch_samplers, mode::OPTIONAL),
         ADD_SCALAR(plugin_filename, mode::OPTIONAL),
-        ADD_SCALAR(plugin_params, mode::OPTIONAL)};
+        ADD_JSON(plugin_params, "plugin_params", mode::OPTIONAL)};
 
     emit_type get_emit_constraint_type();
 };
