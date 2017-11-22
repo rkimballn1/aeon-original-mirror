@@ -37,6 +37,11 @@ cfg = {
                 'channels': 1},
                {'type': 'label',
                 'binary': False}
+           ],
+           'augmentation': [
+               {'type': 'image',
+               'plugin_filename': 'rotate',
+               'plugin_params': {"angle": [-45,45]}}
            ]
       }
 
