@@ -38,7 +38,6 @@ set (SRC
     normalized_box.cpp
     provider.cpp
     provider_factory.cpp
-    python_init.cpp
     python_plugin.cpp
     specgram.cpp
     typemap.cpp
