@@ -114,9 +114,8 @@ void provider::provider_base::provide(int                           idx,
                                       nervana::encoded_record_list& in_buf,
                                       nervana::fixed_buffer_map&    out_buf) const
 {
-    //python::ensure_gil gil;
-    augmentation       aug;
-    int                index = 0;
+    augmentation aug;
+    int          index = 0;
     for (const shared_ptr<provider::interface>& provider : m_providers)
     {
         provider->provide(idx, in_buf.record(idx).element(index++), out_buf, aug);
