@@ -1,7 +1,23 @@
+/*
+ Copyright 2017 Nervana Systems Inc.
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
 #pragma once
 
 #include "python_utils.hpp"
 #include "conversion.hpp"
+
+#define NP_NO_DEPRACATED_API NPY_1_7_API_VERSION
 
 namespace nervana
 {
@@ -48,7 +64,7 @@ namespace nervana
         PyObject*               func_prepare{nullptr};
         std::shared_ptr<module> module_ptr;
 
-        template<typename T>
+        template <typename T>
         T augment(PyObject* func, const T& in_data)
         {
             std::lock_guard<std::mutex> lock(mtx);
@@ -80,8 +96,7 @@ namespace nervana
         }
 
     public:
-        plugin()
-        { }
+        plugin() {}
         ~plugin()
         {
             std::lock_guard<std::mutex> lock(mtx);
@@ -172,12 +187,9 @@ namespace nervana
             PyObject_CallObject(func_prepare, arg_tuple);
         }
 
-        cv::Mat augment_image(const cv::Mat& m)
-        {
-            return augment(func_image, m);
-        }
-
-        std::vector<boundingbox::box> augment_boundingbox(const std::vector<boundingbox::box>& boxes)
+        cv::Mat augment_image(const cv::Mat& m) { return augment(func_image, m); }
+        std::vector<boundingbox::box>
+            augment_boundingbox(const std::vector<boundingbox::box>& boxes)
         {
             return augment(func_boundingbox, boxes);
         }
@@ -192,9 +204,24 @@ namespace nervana
             return augment(func_depthmap, depthmap);
         }
 
-        cv::Mat augment_audio(const cv::Mat& audio)
+        cv::Mat augment_audio(const cv::Mat& audio) { return augment(func_audio, audio); }
+        friend struct call_initialize;
+    };
+
+    struct call_initialize
+    {
+        call_initialize()
         {
-            return augment(func_audio, audio);
+            std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
+            Py_Initialize();
+            PyRun_SimpleString("import threading");
+            std::atexit(call_finalize);
+        }
+        static void call_finalize()
+        {
+            std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
+            PyGILState_Ensure();
+            Py_Finalize();
         }
     };
 }
