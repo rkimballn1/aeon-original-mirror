@@ -308,8 +308,8 @@ cv::Mat nervana::read_audio_from_mem(const char* item, int itemSize)
 // Audio buffer must be int16
 void nervana::write_audio_to_file(cv::Mat buffer, std::string path, sox_rate_t sample_rate_hz)
 {
-    sox_signalinfo_t   signal{sample_rate_hz, 1, 16, buffer.total(), NULL};
-    auto t = sox_open_write(path.c_str(), &signal, NULL, NULL, NULL, NULL);
+    sox_signalinfo_t signal{sample_rate_hz, 1, 16, buffer.total(), NULL};
+    auto             t = sox_open_write(path.c_str(), &signal, NULL, NULL, NULL, NULL);
 
     sox_sample_t sample_buffer[buffer.total()];
     for (auto i = 0; i < buffer.total(); i++)
