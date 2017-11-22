@@ -1,3 +1,17 @@
+/*
+ Copyright 2017 Nervana Systems Inc.
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
 #include "conversion.hpp"
 #include "python_utils.hpp"
 
@@ -71,8 +85,6 @@ namespace
                       uchar*&    data,
                       size_t*    step)
         {
-            //nervana::python::ensure_gil gil;
-
             int       depth = CV_MAT_DEPTH(type);
             int       cn    = CV_MAT_CN(type);
             const int f     = (int)(sizeof(size_t) / 8);
@@ -123,7 +135,6 @@ namespace
 
         void deallocate(int* refcount, uchar*, uchar*)
         {
-            //nervana::python::ensure_gil gil;
             if (!refcount)
                 return;
             PyObject* o = pyObjectFromRefcount(refcount);
