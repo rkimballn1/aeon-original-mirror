@@ -1523,7 +1523,7 @@ TEST(plugin, image_example_flip)
                           {"crop_enable", false},
                           {"flip_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", {{"probability", 1}}}};
+                          {"plugin_params", {{"probability", 1}, {"width", 256}}}};
 
     image::config config_ptr{jsConfig};
 
