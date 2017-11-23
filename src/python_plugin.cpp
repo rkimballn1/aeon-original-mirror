@@ -16,6 +16,9 @@
 #include <cstdlib>
 #include "python_plugin.hpp"
 
+//#define LOCK std::lock_guard<std::mutex> lock(nervana::plugin::mtx)
+#define LOCK //
+
 std::mutex nervana::plugin::mtx;
 
 namespace
@@ -29,21 +32,22 @@ namespace nervana
 
     call_initialize::call_initialize()
     {
-        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
-        Py_Initialize();
-        std::cout << "Before init threads() " << PyGILState_GetThisThreadState() << std::endl;
-        PyEval_InitThreads();
-        std::cout << "After init threads() " << PyGILState_GetThisThreadState() << std::endl;
+        LOCK;
+        Py_InitializeEx(0);
+        if (!PyEval_ThreadsInitialized())
+            PyEval_InitThreads();
 
-        //PyRun_SimpleString("import threading");
+        PyRun_SimpleString("import threading");
         std::atexit(call_finalize);
         m_tstate = PyEval_SaveThread();
+        //m_tstate  = PyGILState_GetThisThreadState();
+        //m_tstate = PyThreadState_Get();
     }
 
     void call_initialize::call_finalize()
     {
-        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
-        std::cout << "before finalize " << PyGILState_GetThisThreadState() << std::endl;
+        LOCK;
+        std::cout << "Before finalize " << PyGILState_GetThisThreadState() << std::endl;
 
         PyEval_RestoreThread(m_tstate);
         //PyGILState_Ensure();
@@ -53,8 +57,8 @@ namespace nervana
     template <typename T>
     T plugin::augment(PyObject* methodname, const T& in_data)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        python::ensure_gil          gil;
+        LOCK;
+        python::ensure_gil gil;
 
         using convert = typename ::python::conversion::convert<T>;
 
@@ -84,12 +88,8 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        std::cout << "plugin() " << PyGILState_GetThisThreadState() << std::endl;
-        std::cout << "is initialized? " << Py_IsInitialized() << PyEval_ThreadsInitialized()
-                  << std::endl;
+        LOCK;
         python::ensure_gil gil;
-        std::cout << "plugin() after gil " << PyGILState_GetThisThreadState() << std::endl;
 
         name   = PyString_FromString(filename.c_str());
         handle = PyImport_Import(name);
@@ -122,8 +122,8 @@ namespace nervana
     plugin::~plugin() {}
     void plugin::prepare()
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        python::ensure_gil          gil;
+        LOCK;
+        python::ensure_gil gil;
         PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
     }
     cv::Mat plugin::augment_image(const cv::Mat& m)

@@ -57,12 +57,22 @@ int gil_lock::gil_init = 0;
         {
         public:
             ensure_gil()
-                : _state(PyGILState_Ensure())
             {
+                PyThreadState* currentThread = _PyThreadState_Current;
+
+                flag = PyGILState_GetThisThreadState() || !currentThread;
+                if (flag)
+                    _state = PyGILState_Ensure();
             }
 
-            ~ensure_gil() { PyGILState_Release(_state); }
+            ~ensure_gil()
+            {
+                if (flag)
+                    PyGILState_Release(_state);
+            }
+
         private:
+            bool             flag;
             PyGILState_STATE _state;
         };
     }
