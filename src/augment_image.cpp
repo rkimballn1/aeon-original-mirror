@@ -24,7 +24,7 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
-thread_local std::shared_ptr<plugin> augment::image::param_factory::user_plugin;
+std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin;
 
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
@@ -84,14 +84,14 @@ augment::image::param_factory::param_factory(nlohmann::json js)
                 padding_crop_offset_distribution =
                     std::uniform_int_distribution<int>(0, padding * 2);
             }
-            if (!plugin_filename.empty())
-            {
-                // thread local variable
-                user_plugin = make_shared<plugin>(plugin_filename, plugin_params.dump());
-            }
         }
         m_emit_type = get_emit_constraint_type();
     }
+}
+
+nervana::augment::image::param_factory::~param_factory()
+{
+    user_plugin.clear();
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
@@ -120,9 +120,20 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
 
     if (!plugin_filename.empty())
     {
-        // thread local variable
-        settings->user_plugin = user_plugin;
-        settings->user_plugin->prepare();
+        if (user_plugin.find(this_thread::get_id()) == user_plugin.end())
+        {
+            user_plugin[std::this_thread::get_id()] =
+                std::make_shared<plugin>(plugin_filename, plugin_params.dump());
+        }
+        settings->user_plugin = user_plugin[this_thread::get_id()];
+
+        if (settings->user_plugin)
+            settings->user_plugin->prepare();
+    }
+    else
+    {
+        user_plugin[std::this_thread::get_id()] = std::shared_ptr<plugin>();
+        settings->user_plugin                   = user_plugin[std::this_thread::get_id()];
     }
 
     auto& random = get_thread_local_random_engine();

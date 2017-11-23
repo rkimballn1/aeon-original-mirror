@@ -111,7 +111,7 @@ TEST(plugin, depthmap_example_flip)
     nlohmann::json aug = {{"type", "image"},
                           {"crop_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", {{"probability", 1}}}};
+                          {"plugin_params", {{"probability", 1}, {"width", 256}}}};
     image::config cfg(js);
 
     depthmap::extractor           extractor{cfg};
