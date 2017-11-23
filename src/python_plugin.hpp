@@ -24,7 +24,7 @@ namespace nervana
     {
         call_initialize();
         static void    call_finalize();
-        PyThreadState* m_tstate;
+        static PyThreadState* m_tstate;
     };
 
     class plugin
