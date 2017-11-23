@@ -25,6 +25,8 @@ namespace
 
 namespace nervana
 {
+    PyThreadState* call_initialize::m_tstate{nullptr};
+
     call_initialize::call_initialize()
     {
         std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
