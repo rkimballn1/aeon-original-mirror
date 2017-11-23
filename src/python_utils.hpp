@@ -49,14 +49,8 @@ int gil_lock::gil_init = 0;
         class allow_threads
         {
         public:
-            allow_threads()
-                : _state(PyEval_SaveThread())
-            {
-            }
-
-            ~allow_threads() { PyEval_RestoreThread(_state); }
-        private:
-            PyThreadState* _state;
+            allow_threads(PyThreadState* m_state) { PyEval_RestoreThread(m_state); }
+            ~allow_threads() { PyEval_SaveThread(); }
         };
 
         class ensure_gil

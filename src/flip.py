@@ -16,6 +16,8 @@ class plugin(Plugin):
                 self.probability = params["probability"]
             if params.has_key("width"):
                 self.width = params["width"]
+            else:
+                raise ValueError("Width required for flip.py")
 
     def prepare(self):
         self.do_flip = np.random.uniform() < self.probability

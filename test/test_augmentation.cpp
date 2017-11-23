@@ -468,10 +468,21 @@ TEST(image_augmentation, plugin_example_flip_config)
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
-                         {"plugin_params", nlohmann::json({})}};
+                         {"plugin_params", {{"width", 10}}}};
 
     augment::image::param_factory config(js);
     config.make_params(10, 10, 10, 10);
+}
+
+TEST(image_augmentation, plugin_example_flip_config_missing_argument)
+{
+    nlohmann::json js = {{"type", "image"},
+                         {"crop_enable", false},
+                         {"plugin_filename", "flip"},
+                         {"plugin_params", nlohmann::json({})}};
+
+    augment::image::param_factory config(js);
+    EXPECT_THROW(config.make_params(10, 10, 10, 10), std::runtime_error);
 }
 
 TEST(image_augmentation, plugin_base_class_config)
@@ -482,5 +493,6 @@ TEST(image_augmentation, plugin_base_class_config)
                          {"plugin_params", nlohmann::json({})}};
 
     std::shared_ptr<augment::image::param_factory> factory;
-    EXPECT_THROW(factory = make_shared<augment::image::param_factory>(js), std::runtime_error);
+    factory = make_shared<augment::image::param_factory>(js);
+    EXPECT_THROW(factory->make_params(10, 10, 10, 10), std::runtime_error);
 }

@@ -125,6 +125,7 @@ class nervana::augment::image::param_factory : public json_configurable
 {
 public:
     param_factory(nlohmann::json config);
+    ~param_factory();
     std::shared_ptr<params> make_params(size_t input_width,
                                         size_t input_height,
                                         size_t output_width,
@@ -137,16 +138,16 @@ public:
                         size_t                                        output_height,
                         const std::vector<nervana::boundingbox::box>& object_bboxes) const;
 
-    bool                                        do_area_scale                 = false;
-    bool                                        crop_enable                   = true;
-    bool                                        fixed_aspect_ratio            = false;
-    float                                       expand_probability            = 0.;
-    float                                       fixed_scaling_factor          = -1;
-    std::string                                 m_emit_constraint_type        = "";
-    float                                       m_emit_constraint_min_overlap = 0.0;
-    std::string                                 plugin_filename;
-    nlohmann::json                              plugin_params;
-    static thread_local std::shared_ptr<plugin> user_plugin;
+    bool           do_area_scale                 = false;
+    bool           crop_enable                   = true;
+    bool           fixed_aspect_ratio            = false;
+    float          expand_probability            = 0.;
+    float          fixed_scaling_factor          = -1;
+    std::string    m_emit_constraint_type        = "";
+    float          m_emit_constraint_min_overlap = 0.0;
+    std::string    plugin_filename;
+    nlohmann::json plugin_params;
+    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin;
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
