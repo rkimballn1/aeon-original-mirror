@@ -16,8 +16,7 @@
 #include <cstdlib>
 #include "python_plugin.hpp"
 
-std::vector<std::shared_ptr<nervana::module>> nervana::plugin::loaded_modules;
-std::mutex                                    nervana::plugin::mtx;
+std::mutex nervana::plugin::mtx;
 
 namespace
 {
@@ -26,32 +25,34 @@ namespace
 
 namespace nervana
 {
-    module::module(std::string path)
-        : filename(path)
+    call_initialize::call_initialize()
     {
-        name   = PyString_FromString(filename.c_str());
-        handle = PyImport_Import(name);
+        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
+        Py_Initialize();
+        std::cout << "Before init threads() " << PyGILState_GetThisThreadState() << std::endl;
+        PyEval_InitThreads();
+        std::cout << "After init threads() " << PyGILState_GetThisThreadState() << std::endl;
 
-        if (!handle)
-        {
-            PyErr_Print();
-            throw std::runtime_error("python module not loaded");
-        }
-
-        klass = PyObject_GetAttrString(handle, "plugin");
-
-        if (!klass)
-        {
-            PyErr_Print();
-            throw std::runtime_error("python class not loaded");
-        }
+        //PyRun_SimpleString("import threading");
+        std::atexit(call_finalize);
+        m_tstate = PyEval_SaveThread();
     }
 
-    bool module::operator==(const module& other) { return filename == other.filename; }
+    void call_initialize::call_finalize()
+    {
+        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
+        std::cout << "before finalize " << PyGILState_GetThisThreadState() << std::endl;
+
+        PyEval_RestoreThread(m_tstate);
+        //PyGILState_Ensure();
+        Py_Finalize();
+    }
+
     template <typename T>
     T plugin::augment(PyObject* methodname, const T& in_data)
     {
         std::lock_guard<std::mutex> lock(mtx);
+        python::ensure_gil          gil;
 
         using convert = typename ::python::conversion::convert<T>;
 
@@ -78,28 +79,37 @@ namespace nervana
         return out;
     }
 
-    plugin::plugin(std::string filename, std::string params)
+    plugin::plugin(std::string fname, std::string params)
+        : filename(fname)
     {
         std::lock_guard<std::mutex> lock(mtx);
+        std::cout << "plugin() " << PyGILState_GetThisThreadState() << std::endl;
+        std::cout << "is initialized? " << Py_IsInitialized() << PyEval_ThreadsInitialized()
+                  << std::endl;
+        python::ensure_gil gil;
+        std::cout << "plugin() after gil " << PyGILState_GetThisThreadState() << std::endl;
 
-        auto it = std::find_if(
-            loaded_modules.begin(),
-            loaded_modules.end(),
-            [&filename](const std::shared_ptr<module> obj) { return obj->filename == filename; });
-        if (it == loaded_modules.end())
+        name   = PyString_FromString(filename.c_str());
+        handle = PyImport_Import(name);
+
+        if (!handle)
         {
-            module_ptr = std::make_shared<module>(filename);
-            loaded_modules.push_back(module_ptr);
+            PyErr_Print();
+            throw std::runtime_error("python module not loaded");
         }
-        else
+
+        klass = PyObject_GetAttrString(handle, "plugin");
+
+        if (!klass)
         {
-            module_ptr = *it;
+            PyErr_Print();
+            throw std::runtime_error("python class not loaded");
         }
 
         PyObject* arg_tuple = PyTuple_New(1);
-
         PyTuple_SetItem(arg_tuple, 0, PyString_FromString(params.c_str()));
-        instance = PyObject_Call(module_ptr->klass, arg_tuple, NULL);
+
+        instance = PyObject_CallObject(klass, arg_tuple);
         if (!instance)
         {
             PyErr_Print();
@@ -107,21 +117,12 @@ namespace nervana
         }
     }
 
-    plugin::~plugin()
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        auto it = std::find(loaded_modules.begin(), loaded_modules.end(), module_ptr);
-        if (it != loaded_modules.end())
-        {
-            loaded_modules.erase(it);
-        }
-    }
-
+    plugin::~plugin() {}
     void plugin::prepare()
     {
         std::lock_guard<std::mutex> lock(mtx);
-
-        PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL, NULL);
+        python::ensure_gil          gil;
+        PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
     }
     cv::Mat plugin::augment_image(const cv::Mat& m)
 
@@ -149,19 +150,4 @@ namespace nervana
     {
         return augment(PyString_FromString("augment_audio"), audio);
     }
-
-    call_initialize::call_initialize()
-    {
-        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
-        Py_Initialize();
-        PyRun_SimpleString("import threading");
-        std::atexit(call_finalize);
-    }
-
-    void call_initialize::call_finalize()
-    {
-        std::lock_guard<std::mutex> lock(nervana::plugin::mtx);
-        PyGILState_Ensure();
-        Py_Finalize();
-    }
-};
+}

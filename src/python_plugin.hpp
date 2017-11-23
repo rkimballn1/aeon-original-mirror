@@ -23,31 +23,25 @@ namespace nervana
     struct call_initialize
     {
         call_initialize();
-        static void call_finalize();
-    };
-    struct module
-    {
-        module(std::string path);
-        bool operator==(const module& other);
-        std::string filename{""};
-        PyObject*   name{nullptr};
-        PyObject*   handle{nullptr};
-        PyObject*   klass{nullptr};
+        static void    call_finalize();
+        PyThreadState* m_tstate;
     };
 
     class plugin
     {
-        static std::vector<std::shared_ptr<module>> loaded_modules;
-        static std::mutex                           mtx;
+        static std::mutex mtx;
 
-        PyObject*               instance{nullptr};
-        std::shared_ptr<module> module_ptr;
+        std::string filename;
+        PyObject*   name{nullptr};
+        PyObject*   handle{nullptr};
+        PyObject*   klass{nullptr};
+        PyObject*   instance{nullptr};
 
         template <typename T>
-        T augment2(PyObject* methodname, const T& in_data);
+        T augment(PyObject* methodname, const T& in_data);
 
     public:
-        plugin() {}
+        plugin() = delete;
         plugin(std::string filename, std::string params);
         ~plugin();
 
