@@ -16,40 +16,52 @@
 #include <cstdlib>
 #include "python_plugin.hpp"
 
-//#define LOCK std::lock_guard<std::mutex> lock(nervana::plugin::mtx)
-#define LOCK //
+#define LOCK std::lock_guard<std::mutex> lock(nervana::plugin::mtx)
+//#define LOCK //
 
 std::mutex nervana::plugin::mtx;
 
-namespace
-{
-    static nervana::call_initialize x;
-}
-
 namespace nervana
 {
-    PyThreadState* call_initialize::m_tstate{nullptr};
+    call_initialize& call_initialize::Instance()
+    {
+        static call_initialize instance;
+        return instance;
+    }
 
     call_initialize::call_initialize()
     {
         LOCK;
-        Py_InitializeEx(0);
-        if (!PyEval_ThreadsInitialized())
-            PyEval_InitThreads();
+        if (!Py_IsInitialized()) {
+            Py_InitializeEx(0);
+            std::cout << "initializing python" << std::endl;
+        } else
+            std::cout << "python already initialized" << std::endl;
 
-        PyRun_SimpleString("import threading");
-        std::atexit(call_finalize);
-        m_tstate = PyEval_SaveThread();
-        //m_tstate  = PyGILState_GetThisThreadState();
+        if (!PyEval_ThreadsInitialized())
+        {
+            std::cout << "initializing threads" << std::endl;
+            PyEval_InitThreads();
+            m_tstate = PyEval_SaveThread();
+        }
+        else
+        {
+            std::cout << "threads already initialized" << std::endl;
+        }
+
+        //std::atexit(call_finalize);
+        //m_tstate = PyGILState_GetThisThreadState();
         //m_tstate = PyThreadState_Get();
     }
 
-    void call_initialize::call_finalize()
+    call_initialize::~call_initialize()
     {
         LOCK;
-        std::cout << "Before finalize " << PyGILState_GetThisThreadState() << std::endl;
+        std::cout << "Before finalize ";
+        std::cout << PyGILState_GetThisThreadState() << std::endl;
 
-        PyEval_RestoreThread(m_tstate);
+        if (m_tstate)
+            PyEval_RestoreThread(m_tstate);
         //PyGILState_Ensure();
         Py_Finalize();
     }
@@ -88,6 +100,7 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
+        call_initialize::Instance();
         LOCK;
         python::ensure_gil gil;
 
