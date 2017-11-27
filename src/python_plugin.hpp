@@ -20,17 +20,23 @@
 
 namespace nervana
 {
-    struct call_initialize
+    class call_initialize
     {
+    public:
+        static call_initialize& Instance();
+
+    protected:
         call_initialize();
-        static void    call_finalize();
-        static PyThreadState* m_tstate;
+        ~call_initialize();
+        PyThreadState* m_tstate{nullptr};
     };
 
     class plugin
     {
+    public:
         static std::mutex mtx;
 
+    private:
         std::string filename;
         PyObject*   name{nullptr};
         PyObject*   handle{nullptr};
@@ -56,6 +62,5 @@ namespace nervana
         cv::Mat augment_depthmap(const cv::Mat& depthmap);
 
         cv::Mat augment_audio(const cv::Mat& audio);
-        friend struct call_initialize;
     };
 }
