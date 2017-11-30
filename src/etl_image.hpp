@@ -156,11 +156,6 @@ class nervana::image::transformer
 public:
     transformer(const image::config&);
     ~transformer();
-    /*    { 
-        if (py_init) {
-            Py_Finalize(); 
-        }
-    }*/
     virtual std::shared_ptr<image::decoded>
         transform(std::shared_ptr<augment::image::params>,
                   std::shared_ptr<image::decoded>) const override;

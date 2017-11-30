@@ -16,67 +16,17 @@
 #include <cstdlib>
 #include "python_plugin.hpp"
 
-#define LOCK std::lock_guard<std::mutex> lock(nervana::plugin::mtx)
-//#define LOCK //
-
-std::mutex nervana::plugin::mtx;
 
 namespace nervana
 {
-    call_initialize& call_initialize::Instance()
-    {
-        static call_initialize instance;
-        return instance;
-    }
-
-    call_initialize::call_initialize()
-    {
-        LOCK;
-        if (!Py_IsInitialized()) {
-            Py_InitializeEx(0);
-            std::cout << "initializing python" << std::endl;
-        } else
-            std::cout << "python already initialized" << std::endl;
-
-        if (!PyEval_ThreadsInitialized())
-        {
-            std::cout << "initializing threads" << std::endl;
-            PyEval_InitThreads();
-            m_tstate = PyEval_SaveThread();
-        }
-        else
-        {
-            std::cout << "threads already initialized" << std::endl;
-        }
-
-        //std::atexit(call_finalize);
-        //m_tstate = PyGILState_GetThisThreadState();
-        //m_tstate = PyThreadState_Get();
-    }
-
-    call_initialize::~call_initialize()
-    {
-        LOCK;
-        std::cout << "Before finalize ";
-        std::cout << PyGILState_GetThisThreadState() << std::endl;
-
-        if (m_tstate)
-            PyEval_RestoreThread(m_tstate);
-        //PyGILState_Ensure();
-        Py_Finalize();
-    }
-
     template <typename T>
-    T plugin::augment(PyObject* methodname, const T& in_data)
+    T plugin::augment(std::string methodname, const T& in_data)
     {
-        LOCK;
-        python::ensure_gil gil;
-
         using convert = typename ::python::conversion::convert<T>;
 
         PyObject* arg = convert::to_pyobject(in_data);
 
-        PyObject* ret_val = PyObject_CallMethodObjArgs(instance, methodname, arg, NULL);
+        PyObject* ret_val = PyObject_CallMethodObjArgs(instance, PyString_FromString(methodname.c_str()), arg, NULL);
 
         T out;
         if (ret_val != NULL)
@@ -100,10 +50,6 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
-        call_initialize::Instance();
-        LOCK;
-        python::ensure_gil gil;
-
         name   = PyString_FromString(filename.c_str());
         handle = PyImport_Import(name);
 
@@ -132,37 +78,35 @@ namespace nervana
         }
     }
 
-    plugin::~plugin() {}
+    plugin::~plugin() { };
+
     void plugin::prepare()
     {
-        LOCK;
-        python::ensure_gil gil;
         PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
     }
+    
     cv::Mat plugin::augment_image(const cv::Mat& m)
-
     {
-        return augment(PyString_FromString("augment_image"), m);
+        return augment("augment_image", m);
     }
 
-    std::vector<boundingbox::box>
-        plugin::augment_boundingbox(const std::vector<boundingbox::box>& boxes)
+    std::vector<boundingbox::box> plugin::augment_boundingbox(const std::vector<boundingbox::box>& boxes)
     {
-        return augment(PyString_FromString("augment_boundingbox"), boxes);
+        return augment("augment_boundingbox", boxes);
     }
 
-    cv::Mat plugin::augment_pixel_mask(const cv::Mat& pixel_mask)
+    cv::Mat plugin::augment_audio(const cv::Mat& m)
     {
-        return augment(PyString_FromString("augment_pixel_mask"), pixel_mask);
+        return augment("augment_audio", m);
     }
 
-    cv::Mat plugin::augment_depthmap(const cv::Mat& depthmap)
+    cv::Mat plugin::augment_pixel_mask(const cv::Mat& m)
     {
-        return augment(PyString_FromString("augment_depthmap"), depthmap);
+        return augment("augment_pixel_mask", m);
     }
 
-    cv::Mat plugin::augment_audio(const cv::Mat& audio)
+    cv::Mat plugin::augment_depthmap(const cv::Mat& m)
     {
-        return augment(PyString_FromString("augment_audio"), audio);
+        return augment("augment_depthmap", m);
     }
 }

@@ -20,17 +20,15 @@
 
 namespace nervana
 {
+    /*
     class call_initialize
     {
     public:
-        static call_initialize& Instance();
-
-    protected:
         call_initialize();
         ~call_initialize();
-        PyThreadState* m_tstate{nullptr};
+        static PyInterpreterState* interp_state;
     };
-
+*/
     class plugin
     {
     public:
@@ -44,7 +42,7 @@ namespace nervana
         PyObject*   instance{nullptr};
 
         template <typename T>
-        T augment(PyObject* methodname, const T& in_data);
+        T augment(std::string methodname, const T& in_data);
 
     public:
         plugin() = delete;
@@ -52,15 +50,10 @@ namespace nervana
         ~plugin();
 
         void prepare();
-
         cv::Mat augment_image(const cv::Mat& m);
-        std::vector<boundingbox::box>
-            augment_boundingbox(const std::vector<boundingbox::box>& boxes);
-
-        cv::Mat augment_pixel_mask(const cv::Mat& pixel_mask);
-
-        cv::Mat augment_depthmap(const cv::Mat& depthmap);
-
-        cv::Mat augment_audio(const cv::Mat& audio);
+        std::vector<boundingbox::box> augment_boundingbox(const std::vector<boundingbox::box>& boxes);
+        cv::Mat augment_audio(const cv::Mat& m);
+        cv::Mat augment_pixel_mask(const cv::Mat& m);
+        cv::Mat augment_depthmap(const cv::Mat& m);
     };
 }
