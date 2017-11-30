@@ -22,6 +22,7 @@ namespace nervana
     template <typename T>
     T plugin::augment(std::string methodname, const T& in_data)
     {
+        python::ensure_gil gil;
         using convert = typename ::python::conversion::convert<T>;
 
         PyObject* arg = convert::to_pyobject(in_data);
@@ -50,6 +51,7 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
+        python::ensure_gil gil;
         name   = PyString_FromString(filename.c_str());
         handle = PyImport_Import(name);
 
@@ -82,9 +84,10 @@ namespace nervana
 
     void plugin::prepare()
     {
+        python::ensure_gil gil;
         PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
     }
-    
+
     cv::Mat plugin::augment_image(const cv::Mat& m)
     {
         return augment("augment_image", m);
