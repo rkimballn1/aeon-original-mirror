@@ -18,7 +18,7 @@
 using namespace std;
 using namespace nervana;
 
-thread_local std::shared_ptr<plugin> augment::audio::param_factory::user_plugin;
+std::map<std::thread::id, std::shared_ptr<plugin>> augment::audio::param_factory::user_plugin;
 
 nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 {
@@ -46,13 +46,13 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 
             add_noise = std::bernoulli_distribution{add_noise_probability};
             // validate();
-            if (!plugin_filename.empty())
-            {
-                // thread local variable
-                user_plugin = make_shared<plugin>(plugin_filename, plugin_params.dump());
-            }
         }
     }
+}
+
+nervana::augment::audio::param_factory::~param_factory()
+{
+    user_plugin.clear();
 }
 
 shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() const
@@ -61,9 +61,20 @@ shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() 
 
     if (!plugin_filename.empty())
     {
-        // thread local variable
-        audio_stgs->user_plugin = user_plugin;
-        audio_stgs->user_plugin->prepare();
+        if (user_plugin.find(this_thread::get_id()) == user_plugin.end())
+        {
+            user_plugin[std::this_thread::get_id()] =
+                std::make_shared<plugin>(plugin_filename, plugin_params.dump());
+        }
+        audio_stgs->user_plugin = user_plugin[this_thread::get_id()];
+
+        if (audio_stgs->user_plugin)
+            audio_stgs->user_plugin->prepare();
+    }
+    else
+    {
+        user_plugin[std::this_thread::get_id()] = std::shared_ptr<plugin>();
+        audio_stgs->user_plugin                 = user_plugin[std::this_thread::get_id()];
     }
 
     auto& random = get_thread_local_random_engine();
