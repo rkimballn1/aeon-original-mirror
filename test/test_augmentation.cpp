@@ -460,7 +460,11 @@ TEST(image_augmentation, plugin_example_rotate_config)
                          {"plugin_params", {{"angle", {-20, 20}}}}};
 
     augment::image::param_factory config(js);
-    config.make_params(10, 10, 10, 10);
+
+    {
+        nervana::python::ensure_gil gil;
+        config.make_params(10, 10, 10, 10);
+    }
 }
 
 TEST(image_augmentation, plugin_example_flip_config)
@@ -471,7 +475,11 @@ TEST(image_augmentation, plugin_example_flip_config)
                          {"plugin_params", {{"width", 10}}}};
 
     augment::image::param_factory config(js);
-    config.make_params(10, 10, 10, 10);
+
+    {
+        nervana::python::ensure_gil gil;
+        config.make_params(10, 10, 10, 10);
+    }
 }
 
 TEST(image_augmentation, plugin_example_flip_config_missing_argument)
@@ -482,7 +490,11 @@ TEST(image_augmentation, plugin_example_flip_config_missing_argument)
                          {"plugin_params", nlohmann::json({})}};
 
     augment::image::param_factory config(js);
-    EXPECT_THROW(config.make_params(10, 10, 10, 10), std::runtime_error);
+
+    {
+        nervana::python::ensure_gil gil;
+        EXPECT_THROW(config.make_params(10, 10, 10, 10), std::runtime_error);
+    }
 }
 
 TEST(image_augmentation, plugin_base_class_config)
@@ -494,5 +506,8 @@ TEST(image_augmentation, plugin_base_class_config)
 
     std::shared_ptr<augment::image::param_factory> factory;
     factory = make_shared<augment::image::param_factory>(js);
-    EXPECT_THROW(factory->make_params(10, 10, 10, 10), std::runtime_error);
+    {
+        nervana::python::ensure_gil gil;
+        EXPECT_THROW(factory->make_params(10, 10, 10, 10), std::runtime_error);
+    }
 }

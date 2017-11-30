@@ -19,6 +19,7 @@
 
 #include "etl_audio.hpp"
 #include "wav_data.hpp"
+#include "python_utils.hpp"
 
 using namespace std;
 using namespace nervana;
@@ -434,9 +435,11 @@ TEST(plugin, audio_example_scale)
     ASSERT_EQ(decoded_audio->get_time_data().rows, 16000 * 3);
     cv::Mat old = decoded_audio->get_time_data().clone();
     //nervana::write_audio_to_file(old, "scale_before.wav", sample_freq);
-    auto audioParams = factory.make_params();
-
-    _audioTransformer.transform(audioParams, decoded_audio);
+    {
+        nervana::python::ensure_gil gil;
+        auto audioParams = factory.make_params();
+        _audioTransformer.transform(audioParams, decoded_audio);
+    }
     cv::Mat after = decoded_audio->get_freq_data().clone();
     //nervana::write_audio_to_file(after, "scale_after.wav", sample_freq);
     auto shape = config.get_shape_type();

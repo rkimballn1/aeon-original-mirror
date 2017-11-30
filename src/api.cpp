@@ -34,7 +34,7 @@ extern "C" {
 #define PYOBJ_TAIL_INIT
 #endif
 
-PyThreadState* main_state;
+static PyThreadState* main_state;
 
 #define DL_get_loader(v) (((aeon_DataLoader*)(v))->m_loader)
 

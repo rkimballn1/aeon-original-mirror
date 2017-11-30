@@ -53,7 +53,7 @@ public:
     float                   noise_level;
     float                   noise_offset_fraction;
     float                   time_scale_fraction;
-    std::shared_ptr<plugin> user_plugin = nullptr;
+    std::shared_ptr<plugin> user_plugin{nullptr};
 
 private:
     params() {}
@@ -67,7 +67,6 @@ public:
 
     std::string                                 plugin_filename;
     nlohmann::json                              plugin_params;
-    static thread_local std::shared_ptr<plugin> user_plugin;
 
     // This derived distribution gets filled by parsing add_noise_probability
     /** Probability of adding noise */

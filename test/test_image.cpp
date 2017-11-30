@@ -30,6 +30,7 @@
 #include "log.hpp"
 #include "util.hpp"
 #include "file_util.hpp"
+#include "python_utils.hpp"
 
 #define private public
 
@@ -1463,7 +1464,7 @@ TEST(photometric, hue)
 }
 
 TEST(plugin, image_example_rotate)
-{
+{    
     auto                  indexed = generate_indexed_image(256, 256);
     vector<unsigned char> img;
     cv::imencode(".png", indexed, img);
@@ -1481,11 +1482,16 @@ TEST(plugin, image_example_rotate)
     augment::image::param_factory factory(aug);
 
     auto                               image_size = decoded->get_image_size();
-    shared_ptr<augment::image::params> params_ptr = factory.make_params(
-        image_size.width, image_size.height, config_ptr.width, config_ptr.height);
-
     image::transformer         trans{config_ptr};
-    shared_ptr<image::decoded> transformed = trans.transform(params_ptr, decoded);
+
+    shared_ptr<image::decoded> transformed;
+    {
+        nervana::python::ensure_gil gil;
+        shared_ptr<augment::image::params> params_ptr = factory.make_params(
+            image_size.width, image_size.height, config_ptr.width, config_ptr.height);
+
+        transformed = trans.transform(params_ptr, decoded);
+    }
 
     cv::Mat image = transformed->get_image(0);
     EXPECT_EQ(256, image.size().width);
@@ -1500,7 +1506,7 @@ TEST(plugin, image_example_rotate)
 
     factory = augment::image::param_factory(aug);
 
-    params_ptr = factory.make_params(
+    auto params_ptr = factory.make_params(
         image_size.width, image_size.height, config_ptr.width, config_ptr.height);
 
     transformed    = trans.transform(params_ptr, decoded);
@@ -1533,11 +1539,15 @@ TEST(plugin, image_example_flip)
     augment::image::param_factory factory(aug);
 
     auto                               image_size = decoded->get_image_size();
-    shared_ptr<augment::image::params> params_ptr = factory.make_params(
-        image_size.width, image_size.height, config_ptr.width, config_ptr.height);
-
     image::transformer         trans{config_ptr};
-    shared_ptr<image::decoded> transformed = trans.transform(params_ptr, decoded);
+    shared_ptr<image::decoded> transformed;
+    {
+        nervana::python::ensure_gil gil;
+        shared_ptr<augment::image::params> params_ptr = factory.make_params(
+            image_size.width, image_size.height, config_ptr.width, config_ptr.height);
+
+        transformed = trans.transform(params_ptr, decoded);
+    }
 
     cv::Mat image = transformed->get_image(0);
     EXPECT_EQ(256, image.size().width);
@@ -1546,13 +1556,11 @@ TEST(plugin, image_example_flip)
     // phase two
     aug = {{"type", "image"},
            {"crop_enable", false},
-           {"flip_enable", true},
-           {"plugin_filename", ""},
-           {"plugin_params", ""}};
+           {"flip_enable", true}};
 
     factory = augment::image::param_factory(aug);
 
-    params_ptr = factory.make_params(
+    auto params_ptr = factory.make_params(
         image_size.width, image_size.height, config_ptr.width, config_ptr.height);
     params_ptr->flip = true;
 

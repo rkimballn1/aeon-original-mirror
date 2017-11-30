@@ -178,8 +178,15 @@ extern "C" int main(int argc, char** argv)
     test_cache_directory = nervana::file_util::make_temp_directory();
 
     ::testing::InitGoogleTest(&argc, argv_vector.data());
+    Py_Initialize();
+    PyEval_InitThreads();
+    PyThreadState* main_state = PyThreadState_Get();
+    PyEval_ReleaseThread(main_state);
+
     int rc = RUN_ALL_TESTS();
 
+    PyGILState_Ensure();
+    Py_Finalize();
     nervana::file_util::remove_directory(test_cache_directory);
     DeleteDataset();
 

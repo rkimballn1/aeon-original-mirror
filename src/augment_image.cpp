@@ -111,8 +111,10 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
 
-    settings->user_plugin = std::make_shared<plugin>(plugin_filename, plugin_params.dump());
-    settings->user_plugin->prepare();
+    if (!plugin_filename.empty()) {
+        settings->user_plugin = std::make_shared<plugin>(plugin_filename, plugin_params.dump());
+        settings->user_plugin->prepare();
+    }
 
     /*
     if (!plugin_filename.empty())

@@ -115,7 +115,7 @@ public:
     int                     hue                    = 0;
     bool                    debug_deterministic    = false;
     std::string             debug_output_directory = "";
-    std::shared_ptr<plugin> user_plugin            = nullptr;
+    std::shared_ptr<plugin> user_plugin{nullptr};
 
 private:
     params() {}

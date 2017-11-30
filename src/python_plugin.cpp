@@ -76,6 +76,10 @@ namespace nervana
             PyErr_Print();
             throw std::runtime_error("python instance not loaded");
         }
+
+        Py_DECREF(name);
+        Py_DECREF(handle);
+        Py_DECREF(klass);
     }
 
     plugin::~plugin() { };
