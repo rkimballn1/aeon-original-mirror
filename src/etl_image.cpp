@@ -181,6 +181,7 @@ cv::Mat
 
     cv::Mat* finalImage = &flippedImage;
     cv::Mat  pluginImage;
+    
     if (img_xform->user_plugin)
     {
         pluginImage = img_xform->user_plugin->augment_image(flippedImage);

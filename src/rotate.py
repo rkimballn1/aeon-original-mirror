@@ -11,17 +11,14 @@ class plugin(Plugin):
     angle_max = 0
 
     def __init__(self, param_string):
-        print("constructor ",self)
         params = json.loads(param_string)
         self.angle_min = params["angle"][0]
         self.angle_max = params["angle"][1]
 
     def prepare(self):
         self.angle = np.random.uniform(self.angle_min, self.angle_max)
-        print ("prepare ",self,self.angle)
 
     def augment_image(self, mat):
-        print ("augmentimage ",self,self.angle)
         if self.angle == 0:
             return mat
 

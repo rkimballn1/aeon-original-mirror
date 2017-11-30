@@ -24,7 +24,6 @@ using namespace nervana;
 using namespace std;
 
 extern "C" {
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #endif
@@ -34,6 +33,8 @@ extern "C" {
 #else
 #define PYOBJ_TAIL_INIT
 #endif
+
+PyThreadState* main_state;
 
 #define DL_get_loader(v) (((aeon_DataLoader*)(v))->m_loader)
 
@@ -97,13 +98,16 @@ static PyObject* DataLoader_iter(PyObject* self)
 {
     INFO << " aeon_DataLoader_iter";
     Py_INCREF(self);
+    PyEval_ReleaseThread(main_state);
     DL_get_loader(self)->reset();
     ((aeon_DataLoader*)(self))->m_first_iteration = true;
+    PyEval_AcquireThread(main_state);
     return self;
 }
 
 static PyObject* DataLoader_iternext(PyObject* self)
 {
+    PyEval_ReleaseThread(main_state);
     INFO << " aeon_DataLoader_iternext";
     PyObject* result = NULL;
 
@@ -118,6 +122,7 @@ static PyObject* DataLoader_iternext(PyObject* self)
         const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
         auto                    names = DL_get_loader(self)->get_buffer_names();
 
+        PyEval_AcquireThread(main_state);
         result            = PyTuple_New(names.size());
         int buf_tuple_len = 2;
         int tuple_pos     = 0;
@@ -142,13 +147,17 @@ static PyObject* DataLoader_iternext(PyObject* self)
                 PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
             }
         }
+        PyEval_ReleaseThread(main_state);
     }
     else
     {
+        PyEval_AcquireThread(main_state);
         /* Raising of standard StopIteration exception with empty value. */
         PyErr_SetNone(PyExc_StopIteration);
+        PyEval_ReleaseThread(main_state);
     }
 
+    PyEval_AcquireThread(main_state);
     return result;
 }
 
@@ -192,6 +201,7 @@ static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf)
 
 static void DataLoader_dealloc(aeon_DataLoader* self)
 {
+    PyEval_ReleaseThread(main_state);
     INFO << " DataLoader_dealloc";
     if (self->m_loader != nullptr)
     {
@@ -202,6 +212,9 @@ static void DataLoader_dealloc(aeon_DataLoader* self)
     Py_XDECREF(self->axes_info);
     Py_XDECREF(self->config);
     Py_TYPE(self)->tp_free((PyObject*)self);
+
+    PyGILState_Ensure();
+    Py_Finalize();
 }
 
 static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
@@ -210,6 +223,11 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
     aeon_DataLoader* self = nullptr;
 
     static const char* keyword_list[] = {"config", nullptr};
+    
+    Py_Initialize();
+    PyEval_InitThreads();
+
+    main_state = PyThreadState_Get();
 
     PyObject* dict;
     auto      rc = PyArg_ParseTupleAndKeywords(
@@ -239,14 +257,18 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
         try
         {
+            PyEval_ReleaseThread(main_state);
             self->m_loader          = new loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
+            PyEval_AcquireThread(main_state);
             self->ndata             = Py_BuildValue("i", self->m_loader->record_count());
             self->batch_size        = Py_BuildValue("i", self->m_loader->batch_size());
             self->config            = PyDict_Copy(dict);
+            PyEval_ReleaseThread(main_state);
 
             auto name_shape_list = self->m_loader->get_names_and_shapes();
+            PyEval_AcquireThread(main_state);
 
             // axes_info is represented as a tuple of tuples.
             // A single entry in axes_info is represented as
@@ -321,6 +343,7 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
         }
     }
 
+    //PyEval_ReleaseThread(main_state);
     return (PyObject*)self;
 }
 
@@ -465,7 +488,7 @@ PyMODINIT_FUNC initaeon(void)
 #ifdef IS_PY3K
     m = PyModule_Create(&aeonmodule);
 #else
-    m = Py_InitModule3("aeon", aeon_methods, "DataLoader containing module");
+    m = Py_InitModule("aeon", aeon_methods/*, "DataLoader containing module"*/);
 #endif
     if (m == NULL)
     {
