@@ -56,7 +56,10 @@ void batch_decoder::process(const int index)
     if (m_deterministic_mode)
         get_thread_local_random_engine() = m_random[index];
 
-    m_provider->provide(index, *m_inputs, *m_outputs);
+    {
+        python::ensure_gil gil;
+        m_provider->provide(index, *m_inputs, *m_outputs);
+    }
 
     if (m_deterministic_mode)
         m_random[index] = get_thread_local_random_engine();
@@ -84,6 +87,7 @@ fixed_buffer_map* batch_decoder::filler()
         }
         m_inputs  = inputs;
         m_outputs = outputs;
+
         m_thread_pool->run(this, m_batch_size);
     }
     m_state = async_state::idle;
