@@ -68,7 +68,8 @@ public:
 
     std::string                    plugin_filename;
     nlohmann::json                 plugin_params;
-    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin;
+    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
+    static std::mutex mtx;
 
     // This derived distribution gets filled by parsing add_noise_probability
     /** Probability of adding noise */

@@ -24,7 +24,8 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
-std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin;
+std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin_map;
+std::mutex augment::image::param_factory::mtx;
 
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
@@ -91,7 +92,7 @@ augment::image::param_factory::param_factory(nlohmann::json js)
 
 nervana::augment::image::param_factory::~param_factory()
 {
-    user_plugin.clear();
+    user_plugin_map.clear();
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
@@ -120,20 +121,22 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
 
     if (!plugin_filename.empty())
     {
-        if (user_plugin.find(this_thread::get_id()) == user_plugin.end())
+        std::lock_guard<std::mutex> lock(mtx);
+        if (user_plugin_map.find(this_thread::get_id()) == user_plugin_map.end())
         {
-            user_plugin[std::this_thread::get_id()] =
+            user_plugin_map[std::this_thread::get_id()] =
                 std::make_shared<plugin>(plugin_filename, plugin_params.dump());
         }
-        settings->user_plugin = user_plugin[this_thread::get_id()];
+        settings->user_plugin = user_plugin_map[this_thread::get_id()];
 
         if (settings->user_plugin)
             settings->user_plugin->prepare();
     }
     else
     {
-        user_plugin[std::this_thread::get_id()] = std::shared_ptr<plugin>();
-        settings->user_plugin                   = user_plugin[std::this_thread::get_id()];
+        std::lock_guard<std::mutex> lock(mtx);
+        user_plugin_map[std::this_thread::get_id()] = std::shared_ptr<plugin>();
+        settings->user_plugin                       = user_plugin_map[std::this_thread::get_id()];
     }
 
     auto& random = get_thread_local_random_engine();
