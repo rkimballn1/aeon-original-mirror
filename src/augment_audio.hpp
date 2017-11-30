@@ -63,11 +63,12 @@ class nervana::augment::audio::param_factory : public json_configurable
 {
 public:
     param_factory(nlohmann::json config);
+    ~param_factory();
     std::shared_ptr<augment::audio::params> make_params() const;
 
-    std::string                                 plugin_filename;
-    nlohmann::json                              plugin_params;
-    static thread_local std::shared_ptr<plugin> user_plugin;
+    std::string                    plugin_filename;
+    nlohmann::json                 plugin_params;
+    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin;
 
     // This derived distribution gets filled by parsing add_noise_probability
     /** Probability of adding noise */
