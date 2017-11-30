@@ -146,7 +146,8 @@ public:
     float          m_emit_constraint_min_overlap = 0.0;
     std::string    plugin_filename;
     nlohmann::json plugin_params;
-    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin;
+    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
+    static std::mutex mtx;
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
