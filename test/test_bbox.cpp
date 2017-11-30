@@ -950,6 +950,7 @@ TEST(boundingbox, operator_equal)
     EXPECT_NE(b1, b2);
 }
 
+/*
 TEST(plugin, bbox_example_flip)
 {
     // Create test metadata
@@ -1036,8 +1037,10 @@ TEST(plugin, bbox_example_rotate)
     iparam->user_plugin->prepare();
     shared_ptr<boundingbox::decoded> tx_decoded;
     EXPECT_THROW(tx_decoded = transform.transform(iparam, decoded), std::runtime_error);
+    */
     /*
     vector<bbox> tx_boxes = tx_decoded->boxes();
     ASSERT_EQ(0, tx_boxes.size());
     */
-}
+//}
+

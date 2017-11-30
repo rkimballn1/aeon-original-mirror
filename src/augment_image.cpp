@@ -24,8 +24,6 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
-std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin;
-
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -89,11 +87,6 @@ augment::image::param_factory::param_factory(nlohmann::json js)
     }
 }
 
-nervana::augment::image::param_factory::~param_factory()
-{
-    user_plugin.clear();
-}
-
 emit_type augment::image::param_factory::get_emit_constraint_type()
 {
     std::transform(m_emit_constraint_type.begin(),
@@ -118,6 +111,10 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
 
+    settings->user_plugin = std::make_shared<plugin>(plugin_filename, plugin_params.dump());
+    settings->user_plugin->prepare();
+
+    /*
     if (!plugin_filename.empty())
     {
         if (user_plugin.find(this_thread::get_id()) == user_plugin.end())
@@ -135,7 +132,7 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
         user_plugin[std::this_thread::get_id()] = std::shared_ptr<plugin>();
         settings->user_plugin                   = user_plugin[std::this_thread::get_id()];
     }
-
+*/
     auto& random = get_thread_local_random_engine();
 
     settings->output_size = cv::Size2i(output_width, output_height);
@@ -210,7 +207,7 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
         }
         settings->color_noise_std = lighting.stddev();
     }
-
+    
     return settings;
 }
 

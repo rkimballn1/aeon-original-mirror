@@ -14,6 +14,7 @@
 */
 #pragma once
 #include <Python.h>
+#include <iostream>
 
 namespace nervana
 {
@@ -58,21 +59,15 @@ int gil_lock::gil_init = 0;
         public:
             ensure_gil()
             {
-                PyThreadState* currentThread = _PyThreadState_Current;
-
-                flag = PyGILState_GetThisThreadState() || !currentThread;
-                if (flag)
-                    _state = PyGILState_Ensure();
+                _state = PyGILState_Ensure();
             }
 
             ~ensure_gil()
             {
-                if (flag)
-                    PyGILState_Release(_state);
+                PyGILState_Release(_state);
             }
 
         private:
-            bool             flag;
             PyGILState_STATE _state;
         };
     }
