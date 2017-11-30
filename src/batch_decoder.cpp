@@ -57,7 +57,6 @@ void batch_decoder::process(const int index)
         get_thread_local_random_engine() = m_random[index];
 
     {
-        python::ensure_gil gil;
         m_provider->provide(index, *m_inputs, *m_outputs);
     }
 
