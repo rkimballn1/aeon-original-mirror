@@ -74,6 +74,8 @@ static bool verify_image(cv::Mat img)
 
 TEST(plugin, depthmap_example_rotate)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     auto            test_image = generate_test_image();
     vector<uint8_t> test_data;
     cv::imencode(".png", test_image, test_data);
@@ -99,10 +101,13 @@ TEST(plugin, depthmap_example_rotate)
     cv::Mat                    tximg       = transformed->get_image(0);
     cv::imwrite("tx_depthmap_rotate_plugin.png", tximg);
     EXPECT_TRUE(verify_image(tximg));
+    //Py_Finalize();
 }
 
 TEST(plugin, depthmap_example_flip)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     auto            test_image = generate_test_image();
     vector<uint8_t> test_data;
     cv::imencode(".png", test_image, test_data);

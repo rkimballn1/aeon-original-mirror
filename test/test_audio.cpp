@@ -394,6 +394,8 @@ TEST(audio, filterbank)
 
 TEST(plugin, audio_example_scale)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     auto js     = R"(
         {
             "max_duration": "3 seconds",

@@ -1464,6 +1464,8 @@ TEST(photometric, hue)
 
 TEST(plugin, image_example_rotate)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     auto                  indexed = generate_indexed_image(256, 256);
     vector<unsigned char> img;
     cv::imencode(".png", indexed, img);
@@ -1515,6 +1517,8 @@ TEST(plugin, image_example_rotate)
 
 TEST(plugin, image_example_flip)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     auto                  indexed = generate_indexed_image(256, 256);
     vector<unsigned char> img;
     cv::imencode(".png", indexed, img);
