@@ -16,7 +16,6 @@
 #include <cstdlib>
 #include "python_plugin.hpp"
 
-
 namespace nervana
 {
     template <typename T>
@@ -27,7 +26,8 @@ namespace nervana
 
         PyObject* arg = convert::to_pyobject(in_data);
 
-        PyObject* ret_val = PyObject_CallMethodObjArgs(instance, PyString_FromString(methodname.c_str()), arg, NULL);
+        PyObject* ret_val = PyObject_CallMethodObjArgs(
+            instance, PyString_FromString(methodname.c_str()), arg, NULL);
 
         T out;
         if (ret_val != NULL)
@@ -80,7 +80,7 @@ namespace nervana
         }
     }
 
-    plugin::~plugin() { };
+    plugin::~plugin(){};
 
     void plugin::prepare()
     {
@@ -88,28 +88,18 @@ namespace nervana
         PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
     }
 
-    cv::Mat plugin::augment_image(const cv::Mat& m)
-    {
-        return augment("augment_image", m);
-    }
-
-    std::vector<boundingbox::box> plugin::augment_boundingbox(const std::vector<boundingbox::box>& boxes)
+    cv::Mat plugin::augment_image(const cv::Mat& m) { return augment("augment_image", m); }
+    std::vector<boundingbox::box>
+        plugin::augment_boundingbox(const std::vector<boundingbox::box>& boxes)
     {
         return augment("augment_boundingbox", boxes);
     }
 
-    cv::Mat plugin::augment_audio(const cv::Mat& m)
-    {
-        return augment("augment_audio", m);
-    }
-
+    cv::Mat plugin::augment_audio(const cv::Mat& m) { return augment("augment_audio", m); }
     cv::Mat plugin::augment_pixel_mask(const cv::Mat& m)
     {
         return augment("augment_pixel_mask", m);
     }
 
-    cv::Mat plugin::augment_depthmap(const cv::Mat& m)
-    {
-        return augment("augment_depthmap", m);
-    }
+    cv::Mat plugin::augment_depthmap(const cv::Mat& m) { return augment("augment_depthmap", m); }
 }
