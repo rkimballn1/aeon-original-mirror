@@ -20,15 +20,6 @@
 
 namespace nervana
 {
-    /*
-    class call_initialize
-    {
-    public:
-        call_initialize();
-        ~call_initialize();
-        static PyInterpreterState* interp_state;
-    };
-*/
     class plugin
     {
     public:

@@ -145,7 +145,7 @@ public:
     std::string    m_emit_constraint_type        = "";
     float          m_emit_constraint_min_overlap = 0.0;
     std::string    plugin_filename;
-    nlohmann::json plugin_params;
+    nlohmann::json plugin_params = nlohmann::json({});
     static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
     static std::mutex mtx;
 
