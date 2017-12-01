@@ -66,8 +66,8 @@ public:
     ~param_factory();
     std::shared_ptr<augment::audio::params> make_params() const;
 
-    std::string                    plugin_filename;
-    nlohmann::json                 plugin_params;
+    std::string    plugin_filename;
+    nlohmann::json plugin_params = nlohmann::json({});
     static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
     static std::mutex mtx;
 
