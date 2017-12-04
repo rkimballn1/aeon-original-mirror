@@ -19,7 +19,9 @@
 
 #include "json.hpp"
 #include "interface.hpp"
+#ifdef PYTHON_PLUGIN
 #include "python_plugin.hpp"
+#endif
 
 namespace nervana
 {
@@ -53,7 +55,9 @@ public:
     float                   noise_level;
     float                   noise_offset_fraction;
     float                   time_scale_fraction;
+#ifdef PYTHON_PLUGIN
     std::shared_ptr<plugin> user_plugin = nullptr;
+#endif
 
 private:
     params() {}
@@ -66,10 +70,12 @@ public:
     ~param_factory();
     std::shared_ptr<augment::audio::params> make_params() const;
 
+#ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});
     static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
     static std::mutex mtx;
+#endif
 
     // This derived distribution gets filled by parsing add_noise_probability
     /** Probability of adding noise */
@@ -103,9 +109,10 @@ private:
         // ADD_SCALAR(window_type, mode::OPTIONAL),
         // ADD_SCALAR(noise_root, mode::OPTIONAL),
         ADD_SCALAR(add_noise_probability, mode::OPTIONAL),
+#ifdef PYTHON_PLUGIN
         ADD_SCALAR(plugin_filename, mode::OPTIONAL),
         ADD_JSON(plugin_params, "plugin_params", mode::OPTIONAL),
-
+#endif
         ADD_DISTRIBUTION(time_scale_fraction,
                          mode::OPTIONAL,
                          [](decltype(time_scale_fraction) v) { return v.a() <= v.b(); }),

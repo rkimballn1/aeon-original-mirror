@@ -273,6 +273,7 @@ TEST(pixel_mask, load_int)
 ////    }
 //}
 
+#ifdef PYTHON_PLUGIN
 TEST(plugin, pixel_mask_example_rotate)
 {
     Py_Initialize();
@@ -341,3 +342,4 @@ TEST(plugin, pixel_mask_example_flip)
     bool isEqual = (cv::sum(tximg != tximg2) == cv::Scalar(0, 0, 0, 0));
     EXPECT_TRUE(isEqual);
 }
+#endif

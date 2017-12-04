@@ -70,6 +70,13 @@ if(COVERAGE)
   set(LCOVERAGE "--coverage")
 endif(COVERAGE)
 
+option(PYTHON_PLUGIN "add plugin support" OFF)
+if(PYTHON_PLUGIN)
+    add_definitions(-DPYTHON_PLUGIN)
+else(PYTHON_PLUGIN)
+    message("Without PYTHON_PLUGIN flag python plugin support is unavailable")
+endif(PYTHON_PLUGIN)
+
 if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 else()

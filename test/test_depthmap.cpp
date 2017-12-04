@@ -72,6 +72,7 @@ static bool verify_image(cv::Mat img)
     return true;
 }
 
+#ifdef PYTHON_PLUGIN
 TEST(plugin, depthmap_example_rotate)
 {
     Py_Initialize();
@@ -143,3 +144,4 @@ TEST(plugin, depthmap_example_flip)
     bool isEqual = (cv::sum(tximg != tximg2) == cv::Scalar(0, 0, 0, 0));
     EXPECT_TRUE(isEqual);
 }
+#endif

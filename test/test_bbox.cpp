@@ -950,6 +950,7 @@ TEST(boundingbox, operator_equal)
     EXPECT_NE(b1, b2);
 }
 
+#ifdef PYTHON_PLUGIN
 TEST(plugin, bbox_example_flip)
 {
     Py_Initialize();
@@ -1041,3 +1042,4 @@ TEST(plugin, bbox_example_rotate)
     shared_ptr<boundingbox::decoded> tx_decoded;
     EXPECT_THROW(tx_decoded = transform.transform(iparam, decoded), std::runtime_error);
 }
+#endif

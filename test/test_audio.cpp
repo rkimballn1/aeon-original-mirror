@@ -392,6 +392,7 @@ TEST(audio, filterbank)
     }
 }
 
+#ifdef PYTHON_PLUGIN
 TEST(plugin, audio_example_scale)
 {
     Py_Initialize();
@@ -449,3 +450,4 @@ TEST(plugin, audio_example_scale)
     cv::minMaxLoc(diff, &min, &max);
     EXPECT_NEAR(min, max, 18);
 }
+#endif

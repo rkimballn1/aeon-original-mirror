@@ -14,7 +14,9 @@
 */
 #include "etl_image.hpp"
 #include "conversion.hpp"
+#ifdef PYTHON_PLUGIN
 #include "python_plugin.hpp"
+#endif
 
 #include <atomic>
 #include <fstream>
@@ -180,13 +182,15 @@ cv::Mat
         flippedImage = resizedImage;
 
     cv::Mat* finalImage = &flippedImage;
+
+#ifdef PYTHON_PLUGIN
     cv::Mat  pluginImage;
-    
     if (img_xform->user_plugin)
     {
         pluginImage = img_xform->user_plugin->augment_image(flippedImage);
         finalImage  = &pluginImage;
     }
+#endif
 
     if (!img_xform->debug_output_directory.empty())
     {

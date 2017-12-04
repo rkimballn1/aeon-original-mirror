@@ -308,7 +308,9 @@ TEST(image_augmentation, make_ssd_params_transformations)
     EXPECT_EQ(params->output_size, cv::Size2i(20, 30));
     EXPECT_EQ(params->debug_deterministic, false);
     EXPECT_EQ(params->debug_output_directory, "");
+#ifdef PYTHON_PLUGIN
     EXPECT_EQ(params->user_plugin, nullptr);
+#endif
 }
 
 TEST(image_augmentation, batch_sampler_ratio_scale)
@@ -452,6 +454,7 @@ TEST(image_augmentation, padding_with_crop_enabled)
     EXPECT_THROW(config.make_params(10, 10, 10, 10), std::invalid_argument);
 }
 
+#ifdef PYTHON_PLUGIN
 TEST(image_augmentation, plugin_example_rotate_config)
 {
     nlohmann::json js = {{"type", "image"},
@@ -496,3 +499,4 @@ TEST(image_augmentation, plugin_base_class_config)
     factory = make_shared<augment::image::param_factory>(js);
     EXPECT_THROW(factory->make_params(10, 10, 10, 10), std::runtime_error);
 }
+#endif

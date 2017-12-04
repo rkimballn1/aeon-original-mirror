@@ -18,8 +18,10 @@
 using namespace std;
 using namespace nervana;
 
+#ifdef PYTHON_PLUGIN
 std::map<std::thread::id, std::shared_ptr<plugin>> augment::audio::param_factory::user_plugin_map;
 std::mutex augment::audio::param_factory::mtx;
+#endif
 
 nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 {
@@ -53,13 +55,16 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 
 nervana::augment::audio::param_factory::~param_factory()
 {
+#ifdef PYTHON_PLUGIN
     user_plugin_map.clear();
+#endif
 }
 
 shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() const
 {
     auto audio_stgs = shared_ptr<augment::audio::params>(new augment::audio::params());
 
+#ifdef PYTHON_PLUGIN
     if (!plugin_filename.empty())
     {
         std::lock_guard<std::mutex> lock(mtx);
@@ -79,6 +84,7 @@ shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() 
         user_plugin_map[std::this_thread::get_id()] = std::shared_ptr<plugin>();
         audio_stgs->user_plugin                     = user_plugin_map[std::this_thread::get_id()];
     }
+#endif
 
     auto& random = get_thread_local_random_engine();
 

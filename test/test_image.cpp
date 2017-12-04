@@ -1462,6 +1462,7 @@ TEST(photometric, hue)
     }
 }
 
+#ifdef PYTHON_PLUGIN
 TEST(plugin, image_example_rotate)
 {
     Py_Initialize();
@@ -1569,3 +1570,4 @@ TEST(plugin, image_example_flip)
     bool isEqual = (cv::sum(image != image2) == cv::Scalar(0, 0, 0, 0));
     EXPECT_TRUE(isEqual);
 }
+#endif
