@@ -257,8 +257,12 @@ std::vector<nervana::boundingbox::box> python::conversion::detail::to_boxes(cons
         float     xmax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "xmax"));
         float     ymax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "ymax"));
         int       label     = PyInt_AsLong(PyDict_GetItemString(dict, "label"));
-        bool      difficult = PyBool_Check(PyDict_GetItemString(dict, "difficult"));
-        bool      truncated = PyBool_Check(PyDict_GetItemString(dict, "truncated"));
+        bool      difficult = PyDict_Contains(dict, PyString_FromString("difficult"))
+                             ? PyBool_Check(PyDict_GetItemString(dict, "difficult"))
+                             : false;
+        bool truncated = PyDict_Contains(dict, PyString_FromString("difficult"))
+                             ? PyBool_Check(PyDict_GetItemString(dict, "truncated"))
+                             : false;
         boxes.emplace_back(xmin, ymin, xmax, ymax, label, difficult, truncated);
     }
     return boxes;
