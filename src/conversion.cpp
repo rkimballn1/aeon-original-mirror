@@ -294,13 +294,13 @@ PyObject* python::conversion::detail::to_list(const std::vector<nervana::boundin
     for (size_t i = 0; i < boxes.size(); i++)
     {
         PyObject* item = PyDict_New();
-        assert(PyDict_SetItemString(item, "xmin", PyFloat_FromDouble(boxes[i].xmin())) == 0);
-        assert(PyDict_SetItemString(item, "ymin", PyFloat_FromDouble(boxes[i].ymin())) == 0);
-        assert(PyDict_SetItemString(item, "xmax", PyFloat_FromDouble(boxes[i].xmax())) == 0);
-        assert(PyDict_SetItemString(item, "ymax", PyFloat_FromDouble(boxes[i].ymax())) == 0);
-        assert(PyDict_SetItemString(item, "label", PyInt_FromLong(boxes[i].label())) == 0);
-        assert(PyDict_SetItemString(item, "difficult", PyBool_FromLong(boxes[i].difficult())) == 0);
-        assert(PyDict_SetItemString(item, "truncated", PyBool_FromLong(boxes[i].truncated())) == 0);
+        PyDict_SetItemString(item, "xmin", PyFloat_FromDouble(boxes[i].xmin()));
+        PyDict_SetItemString(item, "ymin", PyFloat_FromDouble(boxes[i].ymin()));
+        PyDict_SetItemString(item, "xmax", PyFloat_FromDouble(boxes[i].xmax()));
+        PyDict_SetItemString(item, "ymax", PyFloat_FromDouble(boxes[i].ymax()));
+        PyDict_SetItemString(item, "label", PyInt_FromLong(boxes[i].label()));
+        PyDict_SetItemString(item, "difficult", PyBool_FromLong(boxes[i].difficult()));
+        PyDict_SetItemString(item, "truncated", PyBool_FromLong(boxes[i].truncated()));
         PyList_SetItem(list, i, item);
     }
 

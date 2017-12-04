@@ -52,21 +52,33 @@ namespace nervana
         : filename(fname)
     {
         python::ensure_gil gil;
-        name   = PyString_FromString(filename.c_str());
-        handle = PyImport_Import(name);
+        handle = PyImport_ImportModule(filename.c_str());
 
         if (!handle)
         {
-            PyErr_Print();
-            throw std::runtime_error("python module not loaded");
+            PyObject *err_type, *err_value, *err_traceback;
+            PyErr_Fetch(&err_type, &err_value, &err_traceback);
+            char* err_msg = PyString_AsString(err_value);
+
+            std::cout << "exception" << std::endl;
+            std::stringstream ss;
+            ss << "python module not loaded" << std::endl;
+            ss << "Python has failed with error message: " << err_msg << std::endl;
+            throw std::runtime_error(ss.str());
         }
 
         klass = PyObject_GetAttrString(handle, "plugin");
 
         if (!klass)
         {
-            PyErr_Print();
-            throw std::runtime_error("python class not loaded");
+            PyObject *err_type, *err_value, *err_traceback;
+            PyErr_Fetch(&err_type, &err_value, &err_traceback);
+            char* err_msg = PyString_AsString(err_value);
+
+            std::stringstream ss;
+            ss << "python class not loaded" << std::endl;
+            ss << "Python has failed with error message: " << err_msg << std::endl;
+            throw std::runtime_error(ss.str());
         }
 
         PyObject* arg_tuple = PyTuple_New(1);
@@ -75,8 +87,14 @@ namespace nervana
         instance = PyObject_CallObject(klass, arg_tuple);
         if (!instance)
         {
-            PyErr_Print();
-            throw std::runtime_error("python instance not loaded");
+            PyObject *err_type, *err_value, *err_traceback;
+            PyErr_Fetch(&err_type, &err_value, &err_traceback);
+            char* err_msg = PyString_AsString(err_value);
+
+            std::stringstream ss;
+            ss << "python instance not loaded" << std::endl;
+            ss << "Python has failed with error message: " << err_msg << std::endl;
+            throw std::runtime_error(ss.str());
         }
     }
 
