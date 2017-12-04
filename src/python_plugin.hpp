@@ -22,9 +22,6 @@ namespace nervana
 {
     class plugin
     {
-    public:
-        static std::mutex mtx;
-
     private:
         std::string filename;
         PyObject*   name{nullptr};
@@ -38,7 +35,7 @@ namespace nervana
     public:
         plugin() = delete;
         plugin(std::string filename, std::string params);
-        ~plugin();
+        ~plugin() = default;
 
         void prepare();
         cv::Mat augment_image(const cv::Mat& m);
@@ -47,4 +44,22 @@ namespace nervana
         cv::Mat augment_pixel_mask(const cv::Mat& m);
         cv::Mat augment_depthmap(const cv::Mat& m);
     };
+
+    class plugin_registry
+    {
+    public:
+        static bool empty();
+        template<typename... Ts>
+        static void create_plugin(Ts&& ...args);
+        static std::shared_ptr<plugin> get_plugin();
+        static void clear();
+    private:
+        thread_local static std::shared_ptr<plugin> _plugin;
+    };
+
+    template<typename... Ts>
+    void plugin_registry::create_plugin(Ts&& ...args)
+    {
+        _plugin = std::make_shared<plugin>(std::forward<Ts>(args)...);
+    }
 }

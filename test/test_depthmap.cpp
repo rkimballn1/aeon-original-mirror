@@ -96,7 +96,8 @@ TEST(plugin, depthmap_example_rotate)
     auto image_size = extracted->get_image_size();
     auto params_ptr =
         factory.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
-    params_ptr->user_plugin = make_shared<nervana::plugin>("rotate", plugin_params.dump());
+    //params_ptr->user_plugin = new plugin("rotate", plugin_params.dump());
+    params_ptr->user_plugin = std::make_shared<nervana::plugin>("rotate", plugin_params.dump());
     shared_ptr<image::decoded> transformed = transformer.transform(params_ptr, extracted);
     cv::Mat                    tximg       = transformed->get_image(0);
     cv::imwrite("tx_depthmap_rotate_plugin.png", tximg);

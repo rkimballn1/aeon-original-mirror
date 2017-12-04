@@ -296,6 +296,7 @@ TEST(plugin, pixel_mask_example_rotate)
     auto params_ptr =
         factory.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
     params_ptr->user_plugin = make_shared<nervana::plugin>("rotate", "{\"angle\": [45,45]}");
+    //params_ptr->user_plugin = new plugin("rotate", "{\"angle\": [45,45]}");
     shared_ptr<image::decoded> transformed = transformer.transform(params_ptr, extracted);
     cv::Mat                    tximg       = transformed->get_image(0);
     cv::imwrite("tx_pixel_mask_rotate_plugin.png", tximg);

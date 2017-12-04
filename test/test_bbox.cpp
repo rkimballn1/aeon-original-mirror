@@ -986,7 +986,7 @@ TEST(plugin, bbox_example_flip)
     shared_ptr<augment::image::params> iparam = make_params(256, 256);
     stringstream                       ss;
     ss << "{\"width\": " << 256 << ", \"probability\": 1}";
-    iparam->user_plugin = make_shared<plugin>("flip", ss.str());
+    iparam->user_plugin = std::make_shared<plugin>("flip", ss.str());
     iparam->user_plugin->prepare();
     auto         tx_decoded = transform.transform(iparam, decoded);
     vector<bbox> tx_boxes   = tx_decoded->boxes();
@@ -1036,7 +1036,7 @@ TEST(plugin, bbox_example_rotate)
 
     boundingbox::transformer           transform(cfg);
     shared_ptr<augment::image::params> iparam = make_params(256, 256);
-    iparam->user_plugin = make_shared<plugin>("rotate", "{\"angle\": [-20,20]}");
+    iparam->user_plugin = std::make_shared<plugin>("rotate", "{\"angle\": [-20,20]}");
     iparam->user_plugin->prepare();
     shared_ptr<boundingbox::decoded> tx_decoded;
     EXPECT_THROW(tx_decoded = transform.transform(iparam, decoded), std::runtime_error);

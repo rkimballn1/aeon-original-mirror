@@ -80,8 +80,6 @@ namespace nervana
         }
     }
 
-    plugin::~plugin(){};
-
     void plugin::prepare()
     {
         python::ensure_gil gil;
@@ -102,4 +100,20 @@ namespace nervana
     }
 
     cv::Mat plugin::augment_depthmap(const cv::Mat& m) { return augment("augment_depthmap", m); }
+}
+
+thread_local std::shared_ptr<nervana::plugin> nervana::plugin_registry::_plugin{nullptr};
+std::shared_ptr<nervana::plugin> nervana::plugin_registry::get_plugin()
+{
+    return _plugin;
+}
+
+bool nervana::plugin_registry::empty()
+{
+    return !_plugin;
+}
+
+void nervana::plugin_registry::clear()
+{
+    _plugin.reset();
 }

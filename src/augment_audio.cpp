@@ -18,9 +18,6 @@
 using namespace std;
 using namespace nervana;
 
-std::map<std::thread::id, std::shared_ptr<plugin>> augment::audio::param_factory::user_plugin_map;
-std::mutex augment::audio::param_factory::mtx;
-
 nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -52,32 +49,19 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 }
 
 nervana::augment::audio::param_factory::~param_factory()
-{
-    user_plugin_map.clear();
-}
+{ }
 
 shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() const
 {
     auto audio_stgs = shared_ptr<augment::audio::params>(new augment::audio::params());
 
-    if (!plugin_filename.empty())
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (user_plugin_map.find(this_thread::get_id()) == user_plugin_map.end())
-        {
-            user_plugin_map[std::this_thread::get_id()] =
-                std::make_shared<plugin>(plugin_filename, plugin_params.dump());
-        }
-        audio_stgs->user_plugin = user_plugin_map[this_thread::get_id()];
-
-        if (audio_stgs->user_plugin)
-            audio_stgs->user_plugin->prepare();
-    }
-    else
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        user_plugin_map[std::this_thread::get_id()] = std::shared_ptr<plugin>();
-        audio_stgs->user_plugin                     = user_plugin_map[std::this_thread::get_id()];
+    plugin_registry::clear();
+    if (!plugin_filename.empty()) {
+        if (plugin_registry::empty()) {
+            plugin_registry::create_plugin(plugin_filename, plugin_params.dump());
+            audio_stgs->user_plugin = plugin_registry::get_plugin();
+        } 
+        audio_stgs->user_plugin->prepare();
     }
 
     auto& random = get_thread_local_random_engine();

@@ -115,7 +115,7 @@ public:
     int                     hue                    = 0;
     bool                    debug_deterministic    = false;
     std::string             debug_output_directory = "";
-    std::shared_ptr<plugin> user_plugin            = nullptr;
+    std::shared_ptr<plugin> user_plugin{nullptr};
 
 private:
     params() {}
@@ -147,8 +147,6 @@ public:
     float          m_emit_constraint_min_overlap = 0.0;
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});
-    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
-    static std::mutex mtx;
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
