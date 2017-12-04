@@ -241,8 +241,8 @@ static void DataLoader_dealloc(aeon_DataLoader* self)
     Py_XDECREF(self->session_id);
     Py_TYPE(self)->tp_free((PyObject*)self);
 
-    PyGILState_Ensure();
-    Py_Finalize();
+    //PyGILState_Ensure();
+    //Py_Finalize();
 }
 
 static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
