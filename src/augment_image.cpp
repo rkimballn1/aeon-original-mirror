@@ -24,8 +24,10 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
+#ifdef PYTHON_PLUGIN
 std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin_map;
 std::mutex augment::image::param_factory::mtx;
+#endif
 
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
@@ -92,7 +94,9 @@ augment::image::param_factory::param_factory(nlohmann::json js)
 
 nervana::augment::image::param_factory::~param_factory()
 {
+#ifdef PYTHON_PLUGIN
     user_plugin_map.clear();
+#endif
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
@@ -119,6 +123,7 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     // make_shared is not friend :(
     auto settings = shared_ptr<augment::image::params>(new augment::image::params());
 
+#ifdef PYTHON_PLUGIN
     if (!plugin_filename.empty())
     {
         std::lock_guard<std::mutex> lock(mtx);
@@ -138,6 +143,7 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
         user_plugin_map[std::this_thread::get_id()] = std::shared_ptr<plugin>();
         settings->user_plugin                       = user_plugin_map[std::this_thread::get_id()];
     }
+#endif
 
     auto& random = get_thread_local_random_engine();
 

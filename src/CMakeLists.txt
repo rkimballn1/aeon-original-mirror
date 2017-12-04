@@ -53,7 +53,6 @@ set (SRC
     normalized_box.cpp
     provider.cpp
     provider_factory.cpp
-    python_plugin.cpp
     specgram.cpp
     typemap.cpp
     util.cpp
@@ -81,6 +80,10 @@ set(AEON_HEADER_FILES
 if (PYTHON_FOUND)
     list(APPEND SRC api.cpp)
 endif(PYTHON_FOUND)
+
+if (PYTHON_PLUGIN)
+set(SRC ${SRC} python_plugin.cpp)
+endif(PYTHON_PLUGIN)
 
 set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/../setup.py")

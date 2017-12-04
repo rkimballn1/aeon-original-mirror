@@ -29,7 +29,9 @@
 #include "json.hpp"
 #include "interface.hpp"
 #include "box.hpp"
+#ifdef PYTHON_PLUGIN
 #include "python_plugin.hpp"
+#endif
 
 namespace nervana
 {
@@ -114,7 +116,9 @@ public:
     int                     hue                    = 0;
     bool                    debug_deterministic    = false;
     std::string             debug_output_directory = "";
+#ifdef PYTHON_PLUGIN
     std::shared_ptr<plugin> user_plugin            = nullptr;
+#endif
 
 private:
     params() {}
@@ -144,10 +148,12 @@ public:
     float          fixed_scaling_factor          = -1;
     std::string    m_emit_constraint_type        = "";
     float          m_emit_constraint_min_overlap = 0.0;
+#ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});
     static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
     static std::mutex mtx;
+#endif
 
     /** Scale the crop box (width, height) */
     mutable std::uniform_real_distribution<float> scale{1.0f, 1.0f};
@@ -238,9 +244,11 @@ private:
                          mode::OPTIONAL,
                          [](decltype(expand_ratio) v) { return v.a() >= 1 && v.a() <= v.b(); }),
         ADD_DISTRIBUTION(hue, mode::OPTIONAL, [](decltype(hue) v) { return v.a() <= v.b(); }),
-        ADD_OBJECT(batch_samplers, mode::OPTIONAL),
+#ifdef PYTHON_PLUGIN
         ADD_SCALAR(plugin_filename, mode::OPTIONAL),
-        ADD_JSON(plugin_params, "plugin_params", mode::OPTIONAL)};
+        ADD_JSON(plugin_params, "plugin_params", mode::OPTIONAL),
+#endif
+        ADD_OBJECT(batch_samplers, mode::OPTIONAL)};
 
     emit_type get_emit_constraint_type();
 };
