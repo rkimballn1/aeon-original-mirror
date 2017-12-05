@@ -24,6 +24,8 @@
 #include <map>
 #include <future>
 
+#include <boost/variant.hpp>
+
 #include "manifest.hpp"
 #include "provider_factory.hpp"
 
@@ -121,8 +123,7 @@ public:
     const std::vector<std::string>& get_buffer_names() const;
     const std::vector<std::pair<std::string, shape_type>>& get_names_and_shapes() const;
     const shape_t& get_shape(const std::string& name) const;
-
-    int record_count() { return m_manifest_nds ? m_manifest_nds->record_count() : m_manifest->record_count(); }
+    int record_count();
     int batch_size() { return m_batch_size; }
     // member typedefs provided through inheriting from std::iterator
     class iterator : public std::iterator<std::input_iterator_tag, // iterator_category
@@ -182,10 +183,20 @@ private:
 
     iterator                                                m_current_iter;
     iterator                                                m_end_iter;
-    std::shared_ptr<manifest_file>                          m_manifest;
-    std::shared_ptr<manifest_nds>                           m_manifest_nds;
-    std::shared_ptr<block_loader_file>                      m_block_loader;
-    std::shared_ptr<block_loader_nds>                       m_block_loader_nds;
+
+    struct manifest_record_count : public boost::static_visitor<int>
+    {
+        template<typename T>
+        int operator()(std::shared_ptr<T> m) const
+        {
+            return m->record_count();   
+        }
+    };
+
+    boost::variant<std::shared_ptr<manifest_file>, 
+                   std::shared_ptr<manifest_nds>>           m_manifest;
+    boost::variant<std::shared_ptr<block_loader_file>,
+                   std::shared_ptr<block_loader_nds>>       m_block_loader; 
     std::shared_ptr<block_manager>                          m_block_manager;
     std::shared_ptr<batch_iterator>                         m_batch_iterator;
     std::shared_ptr<provider_interface>                     m_provider;
