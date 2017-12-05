@@ -60,7 +60,6 @@ namespace nervana
             PyErr_Fetch(&err_type, &err_value, &err_traceback);
             char* err_msg = PyString_AsString(err_value);
 
-            std::cout << "exception" << std::endl;
             std::stringstream ss;
             ss << "python module not loaded" << std::endl;
             ss << "Python has failed with error message: " << err_msg << std::endl;
@@ -87,13 +86,12 @@ namespace nervana
         instance = PyObject_CallObject(klass, arg_tuple);
         if (!instance)
         {
-            PyObject *err_type, *err_value, *err_traceback;
-            PyErr_Fetch(&err_type, &err_value, &err_traceback);
-            char* err_msg = PyString_AsString(err_value);
+            PyErr_Print();
 
             std::stringstream ss;
-            ss << "python instance not loaded" << std::endl;
-            ss << "Python has failed with error message: " << err_msg << std::endl;
+            ss << "Python plugin instance not created." << std::endl
+               << "Module:" << fname.c_str() << std::endl
+               << "Params:" << params.c_str() << std::endl;
             throw std::runtime_error(ss.str());
         }
     }
