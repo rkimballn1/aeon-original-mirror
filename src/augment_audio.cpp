@@ -18,11 +18,6 @@
 using namespace std;
 using namespace nervana;
 
-#ifdef PYTHON_PLUGIN
-std::map<std::thread::id, std::shared_ptr<plugin>> augment::audio::param_factory::user_plugin_map;
-std::mutex augment::audio::param_factory::mtx;
-#endif
-
 nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -51,13 +46,6 @@ nervana::augment::audio::param_factory::param_factory(nlohmann::json js)
             // validate();
         }
     }
-}
-
-nervana::augment::audio::param_factory::~param_factory()
-{
-#ifdef PYTHON_PLUGIN
-    user_plugin_map.clear();
-#endif
 }
 
 shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() const

@@ -98,8 +98,6 @@ namespace nervana
         }
     }
 
-    plugin::~plugin(){};
-
     void plugin::prepare()
     {
         python::ensure_gil gil;
