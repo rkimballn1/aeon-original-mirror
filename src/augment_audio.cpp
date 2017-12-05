@@ -68,9 +68,7 @@ shared_ptr<augment::audio::params> augment::audio::param_factory::make_params() 
     }
     else
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        user_plugin_map[std::this_thread::get_id()] = std::shared_ptr<plugin>();
-        audio_stgs->user_plugin                     = user_plugin_map[std::this_thread::get_id()];
+        audio_stgs->user_plugin.reset();
     }
 #endif
 
