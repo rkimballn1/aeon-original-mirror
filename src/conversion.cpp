@@ -13,7 +13,6 @@
  limitations under the License.
 */
 #include "conversion.hpp"
-#include "python_utils.hpp"
 
 /*
  * The following conversion functions are taken/adapted from OpenCV's cv2.cpp file
