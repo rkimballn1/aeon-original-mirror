@@ -516,11 +516,11 @@ TEST(image_augmentation, different_plugins_at_once)
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
-                         {"plugin_params", nlohmann::json({})}};
+                         {"plugin_params", {{"width", 20}}}};
 
     // output the random parameters
     augment::image::param_factory factory(js);
-    auto its = factory.make_params(256, 256, 256, 256);
+    auto                          its = factory.make_params(256, 256, 256, 256);
 
     nlohmann::json js2 = {{"type", "image"},
                           {"crop_enable", false},
@@ -529,7 +529,8 @@ TEST(image_augmentation, different_plugins_at_once)
 
     // output the random parameters
     augment::image::param_factory factory2(js2);
-    auto its2 = factory2.make_params(256, 256, 256, 256);
+    auto                          its2 = factory2.make_params(256, 256, 256, 256);
+
     EXPECT_NE(factory.user_plugin_map[std::this_thread::get_id()]->get_name(),
               factory2.user_plugin_map[std::this_thread::get_id()]->get_name());
     EXPECT_EQ(its->user_plugin, factory.user_plugin_map[std::this_thread::get_id()]);

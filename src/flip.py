@@ -17,7 +17,7 @@ class plugin(Plugin):
             if params.has_key("width"):
                 self.width = params["width"]
             else:
-                raise ValueError("Width required for flip.py")
+                raise KeyError('width required for flip.py')
 
     def prepare(self):
         print "prepare"
