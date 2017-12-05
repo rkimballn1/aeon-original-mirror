@@ -67,14 +67,13 @@ class nervana::augment::audio::param_factory : public json_configurable
 {
 public:
     param_factory(nlohmann::json config);
-    ~param_factory();
     std::shared_ptr<augment::audio::params> make_params() const;
 
 #ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});
-    static std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
-    static std::mutex mtx;
+    std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
+    std::mutex mtx;
 #endif
 
     // This derived distribution gets filled by parsing add_noise_probability

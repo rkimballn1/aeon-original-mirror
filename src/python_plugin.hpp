@@ -38,7 +38,6 @@ namespace nervana
     public:
         plugin() = delete;
         plugin(std::string filename, std::string params);
-        ~plugin();
 
         void prepare();
         cv::Mat augment_image(const cv::Mat& m);

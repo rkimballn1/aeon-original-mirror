@@ -24,11 +24,6 @@ using nlohmann::json;
 using bbox = boundingbox::box;
 using nbox = normalized_box::box;
 
-#ifdef PYTHON_PLUGIN
-std::map<std::thread::id, std::shared_ptr<plugin>> augment::image::param_factory::user_plugin_map;
-std::mutex augment::image::param_factory::mtx;
-#endif
-
 augment::image::param_factory::param_factory(nlohmann::json js)
 {
     if (js.is_null() == false)
@@ -90,13 +85,6 @@ augment::image::param_factory::param_factory(nlohmann::json js)
         }
         m_emit_type = get_emit_constraint_type();
     }
-}
-
-nervana::augment::image::param_factory::~param_factory()
-{
-#ifdef PYTHON_PLUGIN
-    user_plugin_map.clear();
-#endif
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
