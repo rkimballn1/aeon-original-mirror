@@ -23,8 +23,7 @@ namespace nervana
     class plugin
     {
     public:
-        static std::mutex mtx;
-
+        std::string get_name() { return filename; }
     private:
         std::string filename;
         PyObject*   name{nullptr};
@@ -39,9 +38,10 @@ namespace nervana
         plugin() = delete;
         plugin(std::string filename, std::string params);
 
-        void prepare();
+        void    prepare();
         cv::Mat augment_image(const cv::Mat& m);
-        std::vector<boundingbox::box> augment_boundingbox(const std::vector<boundingbox::box>& boxes);
+        std::vector<boundingbox::box>
+            augment_boundingbox(const std::vector<boundingbox::box>& boxes);
         cv::Mat augment_audio(const cv::Mat& m);
         cv::Mat augment_pixel_mask(const cv::Mat& m);
         cv::Mat augment_depthmap(const cv::Mat& m);

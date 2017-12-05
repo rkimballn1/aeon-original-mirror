@@ -457,6 +457,8 @@ TEST(image_augmentation, padding_with_crop_enabled)
 #ifdef PYTHON_PLUGIN
 TEST(image_augmentation, plugin_example_rotate_config)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "rotate"},
@@ -468,6 +470,8 @@ TEST(image_augmentation, plugin_example_rotate_config)
 
 TEST(image_augmentation, plugin_example_flip_config)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
@@ -479,6 +483,8 @@ TEST(image_augmentation, plugin_example_flip_config)
 
 TEST(image_augmentation, plugin_example_flip_config_missing_argument)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
@@ -490,6 +496,8 @@ TEST(image_augmentation, plugin_example_flip_config_missing_argument)
 
 TEST(image_augmentation, plugin_base_class_config)
 {
+    Py_Initialize();
+    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "plugin"},
@@ -498,5 +506,33 @@ TEST(image_augmentation, plugin_base_class_config)
     std::shared_ptr<augment::image::param_factory> factory;
     factory = make_shared<augment::image::param_factory>(js);
     EXPECT_THROW(factory->make_params(10, 10, 10, 10), std::runtime_error);
+}
+
+TEST(image_augmentation, different_plugins_at_once)
+{
+    Py_Initialize();
+    PyEval_InitThreads();
+
+    nlohmann::json js = {{"type", "image"},
+                         {"crop_enable", false},
+                         {"plugin_filename", "flip"},
+                         {"plugin_params", nlohmann::json({})}};
+
+    // output the random parameters
+    augment::image::param_factory factory(js);
+    auto its = factory.make_params(256, 256, 256, 256);
+
+    nlohmann::json js2 = {{"type", "image"},
+                          {"crop_enable", false},
+                          {"plugin_filename", "rotate"},
+                          {"plugin_params", {{"angle", {-20, 20}}}}};
+
+    // output the random parameters
+    augment::image::param_factory factory2(js2);
+    auto its2 = factory2.make_params(256, 256, 256, 256);
+    EXPECT_NE(factory.user_plugin_map[std::this_thread::get_id()]->get_name(),
+              factory2.user_plugin_map[std::this_thread::get_id()]->get_name());
+    EXPECT_EQ(its->user_plugin, factory.user_plugin_map[std::this_thread::get_id()]);
+    EXPECT_EQ(its2->user_plugin, factory2.user_plugin_map[std::this_thread::get_id()]);
 }
 #endif
