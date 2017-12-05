@@ -72,8 +72,8 @@ public:
 #ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});
-    std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
-    std::mutex mtx;
+    mutable std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
+    mutable std::mutex mtx;
 #endif
 
     // This derived distribution gets filled by parsing add_noise_probability

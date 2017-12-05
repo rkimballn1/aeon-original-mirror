@@ -1501,9 +1501,9 @@ TEST(plugin, image_example_rotate)
            {"plugin_filename", ""},
            {"plugin_params", ""}};
 
-    factory = augment::image::param_factory(aug);
+    augment::image::param_factory factory2(aug);
 
-    params_ptr = factory.make_params(
+    params_ptr = factory2.make_params(
         image_size.width, image_size.height, config_ptr.width, config_ptr.height);
 
     transformed    = trans.transform(params_ptr, decoded);
@@ -1555,9 +1555,9 @@ TEST(plugin, image_example_flip)
            {"plugin_filename", ""},
            {"plugin_params", ""}};
 
-    factory = augment::image::param_factory(aug);
+    augment::image::param_factory factory2(aug);
 
-    params_ptr = factory.make_params(
+    params_ptr = factory2.make_params(
         image_size.width, image_size.height, config_ptr.width, config_ptr.height);
     params_ptr->flip = true;
 
