@@ -47,6 +47,7 @@ public:
 int gil_lock::gil_init = 0;
 */
 
+
         class allow_threads
         {
         public:
@@ -57,10 +58,8 @@ int gil_lock::gil_init = 0;
         class ensure_gil
         {
         public:
-            ensure_gil()
-            {
-                _state = PyGILState_Ensure();
-            }
+            ensure_gil() : _state{PyGILState_Ensure()}
+            { }
 
             ~ensure_gil()
             {
