@@ -134,8 +134,8 @@ TEST(plugin, depthmap_example_flip)
 
     // phase two
     aug        = {{"type", "image"}, {"crop_enable", false}, {"flip_enable", true}};
-    factory    = augment::image::param_factory{aug};
-    params_ptr = factory.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
+    augment::image::param_factory factory2{aug};
+    params_ptr = factory2.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
     params_ptr->flip = true;
     transformed      = transformer.transform(params_ptr, extracted);
     cv::Mat tximg2   = transformed->get_image(0);
