@@ -50,11 +50,11 @@ public:
         return out;
     }
 
-    bool                    add_noise;
-    uint32_t                noise_index;
-    float                   noise_level;
-    float                   noise_offset_fraction;
-    float                   time_scale_fraction;
+    bool     add_noise;
+    uint32_t noise_index;
+    float    noise_level;
+    float    noise_offset_fraction;
+    float    time_scale_fraction;
 #ifdef PYTHON_PLUGIN
     std::shared_ptr<plugin> user_plugin = nullptr;
 #endif
