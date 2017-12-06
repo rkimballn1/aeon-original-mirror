@@ -20,33 +20,6 @@ namespace nervana
 {
     namespace python
     {
-        /*
-struct gil_lock
-{
-private:
-    PyGILState_STATE gstate;
-    static int gil_init;
-
-public:
-    gil_lock()
-    {
-        if (!gil_lock::gil_init) {
-            gil_lock::gil_init = 1;
-            PyEval_InitThreads();
-            PyEval_SaveThread();
-        }
-        gstate = PyGILState_Ensure();
-    }
-
-    ~gil_lock()
-    {
-        PyGILState_Release(gstate);
-    }
-};
-
-int gil_lock::gil_init = 0;
-*/
-
         class allow_threads
         {
         public:
