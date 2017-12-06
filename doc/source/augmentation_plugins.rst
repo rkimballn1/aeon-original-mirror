@@ -20,10 +20,9 @@ aeon has an experimental feature of customizable augmentation transformation plu
 
 .. image:: etl_image_transforms_plugins.png
 
-1. If required, apply any specified transformations (e.g. crop, lighting, horizontal flip, photometric distortion)
-2. Resize transformation (to fit to network input) is performed as the last standard
-   transformation
-3. Apply plugin transformations if provided
+1. Prepare plugin paramters for next data record
+2. If required, apply any specified transformations (e.g. crop, lighting, horizontal flip, photometric distortion) to record element (e.g. image, boundingbox)
+3. Apply plugin transformations if provided to record elements (e.g. image, boundingbox)
 
 
 User Guide
