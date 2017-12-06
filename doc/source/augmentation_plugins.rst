@@ -13,7 +13,7 @@
 .. limitations under the License.
 .. ---------------------------------------------------------------------------
 
-plugins
+Plugins
 =======
 
 aeon has an experimental feature of customizable augmentation transformation plugins performed right after the standard augmentation pipeline.
@@ -28,14 +28,16 @@ aeon has an experimental feature of customizable augmentation transformation plu
 User Guide
 ----------
 
-To use python augmentation plugins, you need to specify PYTHONPATH:
+To use python augmentation plugins, you need to specify `PYTHONPATH` enviroment variable:
 
 .. code-block:: bash
+
     export PYTHONPATH=$PYTHONPATH:/home/user/aeon/src
 
 And your config as for example:
 
 .. code-block:: python
+
     cfg = {
            'manifest_filename': manifest_file,
            'manifest_root': manifest_root,
@@ -62,7 +64,9 @@ In the above example, the `plugin_filename` points to module `rotate.py` located
 In case of this example rotate plugin, there is the optional argument `angle` specified. Consult your plugin provider or the plugin file for details on what arguments are supported.
 
 Other examples are:
+
 .. code-block:: python
+
            'augmentation': [
                {'type': 'image',
                'plugin_filename': 'flip',
@@ -84,6 +88,7 @@ Developer Guide
 The base class for plugin implemented as follows:
 
 .. code-block:: python
+
     import sys
 
 
@@ -119,7 +124,8 @@ therefore by default the plugin throws exception when it is called.
 To write your own plugin overwrite the methods you wish to support.
 
 .. csv-table::
-    :header: "Method", "Argument", "Description"
+   :header: "Method", "Argument", "Description"
+   :widths: 20, 10, 50
    :delim: |
    :escape: ~
 
@@ -134,6 +140,7 @@ To write your own plugin overwrite the methods you wish to support.
 Example plugin flip:
 
 .. code-block:: python
+
     # import your headers
     import numpy as np
     import cv2
