@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
+
 #include "etl_image.hpp"
 #ifdef PYTHON_PLUGIN
 #include "python_plugin.hpp"
@@ -20,21 +21,22 @@
 #include <atomic>
 #include <fstream>
 
+using namespace std;
 using namespace nervana;
 
 namespace
 {
-    std::string get_debug_file_id();
-    void write_image_with_settings(const std::string&                      filename,
-                                   const cv::Mat&                          image,
-                                   std::shared_ptr<augment::image::params> img_xform);
+    string get_debug_file_id();
+    void write_image_with_settings(const string&                      filename,
+                                   const cv::Mat&                     image,
+                                   shared_ptr<augment::image::params> img_xform);
 }
 
 image::config::config(nlohmann::json js)
 {
     if (js.is_null())
     {
-        throw std::runtime_error("missing image config in json config");
+        throw runtime_error("missing image config in json config");
     }
 
     for (auto& info : config_list)
@@ -59,11 +61,11 @@ void image::config::validate()
 {
     if (width <= 0)
     {
-        throw std::invalid_argument("invalid width");
+        throw invalid_argument("invalid width");
     }
     if (height <= 0)
     {
-        throw std::invalid_argument("invalid height");
+        throw invalid_argument("invalid height");
     }
 }
 
@@ -72,9 +74,9 @@ image::extractor::extractor(const image::config& cfg)
 {
     if (!(cfg.channels == 1 || cfg.channels == 3))
     {
-        std::stringstream ss;
+        stringstream ss;
         ss << "Unsupported number of channels in image: " << cfg.channels;
-        throw std::runtime_error(ss.str());
+        throw runtime_error(ss.str());
     }
     else
     {
@@ -83,7 +85,7 @@ image::extractor::extractor(const image::config& cfg)
     }
 }
 
-std::shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize) const
+shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, size_t insize) const
 {
     cv::Mat output_img;
 
@@ -92,7 +94,7 @@ std::shared_ptr<image::decoded> image::extractor::extract(const void* inbuf, siz
     cv::Mat input_img(1, insize, _pixel_type, (char*)inbuf);
     cv::imdecode(input_img, _color_mode, &output_img);
 
-    auto rc = std::make_shared<image::decoded>();
+    auto rc = make_shared<image::decoded>();
     rc->add(output_img); // don't need to check return for single image
     return rc;
 }
@@ -115,21 +117,17 @@ image::transformer::transformer(const image::config&)
 {
 }
 
-image::transformer::~transformer()
+shared_ptr<image::decoded>
+    image::transformer::transform(shared_ptr<augment::image::params> img_xform,
+                                  shared_ptr<image::decoded>         img) const
 {
-}
-
-std::shared_ptr<image::decoded>
-    image::transformer::transform(std::shared_ptr<augment::image::params> img_xform,
-                                  std::shared_ptr<image::decoded>         img) const
-{
-    std::vector<cv::Mat> finalImageList;
+    vector<cv::Mat> finalImageList;
     for (int i = 0; i < img->get_image_count(); i++)
     {
         finalImageList.push_back(transform_single_image(img_xform, img->get_image(i)));
     }
 
-    auto rc = std::make_shared<image::decoded>();
+    auto rc = make_shared<image::decoded>();
     if (rc->add(finalImageList) == false)
     {
         rc = nullptr;
@@ -145,9 +143,8 @@ std::shared_ptr<image::decoded>
  * distort
  * flip
  */
-cv::Mat
-    image::transformer::transform_single_image(std::shared_ptr<augment::image::params> img_xform,
-                                               cv::Mat& single_img) const
+cv::Mat image::transformer::transform_single_image(shared_ptr<augment::image::params> img_xform,
+                                                   cv::Mat& single_img) const
 {
     // img_xform->dump(cout);
     cv::Mat rotatedImage;
@@ -193,8 +190,8 @@ cv::Mat
 
     if (!img_xform->debug_output_directory.empty())
     {
-        std::string id       = get_debug_file_id();
-        std::string filename = img_xform->debug_output_directory + "/" + id;
+        string id       = get_debug_file_id();
+        string filename = img_xform->debug_output_directory + "/" + id;
         write_image_with_settings(filename, *finalImage, img_xform);
     }
     return *finalImage;
@@ -208,8 +205,7 @@ image::loader::loader(const image::config& cfg, bool fixed_aspect_ratio)
 {
 }
 
-void image::loader::load(const std::vector<void*>&       outlist,
-                         std::shared_ptr<image::decoded> input) const
+void image::loader::load(const vector<void*>& outlist, shared_ptr<image::decoded> input) const
 {
     char* outbuf = (char*)outlist[0];
     // TODO: Generalize this to also handle multi_crop case
@@ -220,11 +216,11 @@ void image::loader::load(const std::vector<void*>&       outlist,
 
     for (int i = 0; i < input->get_image_count(); i++)
     {
-        auto                 outbuf_i    = outbuf + (i * image_size);
-        auto                 input_image = input->get_image(i);
-        std::vector<cv::Mat> source;
-        std::vector<cv::Mat> target;
-        std::vector<int>     from_to;
+        auto            outbuf_i    = outbuf + (i * image_size);
+        auto            input_image = input->get_image(i);
+        vector<cv::Mat> source;
+        vector<cv::Mat> target;
+        vector<int>     from_to;
 
         if (m_fixed_aspect_ratio)
         {
@@ -234,7 +230,7 @@ void image::loader::load(const std::vector<void*>&       outlist,
                 outbuf[j] = 0;
             }
 
-            std::vector<size_t> shape = m_stype.get_shape();
+            vector<size_t> shape = m_stype.get_shape();
             // methods for image_var
             if (m_channel_major)
             {
@@ -293,20 +289,20 @@ void image::loader::load(const std::vector<void*>&       outlist,
 
 namespace
 {
-    std::string get_debug_file_id()
+    string get_debug_file_id()
     {
-        static std::atomic_uint index{0};
-        unsigned int            number = index++;
+        static atomic_uint index{0};
+        unsigned int       number = index++;
 
-        return std::to_string(number);
+        return to_string(number);
     }
 
-    void write_image_with_settings(const std::string&                      filename,
-                                   const cv::Mat&                          image,
-                                   std::shared_ptr<augment::image::params> img_xform)
+    void write_image_with_settings(const string&                      filename,
+                                   const cv::Mat&                     image,
+                                   shared_ptr<augment::image::params> img_xform)
     {
         cv::imwrite(filename + ".png", image);
-        std::ofstream ofs(filename + ".txt", std::ofstream::out);
+        ofstream ofs(filename + ".txt", ofstream::out);
         ofs << *img_xform;
         ofs.close();
     }
