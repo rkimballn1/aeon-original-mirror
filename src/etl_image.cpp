@@ -13,7 +13,6 @@
  limitations under the License.
 */
 #include "etl_image.hpp"
-#include "conversion.hpp"
 #ifdef PYTHON_PLUGIN
 #include "python_plugin.hpp"
 #endif
