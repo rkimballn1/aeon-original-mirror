@@ -83,8 +83,8 @@ augment::image::param_factory::param_factory(nlohmann::json js)
                     std::uniform_int_distribution<int>(0, padding * 2);
             }
         }
-        m_emit_type = get_emit_constraint_type();
     }
+    m_emit_type = get_emit_constraint_type();
 }
 
 emit_type augment::image::param_factory::get_emit_constraint_type()
