@@ -56,9 +56,7 @@ void batch_decoder::process(const int index)
     if (m_deterministic_mode)
         get_thread_local_random_engine() = m_random[index];
 
-    {
-        m_provider->provide(index, *m_inputs, *m_outputs);
-    }
+    m_provider->provide(index, *m_inputs, *m_outputs);
 
     if (m_deterministic_mode)
         m_random[index] = get_thread_local_random_engine();
