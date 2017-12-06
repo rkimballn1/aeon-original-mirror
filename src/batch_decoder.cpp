@@ -84,7 +84,6 @@ fixed_buffer_map* batch_decoder::filler()
         }
         m_inputs  = inputs;
         m_outputs = outputs;
-
         m_thread_pool->run(this, m_batch_size);
     }
     m_state = async_state::idle;
