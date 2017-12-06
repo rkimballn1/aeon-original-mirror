@@ -97,27 +97,27 @@ public:
         return out;
     }
 
-    float                   expand_ratio = 1.0;
-    cv::Size2i              expand_offset;
-    cv::Size2i              expand_size;
-    emit_type               emit_constraint_type = emit_type::undefined;
-    float                   emit_min_overlap     = 0.f;
-    cv::Rect                cropbox;
-    cv::Size2i              output_size;
-    int                     angle = 0;
-    bool                    flip  = false;
-    int                     padding;
-    cv::Size2i              padding_crop_offset;
-    std::vector<float>      lighting; // pixelwise random values
-    float                   color_noise_std        = 0;
-    float                   contrast               = 1.0;
-    float                   brightness             = 1.0;
-    float                   saturation             = 1.0;
-    int                     hue                    = 0;
-    bool                    debug_deterministic    = false;
-    std::string             debug_output_directory = "";
+    float              expand_ratio = 1.0;
+    cv::Size2i         expand_offset;
+    cv::Size2i         expand_size;
+    emit_type          emit_constraint_type = emit_type::undefined;
+    float              emit_min_overlap     = 0.f;
+    cv::Rect           cropbox;
+    cv::Size2i         output_size;
+    int                angle = 0;
+    bool               flip  = false;
+    int                padding;
+    cv::Size2i         padding_crop_offset;
+    std::vector<float> lighting; // pixelwise random values
+    float              color_noise_std        = 0;
+    float              contrast               = 1.0;
+    float              brightness             = 1.0;
+    float              saturation             = 1.0;
+    int                hue                    = 0;
+    bool               debug_deterministic    = false;
+    std::string        debug_output_directory = "";
 #ifdef PYTHON_PLUGIN
-    std::shared_ptr<plugin> user_plugin            = nullptr;
+    std::shared_ptr<plugin> user_plugin = nullptr;
 #endif
 
 private:
@@ -140,13 +140,13 @@ public:
                         size_t                                        output_height,
                         const std::vector<nervana::boundingbox::box>& object_bboxes) const;
 
-    bool           do_area_scale                 = false;
-    bool           crop_enable                   = true;
-    bool           fixed_aspect_ratio            = false;
-    float          expand_probability            = 0.;
-    float          fixed_scaling_factor          = -1;
-    std::string    m_emit_constraint_type        = "";
-    float          m_emit_constraint_min_overlap = 0.0;
+    bool        do_area_scale                 = false;
+    bool        crop_enable                   = true;
+    bool        fixed_aspect_ratio            = false;
+    float       expand_probability            = 0.;
+    float       fixed_scaling_factor          = -1;
+    std::string m_emit_constraint_type        = "";
+    float       m_emit_constraint_min_overlap = 0.0;
 #ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
     nlohmann::json plugin_params = nlohmann::json({});

@@ -315,7 +315,7 @@ TEST(plugin, pixel_mask_example_flip)
     nlohmann::json aug = {{"type", "image"},
                           {"crop_enable", false},
                           {"plugin_filename", "flip"},
-                          {"plugin_params", {{"probability", 1},{"width", 256}}}};
+                          {"plugin_params", {{"probability", 1}, {"width", 256}}}};
     image::config cfg(js);
 
     pixel_mask::extractor         extractor{cfg};
@@ -331,7 +331,7 @@ TEST(plugin, pixel_mask_example_flip)
     cv::Mat                    tximg       = transformed->get_image(0);
 
     // phase two
-    aug        = {{"type", "image"}, {"crop_enable", false}, {"flip_enable", true}};
+    aug = {{"type", "image"}, {"crop_enable", false}, {"flip_enable", true}};
     augment::image::param_factory factory2{aug};
     params_ptr = factory2.make_params(image_size.width, image_size.height, cfg.width, cfg.height);
     params_ptr->flip = true;
