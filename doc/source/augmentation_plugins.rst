@@ -28,6 +28,11 @@ aeon has an experimental feature of customizable augmentation transformation plu
 User Guide
 ----------
 
+To compile aeon with python plugin support, add cmake flag `-DPYTHON_PLUGIN=ON`. 
+Plugins were developed forOpenCV in version 2.4.9.1  and python 2.7. Different versions installed might cause errors. 
+Also python `yaml` package is required for a single unit test to pass, as it provides better json parser.
+
+
 To use python augmentation plugins, you need to specify `PYTHONPATH` enviroment variable:
 
 .. code-block:: bash
