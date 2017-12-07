@@ -1,0 +1,6 @@
+{
+    'type': 'image',
+    'crop_enable': false,
+    'plugin_filename': 'flip',
+    'plugin_params': {'width': -1}
+}

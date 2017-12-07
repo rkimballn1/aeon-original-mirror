@@ -1,0 +1,4 @@
+{
+    'type': 'image',
+    'crop_enable': false,
+}

@@ -1,0 +1,12 @@
+build with cmake .. -DPYTHON_PLUGIN=ON
+export PYTHONPATH=$PYTHONPATH:/path/to/aeon/src/
+tests all four configurations of augmentations from configx.txt
+where:
+    1. Without plugins, casual flip transformation
+    2. WIth flip plugin, without any transformation
+    3. Dummy plugin without any transformations
+    4. Without plugin without any transformations
+compare if there is no drop in performance related to master branch
+
+
+corresponding issue URL: https://jira01.devtools.intel.com/browse/AEON-75
