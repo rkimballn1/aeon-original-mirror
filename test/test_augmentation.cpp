@@ -457,8 +457,6 @@ TEST(image_augmentation, padding_with_crop_enabled)
 #ifdef PYTHON_PLUGIN
 TEST(image_augmentation, plugin_example_rotate_config)
 {
-    Py_Initialize();
-    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "rotate"},
@@ -470,8 +468,6 @@ TEST(image_augmentation, plugin_example_rotate_config)
 
 TEST(image_augmentation, plugin_example_flip_config)
 {
-    Py_Initialize();
-    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
@@ -483,8 +479,6 @@ TEST(image_augmentation, plugin_example_flip_config)
 
 TEST(image_augmentation, plugin_example_flip_config_missing_argument)
 {
-    Py_Initialize();
-    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},
@@ -496,8 +490,6 @@ TEST(image_augmentation, plugin_example_flip_config_missing_argument)
 
 TEST(image_augmentation, plugin_base_class_config)
 {
-    Py_Initialize();
-    PyEval_InitThreads();
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "plugin"},
@@ -510,8 +502,6 @@ TEST(image_augmentation, plugin_base_class_config)
 
 TEST(image_augmentation, different_plugins_at_once)
 {
-    Py_Initialize();
-    PyEval_InitThreads();
 
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
