@@ -15,6 +15,7 @@
 #include <Python.h>
 #include <cstdlib>
 #include "python_plugin.hpp"
+#include "python_utils.hpp"
 
 namespace nervana
 {
@@ -42,6 +43,7 @@ namespace nervana
 
             std::stringstream ss;
             ss << "Python has failed with error message: " << err_msg << std::endl;
+            PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
 
@@ -51,6 +53,9 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
+        if (!Py_IsInitialized())
+            static python::static_initialization init;
+
         python::ensure_gil gil;
         handle = PyImport_ImportModule(filename.c_str());
 
@@ -63,6 +68,7 @@ namespace nervana
             std::stringstream ss;
             ss << "python module not loaded" << std::endl;
             ss << "Python has failed with error message: " << err_msg << std::endl;
+            PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
 
@@ -77,6 +83,7 @@ namespace nervana
             std::stringstream ss;
             ss << "python class not loaded" << std::endl;
             ss << "Python has failed with error message: " << err_msg << std::endl;
+            PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
 
