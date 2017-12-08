@@ -368,12 +368,12 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             ss << "Unable to create internal loader object: " << e.what() << endl;
             ERR << "Unable to create internal loader object: " << e.what() << endl;
             ss << "config is: " << json_config << endl;
+            PyEval_AcquireThread(main_state);
             PyErr_SetString(PyExc_RuntimeError, ss.str().c_str());
             return NULL;
         }
     }
 
-    //PyEval_ReleaseThread(main_state);
     return (PyObject*)self;
 }
 
