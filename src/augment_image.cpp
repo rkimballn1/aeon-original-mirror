@@ -83,6 +83,18 @@ augment::image::param_factory::param_factory(nlohmann::json js)
                     std::uniform_int_distribution<int>(0, padding * 2);
             }
         }
+#ifndef PYTHON_PLUGIN
+        if (js.find("plugin_filename") != js.end())
+            WARN << "Detected `plugin_filename` in augmentation config, but aeon was not compiled "
+                    "with "
+                    "PYTHON_PLUGIN flag. Recompile with PYTHON_PLUGIN flag in order to use plugins."
+                 << std::endl;
+        if (js.find("plugin_params") != js.end())
+            WARN << "Detected `plugin_params` in augmentation config, but aeon was not compiled "
+                    "with "
+                    "PYTHON_PLUGIN flag. Recompile with PYTHON_PLUGIN flag in order to use plugins."
+                 << std::endl;
+#endif
     }
     m_emit_type = get_emit_constraint_type();
 }
