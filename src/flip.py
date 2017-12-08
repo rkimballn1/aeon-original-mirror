@@ -20,11 +20,9 @@ class plugin(Plugin):
                 raise KeyError('width required for flip.py')
 
     def prepare(self):
-        print "prepare"
         self.do_flip = np.random.uniform() < self.probability
 
     def augment_image(self, mat):
-        print "augment_image"
         if self.do_flip:
             dst = cv2.flip(mat, 1)
         else:
@@ -32,7 +30,6 @@ class plugin(Plugin):
         return dst
 
     def augment_boundingbox(self, boxes):
-        print "augment_boundingbox"
         if self.do_flip:
             for i in xrange(len(boxes)):
                 xmax = boxes[i]["xmax"]

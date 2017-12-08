@@ -40,7 +40,6 @@ namespace nervana
             PyGILState_STATE _state;
         };
 
-        void atexit_cleanup();
         class static_initialization
         {
         public:
