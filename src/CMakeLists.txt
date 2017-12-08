@@ -85,9 +85,12 @@ if (PYTHON_FOUND)
 endif(PYTHON_FOUND)
 
 if (PYTHON_PLUGIN)
-set(SRC ${SRC} python_plugin.cpp
-               conversion.cpp
-               python_utils.cpp)
+    set(SRC ${SRC} python_plugin.cpp
+                   conversion.cpp
+                   python_utils.cpp)
+    set(PYTHON_PLUGIN_ON True)
+else(PYTHON_PLUGIN)
+    set(PYTHON_PLUGIN_ON False)
 endif(PYTHON_PLUGIN)
 
 set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
