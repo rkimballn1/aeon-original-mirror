@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Intel(R) Nervana(TM)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +14,12 @@
 
 add_subdirectory(cpp_iterator)
 add_subdirectory(augmentation_assistant)
+if (ENABLE_AEON_SERVICE)
+    add_subdirectory(cpp_remote_iterator)
+endif()
+add_subdirectory(cpp_iterator)
+add_subdirectory(augmentation_assistant)
+add_subdirectory(plugins)
 if (ENABLE_AEON_SERVICE)
     add_subdirectory(cpp_remote_iterator)
 endif()

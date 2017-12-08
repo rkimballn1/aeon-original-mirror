@@ -39,5 +39,12 @@ namespace nervana
         private:
             PyGILState_STATE _state;
         };
+
+        void atexit_cleanup();
+        class static_initialization
+        {
+        public:
+            static_initialization();
+        };
     }
 }
