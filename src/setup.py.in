@@ -73,7 +73,11 @@ include_dirs += get_python_inc() + ' ' + numpy.get_include()
 include_dirs = include_dirs.split()
 libs = libs.replace('-l', '').split()
 lib_dirs = lib_dirs.replace('-L','').split()
-extra_compile_args = "${CMAKE_CXX_FLAGS} -DPYTHON_PLUGIN=${PYTHON_PLUGIN}".split(' ')
+if ${PYTHON_PLUGIN_ON}:
+    extra_compile_args = "${CMAKE_CXX_FLAGS} -DPYTHON_PLUGIN=${PYTHON_PLUGIN}".split(' ')
+else:
+    extra_compile_args = "${CMAKE_CXX_FLAGS}".split(' ')
+
 
 
 module = Extension(
