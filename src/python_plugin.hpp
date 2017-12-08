@@ -26,7 +26,6 @@ namespace nervana
         std::string get_name() { return filename; }
     private:
         std::string filename;
-        PyObject*   name{nullptr};
         PyObject*   handle{nullptr};
         PyObject*   klass{nullptr};
         PyObject*   instance{nullptr};
