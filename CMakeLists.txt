@@ -119,6 +119,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-used-but-marked-unused") # from sox
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-compat-deprecated-writable-strings")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-double-promotion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreserved-id-macro")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 
@@ -145,10 +146,15 @@ find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 
-set(Python_ADDITIONAL_VERSIONS 2.7 3.6 3.5 3.4)
+set(Python_ADDITIONAL_VERSIONS 3.6 3.5 3.4 2.7)
+if (PYTHON_PLUGIN)
+    find_package(PythonLibs 2.7 EXACT REQUIRED)
+    find_package(PythonInterp 2.7 EXACT REQUIRED)
+else(PYTHON_PLUGIN)
+    find_package(PythonLibs)
+    find_package(PythonInterp)
+endif(PYTHON_PLUGIN)
 
-find_package(PythonLibs)
-find_package(PythonInterp)
 
 if (PYTHONLIBS_FOUND)
     find_package(NumPy)

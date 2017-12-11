@@ -53,8 +53,7 @@ namespace nervana
     plugin::plugin(std::string fname, std::string params)
         : filename(fname)
     {
-        if (!Py_IsInitialized())
-            static python::static_initialization init;
+        python::static_initialization::Instance();
 
         python::ensure_gil gil;
         handle = PyImport_ImportModule(filename.c_str());

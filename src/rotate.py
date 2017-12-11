@@ -4,7 +4,6 @@ import json
 from plugin import Plugin
 
 
-
 class plugin(Plugin):
     angle = 0
     angle_min = 0
