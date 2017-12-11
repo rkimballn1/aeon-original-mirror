@@ -43,6 +43,13 @@ namespace nervana
         class static_initialization
         {
         public:
+            static static_initialization& Instance()
+            {
+                static static_initialization obj;
+                return obj;
+            }
+
+        private:
             static_initialization();
         };
     }
