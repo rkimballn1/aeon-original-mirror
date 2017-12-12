@@ -146,7 +146,7 @@ find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 
-set(Python_ADDITIONAL_VERSIONS 3.6 3.5 3.4 2.7)
+set(Python_ADDITIONAL_VERSIONS 2.7 3.6 3.5 3.4)
 if (PYTHON_PLUGIN)
     find_package(PythonLibs 2.7 EXACT REQUIRED)
     find_package(PythonInterp 2.7 EXACT REQUIRED)
