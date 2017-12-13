@@ -84,9 +84,9 @@ if (PYTHON_FOUND)
 endif(PYTHON_FOUND)
 
 if (PYTHON_PLUGIN)
-    set(SRC ${SRC} python_plugin.cpp
-                   conversion.cpp
-                   python_utils.cpp)
+    list(APPEND SRC python_plugin.cpp
+                    conversion.cpp
+                    python_utils.cpp)
     set(PYTHON_PLUGIN_ON True)
 else(PYTHON_PLUGIN)
     set(PYTHON_PLUGIN_ON False)
