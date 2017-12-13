@@ -21,7 +21,7 @@
 
 void python::import_numpy()
 {
-    import_array();
+    _import_array();
 }
 
 namespace
@@ -255,11 +255,11 @@ std::vector<nervana::boundingbox::box> python::conversion::detail::to_boxes(cons
         float     ymin      = PyFloat_AsDouble(PyDict_GetItemString(dict, "ymin"));
         float     xmax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "xmax"));
         float     ymax      = PyFloat_AsDouble(PyDict_GetItemString(dict, "ymax"));
-        int       label     = PyInt_AsLong(PyDict_GetItemString(dict, "label"));
-        bool      difficult = PyDict_Contains(dict, PyString_FromString("difficult"))
+        int       label     = PyLong_AsLong(PyDict_GetItemString(dict, "label"));
+        bool      difficult = PyDict_Contains(dict, PyBytes_FromString("difficult"))
                              ? PyBool_Check(PyDict_GetItemString(dict, "difficult"))
                              : false;
-        bool truncated = PyDict_Contains(dict, PyString_FromString("difficult"))
+        bool truncated = PyDict_Contains(dict, PyBytes_FromString("difficult"))
                              ? PyBool_Check(PyDict_GetItemString(dict, "truncated"))
                              : false;
         boxes.emplace_back(xmin, ymin, xmax, ymax, label, difficult, truncated);
@@ -297,7 +297,7 @@ PyObject* python::conversion::detail::to_list(const std::vector<nervana::boundin
         PyDict_SetItemString(item, "ymin", PyFloat_FromDouble(boxes[i].ymin()));
         PyDict_SetItemString(item, "xmax", PyFloat_FromDouble(boxes[i].xmax()));
         PyDict_SetItemString(item, "ymax", PyFloat_FromDouble(boxes[i].ymax()));
-        PyDict_SetItemString(item, "label", PyInt_FromLong(boxes[i].label()));
+        PyDict_SetItemString(item, "label", PyLong_FromLong(boxes[i].label()));
         PyDict_SetItemString(item, "difficult", PyBool_FromLong(boxes[i].difficult()));
         PyDict_SetItemString(item, "truncated", PyBool_FromLong(boxes[i].truncated()));
         PyList_SetItem(list, i, item);

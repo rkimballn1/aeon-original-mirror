@@ -28,7 +28,7 @@ namespace nervana
         PyObject* arg = convert::to_pyobject(in_data);
 
         PyObject* ret_val = PyObject_CallMethodObjArgs(
-            instance, PyString_FromString(methodname.c_str()), arg, NULL);
+            instance, PyBytes_FromString(methodname.c_str()), arg, NULL);
 
         T out;
         if (ret_val != NULL)
@@ -39,7 +39,7 @@ namespace nervana
         {
             PyObject *err_type, *err_value, *err_traceback;
             PyErr_Fetch(&err_type, &err_value, &err_traceback);
-            char* err_msg = PyString_AsString(err_value);
+            const char* err_msg = PyBytes_AsString(err_value);
 
             std::stringstream ss;
             ss << "Python has failed with error message: " << err_msg << std::endl;
@@ -62,7 +62,7 @@ namespace nervana
         {
             PyObject *err_type, *err_value, *err_traceback;
             PyErr_Fetch(&err_type, &err_value, &err_traceback);
-            char* err_msg = PyString_AsString(err_value);
+            const char* err_msg = PyBytes_AsString(err_value);
 
             std::stringstream ss;
             ss << "python module not loaded" << std::endl;
@@ -77,7 +77,7 @@ namespace nervana
         {
             PyObject *err_type, *err_value, *err_traceback;
             PyErr_Fetch(&err_type, &err_value, &err_traceback);
-            char* err_msg = PyString_AsString(err_value);
+            const char* err_msg = PyBytes_AsString(err_value);
 
             std::stringstream ss;
             ss << "python class not loaded" << std::endl;
@@ -87,7 +87,7 @@ namespace nervana
         }
 
         PyObject* arg_tuple = PyTuple_New(1);
-        PyTuple_SetItem(arg_tuple, 0, PyString_FromString(params.c_str()));
+        PyTuple_SetItem(arg_tuple, 0, PyBytes_FromString(params.c_str()));
 
         instance = PyObject_CallObject(klass, arg_tuple);
         if (!instance)
@@ -105,7 +105,7 @@ namespace nervana
     void plugin::prepare()
     {
         python::ensure_gil gil;
-        PyObject_CallMethodObjArgs(instance, PyString_FromString("prepare"), NULL);
+        PyObject_CallMethodObjArgs(instance, PyBytes_FromString("prepare"), NULL);
     }
 
     cv::Mat plugin::augment_image(const cv::Mat& m) { return augment("augment_image", m); }
