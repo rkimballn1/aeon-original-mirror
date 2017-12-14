@@ -31,6 +31,7 @@ namespace
 }
 
 extern "C" {
+
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #endif
@@ -41,7 +42,9 @@ extern "C" {
 #define PYOBJ_TAIL_INIT
 #endif
 
+#ifdef PYTHON_PLUGIN
 static PyThreadState* main_state;
+#endif
 
 #define DL_get_loader(v) (((aeon_DataLoader*)(v))->m_loader)
 
@@ -106,16 +109,22 @@ static PyObject* DataLoader_iter(PyObject* self)
 {
     INFO << " aeon_DataLoader_iter";
     Py_INCREF(self);
+#ifdef PYTHON_PLUGIN
     PyEval_ReleaseThread(main_state);
+#endif
     DL_get_loader(self)->reset();
     ((aeon_DataLoader*)(self))->m_first_iteration = true;
+#ifdef PYTHON_PLUGIN
     PyEval_AcquireThread(main_state);
+#endif
     return self;
 }
 
 static PyObject* DataLoader_iternext(PyObject* self)
 {
+#ifdef PYTHON_PLUGIN
     PyEval_ReleaseThread(main_state);
+#endif
     INFO << " aeon_DataLoader_iternext";
     PyObject*      result = NULL;
     nlohmann::json conf   = DL_get_loader(self)->get_current_config();
@@ -138,7 +147,9 @@ static PyObject* DataLoader_iternext(PyObject* self)
         const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
         auto                    names = DL_get_loader(self)->get_buffer_names();
 
+#ifdef PYTHON_PLUGIN
         PyEval_AcquireThread(main_state);
+#endif
         result            = PyTuple_New(names.size());
         int buf_tuple_len = 2;
         int tuple_pos     = 0;
@@ -163,17 +174,25 @@ static PyObject* DataLoader_iternext(PyObject* self)
                 PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
             }
         }
+#ifdef PYTHON_PLUGIN
         PyEval_ReleaseThread(main_state);
+#endif
     }
     else
     {
+#ifdef PYTHON_PLUGIN
         PyEval_AcquireThread(main_state);
+#endif
         /* Raising of standard StopIteration exception with empty value. */
         PyErr_SetNone(PyExc_StopIteration);
+#ifdef PYTHON_PLUGIN
         PyEval_ReleaseThread(main_state);
+#endif
     }
 
+#ifdef PYTHON_PLUGIN
     PyEval_AcquireThread(main_state);
+#endif
     return result;
 }
 
@@ -228,7 +247,9 @@ static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf, 
 
 static void DataLoader_dealloc(aeon_DataLoader* self)
 {
+#ifdef PYTHON_PLUGIN
     PyEval_ReleaseThread(main_state);
+#endif
     INFO << " DataLoader_dealloc";
     if (self->m_loader != nullptr)
     {
@@ -241,9 +262,9 @@ static void DataLoader_dealloc(aeon_DataLoader* self)
     Py_XDECREF(self->session_id);
     Py_TYPE(self)->tp_free((PyObject*)self);
 
+#ifdef PYTHON_PLUGIN
     PyEval_AcquireThread(main_state);
-    //PyGILState_Ensure();
-    //Py_Finalize();
+#endif
 }
 
 static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
@@ -253,11 +274,12 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
     static const char* keyword_list[] = {"config", nullptr};
 
+#ifdef PYTHON_PLUGIN
     Py_Initialize();
     PyEval_InitThreads();
 
     main_state = PyThreadState_Get();
-
+#endif
     PyObject* dict;
     auto      rc = PyArg_ParseTupleAndKeywords(
         args, kwds, "O!", const_cast<char**>(keyword_list), &PyDict_Type, &dict);
@@ -286,19 +308,27 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
         try
         {
+#ifdef PYTHON_PLUGIN
             PyEval_ReleaseThread(main_state);
+#endif
             self->m_loader          = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
+#ifdef PYTHON_PLUGIN
             PyEval_AcquireThread(main_state);
+#endif
             self->ndata      = Py_BuildValue("i", self->m_loader->record_count());
             self->batch_size = Py_BuildValue("i", self->m_loader->batch_size());
             self->config     = PyDict_Copy(dict);
             self->session_id = Py_BuildValue("s", self->m_loader->get_session_id());
+#ifdef PYTHON_PLUGIN
             PyEval_ReleaseThread(main_state);
+#endif
 
             auto name_shape_list = self->m_loader->get_names_and_shapes();
+#ifdef PYTHON_PLUGIN
             PyEval_AcquireThread(main_state);
+#endif
 
             // axes_info is represented as a tuple of tuples.
             // A single entry in axes_info is represented as
@@ -368,7 +398,9 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             ss << "Unable to create internal loader object: " << e.what() << endl;
             ERR << "Unable to create internal loader object: " << e.what() << endl;
             ss << "config is: " << json_config << endl;
+#ifdef PYTHON_PLUGIN
             PyEval_AcquireThread(main_state);
+#endif
             PyErr_SetString(PyExc_RuntimeError, ss.str().c_str());
             return NULL;
         }
