@@ -73,6 +73,7 @@ endif(COVERAGE)
 option(PYTHON_PLUGIN "Enable support of custom python plugins in augmentation pipeline" OFF)
 if(PYTHON_PLUGIN)
     add_definitions(-DPYTHON_PLUGIN)
+    list(APPEND CMAKE_CXX_FLAGS "-DPYTHON_PLUGIN")
 endif(PYTHON_PLUGIN)
 
 if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
