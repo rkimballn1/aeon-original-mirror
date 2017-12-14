@@ -502,7 +502,6 @@ TEST(image_augmentation, plugin_base_class_config)
 
 TEST(image_augmentation, different_plugins_at_once)
 {
-
     nlohmann::json js = {{"type", "image"},
                          {"crop_enable", false},
                          {"plugin_filename", "flip"},

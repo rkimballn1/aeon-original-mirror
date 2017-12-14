@@ -291,10 +291,10 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             self->m_i               = 0;
             self->m_first_iteration = true;
             PyEval_AcquireThread(main_state);
-            self->ndata             = Py_BuildValue("i", self->m_loader->record_count());
-            self->batch_size        = Py_BuildValue("i", self->m_loader->batch_size());
-            self->config            = PyDict_Copy(dict);
-            self->session_id        = Py_BuildValue("s", self->m_loader->get_session_id());
+            self->ndata      = Py_BuildValue("i", self->m_loader->record_count());
+            self->batch_size = Py_BuildValue("i", self->m_loader->batch_size());
+            self->config     = PyDict_Copy(dict);
+            self->session_id = Py_BuildValue("s", self->m_loader->get_session_id());
             PyEval_ReleaseThread(main_state);
 
             auto name_shape_list = self->m_loader->get_names_and_shapes();
