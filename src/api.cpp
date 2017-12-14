@@ -278,7 +278,8 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
     Py_Initialize();
     PyEval_InitThreads();
 
-    main_state = PyThreadState_Get();
+    main_state              = PyThreadState_Get();
+    bool is_thread_acquired = true;
 #endif
     PyObject* dict;
     auto      rc = PyArg_ParseTupleAndKeywords(
@@ -310,25 +311,21 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
         {
 #ifdef PYTHON_PLUGIN
             PyEval_ReleaseThread(main_state);
+            is_thread_acquired = false;
 #endif
             self->m_loader          = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
+
+            auto name_shape_list = self->m_loader->get_names_and_shapes();
 #ifdef PYTHON_PLUGIN
             PyEval_AcquireThread(main_state);
+            is_thread_acquired = true;
 #endif
             self->ndata      = Py_BuildValue("i", self->m_loader->record_count());
             self->batch_size = Py_BuildValue("i", self->m_loader->batch_size());
             self->config     = PyDict_Copy(dict);
             self->session_id = Py_BuildValue("s", self->m_loader->get_session_id());
-#ifdef PYTHON_PLUGIN
-            PyEval_ReleaseThread(main_state);
-#endif
-
-            auto name_shape_list = self->m_loader->get_names_and_shapes();
-#ifdef PYTHON_PLUGIN
-            PyEval_AcquireThread(main_state);
-#endif
 
             // axes_info is represented as a tuple of tuples.
             // A single entry in axes_info is represented as
@@ -399,7 +396,8 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             ERR << "Unable to create internal loader object: " << e.what() << endl;
             ss << "config is: " << json_config << endl;
 #ifdef PYTHON_PLUGIN
-            PyEval_AcquireThread(main_state);
+            if (!is_thread_acquired)
+                PyEval_AcquireThread(main_state);
 #endif
             PyErr_SetString(PyExc_RuntimeError, ss.str().c_str());
             return NULL;
