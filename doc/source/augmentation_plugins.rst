@@ -20,7 +20,7 @@ aeon has an experimental feature of customizable augmentation transformation plu
 
 .. image:: etl_image_transforms_plugins.png
 
-1. Prepare plugin paramters for next data record
+1. Prepare plugin parameters for next data record
 2. If required, apply any specified transformations (e.g. crop, lighting, horizontal flip, photometric distortion) to record element (e.g. image, boundingbox)
 3. Apply plugin transformations if provided to record elements (e.g. image, boundingbox)
 
@@ -28,12 +28,12 @@ aeon has an experimental feature of customizable augmentation transformation plu
 User Guide
 ----------
 
-To compile aeon with python plugin support, add cmake flag `-DPYTHON_PLUGIN=ON`. 
-Plugins were developed forOpenCV in version 2.4.9.1  and python 2.7. Different versions installed might cause errors. 
-Also python `yaml` package is required for a single unit test to pass, as it provides better json parser.
+To compile aeon with python plugin support, add cmake flag ``-DPYTHON_PLUGIN=ON``. 
+Plugins were developed for OpenCV in version 2.4.9.1  and python 2.7. Different versions installed might cause errors. 
+Also python ``yaml`` package is required for a single unit test to pass, as it provides better json parser.
 
 
-To use python augmentation plugins, you need to specify `PYTHONPATH` enviroment variable:
+To use python augmentation plugins, you need to specify ``PYTHONPATH`` environment variable:
 
 .. code-block:: bash
 
@@ -65,8 +65,8 @@ And your config as for example:
            ]
         }
 
-In the above example, the `plugin_filename` points to module `rotate.py` located in `$PYTHONPATH`, and `plugin_params` is a dictionary with arguements to the plugin. 
-In case of this example rotate plugin, there is the optional argument `angle` specified. Consult your plugin provider or the plugin file for details on what arguments are supported.
+In the above example, the ``plugin_filename`` points to module ``rotate.py`` located in ``$PYTHONPATH``, and ``plugin_params`` is a dictionary with arguments to the plugin. 
+In case of this example rotate plugin, there is the optional argument ``angle`` specified. Consult your plugin provider or the plugin file for details on what arguments are supported.
 
 Other examples are:
 
@@ -125,7 +125,7 @@ The base class for plugin implemented as follows:
             print('augment audio not implemented')
             raise RuntimeError('Not implemented')
 
-therefore by default the plugin throws exception when it is called.
+Therefore by default the plugin throws exception when it is called.
 To write your own plugin overwrite the methods you wish to support.
 
 .. csv-table::
@@ -159,8 +159,7 @@ Example plugin flip:
         do_flip = False
         width = 0
 
-        # constructor can parse the configuration paramters provided in form of
-        json string
+        # constructor can parse the configuration parameters provided in form of json string
         def __init__(self, param_string):
             if len(param_string) > 0:
                 params = json.loads(param_string)
@@ -173,11 +172,9 @@ Example plugin flip:
                 else:
                     raise KeyError('width required for flip.py')
 
-        # prepare method is called before each record (line) in manifest is
-        processed.
+        # prepare method is called before each record (line) in manifest is processed.
         def prepare(self):
-            # if randomly decided to flip, store the boolean in a variable until the
-            next line is processed
+            # if randomly decided to flip, store the boolean in a variable until the next line is processed
             self.do_flip = np.random.uniform() < self.probability
 
         # flip image
@@ -197,12 +194,11 @@ Example plugin flip:
                     boxes[i]["xmin"] = self.width - xmax - 1
             return boxes
 
-        # pixelmask and depthmap can essentially be treated the same as image in
-        case of flipping
+        # pixelmask and depthmap can essentially be treated the same as image in case of flipping
         def augment_pixel_mask(self, mat):
             return self.augment_image(mat)
 
         def augment_depthmap(self, mat):
             return self.augment_image(mat)
 
-You can find more plugin examples in `src` directory.
+You can find more plugin examples in ``src`` directory.
