@@ -37,7 +37,7 @@ To use python augmentation plugins, you need to specify ``PYTHONPATH`` environme
 
 .. code-block:: bash
 
-    export PYTHONPATH=$PYTHONPATH:/home/user/aeon/src
+    export PYTHONPATH=$PYTHONPATH:/home/user/aeon/plugins
 
 And your config as for example:
 
@@ -201,4 +201,4 @@ Example plugin flip:
         def augment_depthmap(self, mat):
             return self.augment_image(mat)
 
-You can find more plugin examples in ``src`` directory.
+You can find more plugin examples in ``plugins`` directory.

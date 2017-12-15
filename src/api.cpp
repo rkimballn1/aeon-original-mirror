@@ -255,16 +255,15 @@ static void DataLoader_dealloc(aeon_DataLoader* self)
     {
         delete self->m_loader;
     }
+#ifdef PYTHON_PLUGIN
+    PyEval_AcquireThread(main_state);
+#endif
     Py_XDECREF(self->ndata);
     Py_XDECREF(self->batch_size);
     Py_XDECREF(self->axes_info);
     Py_XDECREF(self->config);
     Py_XDECREF(self->session_id);
     Py_TYPE(self)->tp_free((PyObject*)self);
-
-#ifdef PYTHON_PLUGIN
-    PyEval_AcquireThread(main_state);
-#endif
 }
 
 static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
