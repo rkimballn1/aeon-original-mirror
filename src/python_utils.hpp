@@ -20,13 +20,6 @@ namespace nervana
 {
     namespace python
     {
-        class allow_threads
-        {
-        public:
-            allow_threads(PyThreadState* m_state) { PyEval_RestoreThread(m_state); }
-            ~allow_threads() { PyEval_SaveThread(); }
-        };
-
         class ensure_gil
         {
         public:

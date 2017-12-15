@@ -31,11 +31,11 @@ namespace nervana
         PyObject*   instance{nullptr};
 
         template <typename T>
-        T augment(std::string methodname, const T& in_data);
+        T augment(const std::string& methodname, const T& in_data);
 
     public:
         plugin() = delete;
-        plugin(std::string filename, std::string params);
+        plugin(const std::string& filename, const std::string& params);
 
         void    prepare();
         cv::Mat augment_image(const cv::Mat& m);

@@ -20,7 +20,7 @@
 namespace nervana
 {
     template <typename T>
-    T plugin::augment(std::string methodname, const T& in_data)
+    T plugin::augment(const std::string& methodname, const T& in_data)
     {
         python::ensure_gil gil;
         using convert = typename ::python::conversion::convert<T>;
@@ -50,7 +50,7 @@ namespace nervana
         return out;
     }
 
-    plugin::plugin(std::string fname, std::string params)
+    plugin::plugin(const std::string& fname, const std::string& params)
         : filename(fname)
     {
         python::static_initialization::Instance();

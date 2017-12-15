@@ -71,7 +71,7 @@ public:
 
 #ifdef PYTHON_PLUGIN
     std::string    plugin_filename;
-    nlohmann::json plugin_params = nlohmann::json({});
+    nlohmann::json plugin_params;
     mutable std::map<std::thread::id, std::shared_ptr<plugin>> user_plugin_map;
     mutable std::mutex mtx;
 #endif

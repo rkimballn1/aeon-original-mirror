@@ -1,5 +1,5 @@
 /*
- Copyright 2016 Nervana Systems Inc.
+ Copyright 2017 Nervana Systems Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -13,14 +13,8 @@
  limitations under the License.
 */
 
-//#include <vector>
-//#include <string>
-//#include <sstream>
-//#include <random>
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/highgui/highgui.hpp>
 
 #include "gtest/gtest.h"
 
@@ -29,12 +23,11 @@
 #include "etl_depthmap.hpp"
 #include "json.hpp"
 #include "helpers.hpp"
-//#include "provider_factory.hpp"
 
 using namespace std;
 using namespace nervana;
 
-static cv::Mat generate_test_image()
+cv::Mat generate_test_image()
 {
     cv::Mat        color = cv::Mat(256, 256, CV_8UC3);
     unsigned char* input = (unsigned char*)(color.data);
@@ -53,7 +46,7 @@ static cv::Mat generate_test_image()
 }
 
 // pixels must be either black or white
-static bool verify_image(cv::Mat img)
+bool verify_image(cv::Mat img)
 {
     unsigned char* data  = (unsigned char*)(img.data);
     int            index = 0;
@@ -100,7 +93,6 @@ TEST(plugin, depthmap_example_rotate)
     cv::Mat                    tximg       = transformed->get_image(0);
     cv::imwrite("tx_depthmap_rotate_plugin.png", tximg);
     EXPECT_TRUE(verify_image(tximg));
-    //Py_Finalize();
 }
 
 TEST(plugin, depthmap_example_flip)
