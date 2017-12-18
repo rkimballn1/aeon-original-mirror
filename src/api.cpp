@@ -42,10 +42,6 @@ extern "C" {
 #define PYOBJ_TAIL_INIT
 #endif
 
-#ifdef PYTHON_PLUGIN
-static PyThreadState* main_state;
-#endif
-
 #define DL_get_loader(v) (((aeon_DataLoader*)(v))->m_loader)
 
 struct aeon_state
@@ -110,24 +106,24 @@ static PyObject* DataLoader_iter(PyObject* self)
     INFO << " aeon_DataLoader_iter";
     Py_INCREF(self);
 #ifdef PYTHON_PLUGIN
-    PyEval_ReleaseThread(main_state);
+    Py_BEGIN_ALLOW_THREADS;
 #endif
     DL_get_loader(self)->reset();
     ((aeon_DataLoader*)(self))->m_first_iteration = true;
 #ifdef PYTHON_PLUGIN
-    PyEval_AcquireThread(main_state);
+    Py_END_ALLOW_THREADS;
 #endif
     return self;
 }
 
 static PyObject* DataLoader_iternext(PyObject* self)
 {
-#ifdef PYTHON_PLUGIN
-    PyEval_ReleaseThread(main_state);
-#endif
     INFO << " aeon_DataLoader_iternext";
-    PyObject*      result = NULL;
-    nlohmann::json conf   = DL_get_loader(self)->get_current_config();
+    PyObject* result = NULL;
+#ifdef PYTHON_PLUGIN
+    Py_BEGIN_ALLOW_THREADS;
+#endif
+    nlohmann::json conf = DL_get_loader(self)->get_current_config();
     bool           batch_major{true};
     try
     {
@@ -148,7 +144,7 @@ static PyObject* DataLoader_iternext(PyObject* self)
         auto                    names = DL_get_loader(self)->get_buffer_names();
 
 #ifdef PYTHON_PLUGIN
-        PyEval_AcquireThread(main_state);
+        Py_BLOCK_THREADS;
 #endif
         result            = PyTuple_New(names.size());
         int buf_tuple_len = 2;
@@ -175,23 +171,23 @@ static PyObject* DataLoader_iternext(PyObject* self)
             }
         }
 #ifdef PYTHON_PLUGIN
-        PyEval_ReleaseThread(main_state);
+        Py_UNBLOCK_THREADS;
 #endif
     }
     else
     {
 #ifdef PYTHON_PLUGIN
-        PyEval_AcquireThread(main_state);
+        Py_BLOCK_THREADS
 #endif
-        /* Raising of standard StopIteration exception with empty value. */
-        PyErr_SetNone(PyExc_StopIteration);
+            /* Raising of standard StopIteration exception with empty value. */
+            PyErr_SetNone(PyExc_StopIteration);
 #ifdef PYTHON_PLUGIN
-        PyEval_ReleaseThread(main_state);
+        Py_UNBLOCK_THREADS;
 #endif
     }
 
 #ifdef PYTHON_PLUGIN
-    PyEval_AcquireThread(main_state);
+    Py_END_ALLOW_THREADS;
 #endif
     return result;
 }
@@ -248,7 +244,7 @@ static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf, 
 static void DataLoader_dealloc(aeon_DataLoader* self)
 {
 #ifdef PYTHON_PLUGIN
-    PyEval_ReleaseThread(main_state);
+    Py_BEGIN_ALLOW_THREADS;
 #endif
     INFO << " DataLoader_dealloc";
     if (self->m_loader != nullptr)
@@ -256,7 +252,7 @@ static void DataLoader_dealloc(aeon_DataLoader* self)
         delete self->m_loader;
     }
 #ifdef PYTHON_PLUGIN
-    PyEval_AcquireThread(main_state);
+    Py_END_ALLOW_THREADS;
 #endif
     Py_XDECREF(self->ndata);
     Py_XDECREF(self->batch_size);
@@ -276,9 +272,6 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 #ifdef PYTHON_PLUGIN
     Py_Initialize();
     PyEval_InitThreads();
-
-    main_state              = PyThreadState_Get();
-    bool is_thread_acquired = true;
 #endif
     PyObject* dict;
     auto      rc = PyArg_ParseTupleAndKeywords(
@@ -306,21 +299,17 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             return NULL;
         }
 
+#ifdef PYTHON_PLUGIN
+        Py_BEGIN_ALLOW_THREADS;
+#endif
         try
         {
-#ifdef PYTHON_PLUGIN
-            PyEval_ReleaseThread(main_state);
-            is_thread_acquired = false;
-#endif
-            self->m_loader          = create_loader(json_config);
+            self->m_loader = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
 
             auto name_shape_list = self->m_loader->get_names_and_shapes();
-#ifdef PYTHON_PLUGIN
-            PyEval_AcquireThread(main_state);
-            is_thread_acquired = true;
-#endif
+
             self->ndata      = Py_BuildValue("i", self->m_loader->record_count());
             self->batch_size = Py_BuildValue("i", self->m_loader->batch_size());
             self->config     = PyDict_Copy(dict);
@@ -340,6 +329,9 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 // using tuple instead of dict to preserve the order
                 // python 2.x doesnt have the support for ordereddict obj, its supported in python 3.x onwards
 
+#ifdef PYTHON_PLUGIN
+                Py_BLOCK_THREADS;
+#endif
                 PyObject* py_axis_tuple  = PyTuple_New(axes_lengths.size());
                 int       axis_tuple_len = 2;
                 for (size_t j = 0; j < axes_lengths.size(); ++j)
@@ -379,30 +371,38 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
                 int tuple_status = PyTuple_SetItem(self->axes_info, i, py_datum_tuple);
 
+#ifdef PYTHON_PLUGIN
+                Py_UNBLOCK_THREADS;
+#endif 
                 if (tuple_status < 0)
                 {
+#ifdef PYTHON_PLUGIN
+                    Py_BLOCK_THREADS;
+#endif 
                     ERR << "Error building shape string";
                     PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
                     return NULL;
                 }
             }
         }
+        
         catch (std::exception& e)
         {
+#ifdef PYTHON_PLUGIN
+            Py_BLOCK_THREADS;
+#endif
             // Some kind of problem with creating the internal loader object
             std::stringstream ss;
             ss << "Unable to create internal loader object: " << e.what() << endl;
             ERR << "Unable to create internal loader object: " << e.what() << endl;
             ss << "config is: " << json_config << endl;
-#ifdef PYTHON_PLUGIN
-            if (!is_thread_acquired)
-                PyEval_AcquireThread(main_state);
-#endif
             PyErr_SetString(PyExc_RuntimeError, ss.str().c_str());
             return NULL;
         }
+#ifdef PYTHON_PLUGIN
+        Py_END_ALLOW_THREADS;
+#endif
     }
-
     return (PyObject*)self;
 }
 
