@@ -188,7 +188,7 @@ Example plugin flip:
         # flip boundingboxes
         def augment_boundingbox(self, boxes):
             if self.do_flip:
-                for i in xrange(len(boxes)):
+                for i in range(len(boxes)):
                     xmax = boxes[i]["xmax"]
                     boxes[i]["xmax"] = self.width - boxes[i]["xmin"] - 1
                     boxes[i]["xmin"] = self.width - xmax - 1

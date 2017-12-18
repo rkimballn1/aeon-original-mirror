@@ -44,6 +44,7 @@ namespace nervana
 
         private:
             static_initialization();
+            ~static_initialization() {}
         };
     }
 }

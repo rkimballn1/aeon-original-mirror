@@ -28,7 +28,7 @@ namespace nervana
         PyObject* arg = convert::to_pyobject(in_data);
 
         PyObject* ret_val =
-            PyObject_CallMethodObjArgs(instance, PyBytes_FromString(methodname.c_str()), arg, NULL);
+            PyObject_CallMethodObjArgs(instance, PyUnicode_FromString(methodname.c_str()), arg, NULL);
 
         T out;
         if (ret_val != NULL)
@@ -43,6 +43,8 @@ namespace nervana
 
             std::stringstream ss;
             ss << "Python has failed with error message: " << err_msg << std::endl;
+            PyErr_Restore(err_type, err_value, err_traceback);
+            PyErr_Print();
             PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
@@ -68,6 +70,8 @@ namespace nervana
             ss << "python module not loaded" << std::endl;
             ss << "Python has failed with error message: " << err_msg << std::endl;
             PyErr_Restore(err_type, err_value, err_traceback);
+            PyErr_Print();
+            PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
 
@@ -83,11 +87,13 @@ namespace nervana
             ss << "python class not loaded" << std::endl;
             ss << "Python has failed with error message: " << err_msg << std::endl;
             PyErr_Restore(err_type, err_value, err_traceback);
+            PyErr_Print();
+            PyErr_Restore(err_type, err_value, err_traceback);
             throw std::runtime_error(ss.str());
         }
 
         PyObject* arg_tuple = PyTuple_New(1);
-        PyTuple_SetItem(arg_tuple, 0, PyBytes_FromString(params.c_str()));
+        PyTuple_SetItem(arg_tuple, 0, PyUnicode_FromString(params.c_str()));
 
         instance = PyObject_CallObject(klass, arg_tuple);
         if (!instance)
@@ -105,7 +111,7 @@ namespace nervana
     void plugin::prepare()
     {
         python::ensure_gil gil;
-        PyObject_CallMethodObjArgs(instance, PyBytes_FromString("prepare"), NULL);
+        PyObject_CallMethodObjArgs(instance, PyUnicode_FromString("prepare"), NULL);
     }
 
     cv::Mat plugin::augment_image(const cv::Mat& m) { return augment("augment_image", m); }

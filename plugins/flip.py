@@ -25,9 +25,9 @@ class plugin(Plugin):
     def __init__(self, param_string):
         if len(param_string) > 0:
             params = json.loads(param_string)
-            if params.has_key("probability"):
+            if "probability" in params:
                 self.probability = params["probability"]
-            if params.has_key("width"):
+            if "width" in params:
                 self.width = params["width"]
             else:
                 raise KeyError('width required for flip.py')
@@ -44,7 +44,7 @@ class plugin(Plugin):
 
     def augment_boundingbox(self, boxes):
         if self.do_flip:
-            for i in xrange(len(boxes)):
+            for i in range(len(boxes)):
                 xmax = boxes[i]["xmax"]
                 boxes[i]["xmax"] = self.width - boxes[i]["xmin"] - 1
                 boxes[i]["xmin"] = self.width - xmax - 1

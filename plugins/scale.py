@@ -26,11 +26,11 @@ class plugin(Plugin):
     def __init__(self, param_string):
         if len(param_string) > 0:
             params = yaml.safe_load(param_string)
-            if params.has_key("probability"):
+            if "probability" in params:
                 self.probability = params["probability"]
-            if params.has_key("sample_freq_hz"):
+            if "sample_freq_hz" in params:
                 self.sample_freq_hz = params["sample_freq_hz"]
-            if params.has_key("amplitude"):
+            if "amplitude" in params:
                 self.amplitude_min = params["amplitude"][0]
                 self.amplitude_max = params["amplitude"][1]
 
