@@ -43,12 +43,14 @@ namespace
         PyThreadState* _state;
     };
 
-    allow_threads::allow_threads()
-        : _state{PyEval_SaveThread()}
+    allow_threads::allow_threads() : _state{PyEval_SaveThread()}
+    { }
+
+    allow_threads::~allow_threads()
     {
+        PyEval_RestoreThread(_state);
     }
 
-    allow_threads::~allow_threads() { PyEval_RestoreThread(_state); }
     struct block_threads
     {
         block_threads(allow_threads& a);
@@ -60,9 +62,8 @@ namespace
         PyThreadState* _state{nullptr};
     };
 
-    block_threads::block_threads(allow_threads& a)
-        : _parent{a}
-    {
+    block_threads::block_threads(allow_threads& a) : _parent{a}
+    { 
         std::swap(_state, _parent._state);
         PyEval_RestoreThread(_state);
     }
@@ -74,12 +75,12 @@ namespace
     }
 #else
     struct allow_threads
-    {
-    };
+    { };
 
     struct block_threads
     {
-        block_threads(allow_threads&) {}
+        block_threads(allow_threads&)
+        { }
     };
 #endif
 }
@@ -177,63 +178,62 @@ static PyObject* DataLoader_iternext(PyObject* self)
 {
     INFO << " aeon_DataLoader_iternext";
     PyObject* result = NULL;
+
+    allow_threads a;
+
+    nlohmann::json conf = DL_get_loader(self)->get_current_config();
+    bool           batch_major{true};
+    try
     {
-        allow_threads  a;
-        nlohmann::json conf = DL_get_loader(self)->get_current_config();
-        bool           batch_major{true};
-        try
-        {
-            batch_major = conf.at("batch_major");
-        }
-        catch (nlohmann::detail::out_of_range&)
-        {
-        }
-        if (!((aeon_DataLoader*)(self))->m_first_iteration)
-            DL_get_loader(self)->get_current_iter()++;
-        else
-            ((aeon_DataLoader*)(self))->m_first_iteration = false;
+        batch_major = conf.at("batch_major");
+    }
+    catch (nlohmann::detail::out_of_range&)
+    {
+    }
+    if (!((aeon_DataLoader*)(self))->m_first_iteration)
+        DL_get_loader(self)->get_current_iter()++;
+    else
+        ((aeon_DataLoader*)(self))->m_first_iteration = false;
 
-        if (DL_get_loader(self)->get_current_iter() != DL_get_loader(self)->get_end_iter())
-        {
-            // d will be const fixed_buffer_map&
-            const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
-            auto                    names = DL_get_loader(self)->get_buffer_names();
+    if (DL_get_loader(self)->get_current_iter() != DL_get_loader(self)->get_end_iter())
+    {
+        // d will be const fixed_buffer_map&
+        const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
+        auto                    names = DL_get_loader(self)->get_buffer_names();
 
+        block_threads b{a};
+        result            = PyTuple_New(names.size());
+        int buf_tuple_len = 2;
+        int tuple_pos     = 0;
+        for (auto&& nm : names)
+        {
+            PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm], !batch_major);
+            PyObject* buf_name        = Py_BuildValue("s", nm.c_str());
+            PyObject* named_buf_tuple = PyTuple_New(buf_tuple_len);
+
+            // build tuple of (name, buffer) ex: ('image', buf)
+            PyTuple_SetItem(named_buf_tuple, 0, buf_name);
+            PyTuple_SetItem(named_buf_tuple, 1, wrapped_buf);
+
+            int set_status = PyTuple_SetItem(result, tuple_pos, named_buf_tuple);
+            tuple_pos++;
+
+            // Fix me: do i need call Py_DECREF on named_buf_tuple?
+            // Note: PyTuple_SetItem steals the reference.
+            if (set_status < 0)
             {
-                block_threads b{a};
-                result            = PyTuple_New(names.size());
-                int buf_tuple_len = 2;
-                int tuple_pos     = 0;
-                for (auto&& nm : names)
-                {
-                    PyObject* wrapped_buf     = wrap_buffer_as_np_array(d[nm], !batch_major);
-                    PyObject* buf_name        = Py_BuildValue("s", nm.c_str());
-                    PyObject* named_buf_tuple = PyTuple_New(buf_tuple_len);
-
-                    // build tuple of (name, buffer) ex: ('image', buf)
-                    PyTuple_SetItem(named_buf_tuple, 0, buf_name);
-                    PyTuple_SetItem(named_buf_tuple, 1, wrapped_buf);
-
-                    int set_status = PyTuple_SetItem(result, tuple_pos, named_buf_tuple);
-                    tuple_pos++;
-
-                    // Fix me: do i need call Py_DECREF on named_buf_tuple?
-                    // Note: PyTuple_SetItem steals the reference.
-                    if (set_status < 0)
-                    {
-                        ERR << "Error building shape string";
-                        PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
-                    }
-                }
+                ERR << "Error building shape string";
+                PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
             }
         }
-        else
-        {
-            block_threads b{a};
-            /* Raising of standard StopIteration exception with empty value. */
-            PyErr_SetNone(PyExc_StopIteration);
-        }
     }
+    else
+    {
+        block_threads b{a};
+        /* Raising of standard StopIteration exception with empty value. */
+        PyErr_SetNone(PyExc_StopIteration);
+    }
+
     return result;
 }
 
@@ -344,7 +344,7 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
 
         try
         {
-            self->m_loader          = create_loader(json_config);
+            self->m_loader = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
 
