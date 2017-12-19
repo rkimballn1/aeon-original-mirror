@@ -43,8 +43,15 @@ public:
     ~box() {}
     nervana::normalized_box::box& operator=(const box& b);
 
-    float    width() const override { return m_xmax - m_xmin; }
-    float    height() const override { return m_ymax - m_ymin; }
+    float width() const override
+    {
+        throw std::runtime_error("Width of normalized boundingbox is undefined.");
+    }
+    float height() const override
+    {
+        throw std::runtime_error("Height of normalized boundingbox is undefined.");
+    }
+    float    aspect() const { return (xmin() - xmax()) / (ymin() - ymax()); }
     cv::Rect rect() const override
     {
         throw std::runtime_error(

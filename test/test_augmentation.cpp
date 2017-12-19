@@ -65,8 +65,7 @@ void test_sampler(float aspect, float scale, string what = "min_jaccard_overlap"
         ASSERT_LE(out.ymax(), max_height);
         if (normalized_box::box(0, 0, max_width, max_height) != out)
         {
-            EXPECT_NEAR(out.width() / out.height(), aspect, 0.00001);
-            EXPECT_GT(out.width(), 0);
+            EXPECT_NEAR(out.aspect(), aspect, 0.00001);
             non_full_samples_count++;
         }
     }
