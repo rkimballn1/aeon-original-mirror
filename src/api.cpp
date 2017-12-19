@@ -15,9 +15,9 @@
 
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 
 #include "api.hpp"
+#include "python_utils.hpp"
 #include "json_parser.hpp"
 #include <numpy/arrayobject.h>
 #include "structmember.h"
@@ -30,59 +30,8 @@ namespace
 {
     loader* create_loader(const json& config);
 
-    struct block_threads;
-
-#ifdef PYTHON_PLUGIN
-    struct allow_threads
-    {
-        allow_threads();
-        ~allow_threads();
-
-    private:
-        friend struct block_threads;
-        PyThreadState* _state;
-    };
-
-    allow_threads::allow_threads() : _state{PyEval_SaveThread()}
-    { }
-
-    allow_threads::~allow_threads()
-    {
-        PyEval_RestoreThread(_state);
-    }
-
-    struct block_threads
-    {
-        block_threads(allow_threads& a);
-        block_threads() = delete;
-        ~block_threads();
-
-    private:
-        allow_threads& _parent;
-        PyThreadState* _state{nullptr};
-    };
-
-    block_threads::block_threads(allow_threads& a) : _parent{a}
-    { 
-        std::swap(_state, _parent._state);
-        PyEval_RestoreThread(_state);
-    }
-
-    block_threads::~block_threads()
-    {
-        PyEval_SaveThread();
-        std::swap(_parent._state, _state);
-    }
-#else
-    struct allow_threads
-    { };
-
-    struct block_threads
-    {
-        block_threads(allow_threads&)
-        { }
-    };
-#endif
+    using block_threads = nervana::python::block_threads;
+    using allow_threads = nervana::python::allow_threads;
 }
 
 extern "C" {
