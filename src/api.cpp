@@ -342,6 +342,7 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             return NULL;
         }
 
+        allow_threads a;
         try
         {
             self->m_loader = create_loader(json_config);
