@@ -17,6 +17,7 @@
 #include <sstream>
 
 #include "api.hpp"
+#include "python_utils.hpp"
 #include "json_parser.hpp"
 #include <numpy/arrayobject.h>
 #include "structmember.h"
@@ -28,6 +29,9 @@ using nlohmann::json;
 namespace
 {
     loader* create_loader(const json& config);
+
+    using block_threads = nervana::python::block_threads;
+    using allow_threads = nervana::python::allow_threads;
 }
 
 extern "C" {
@@ -111,10 +115,11 @@ static PyObject* DataLoader_iter(PyObject* self)
 {
     INFO << " aeon_DataLoader_iter";
     Py_INCREF(self);
-    Py_BEGIN_ALLOW_THREADS;
+
+    allow_threads a;
+
     DL_get_loader(self)->reset();
     ((aeon_DataLoader*)(self))->m_first_iteration = true;
-    Py_END_ALLOW_THREADS;
     return self;
 }
 
@@ -122,7 +127,9 @@ static PyObject* DataLoader_iternext(PyObject* self)
 {
     INFO << " aeon_DataLoader_iternext";
     PyObject* result = NULL;
-    Py_BEGIN_ALLOW_THREADS;
+
+    allow_threads a;
+
     nlohmann::json conf = DL_get_loader(self)->get_current_config();
     bool           batch_major{true};
     try
@@ -143,7 +150,7 @@ static PyObject* DataLoader_iternext(PyObject* self)
         const fixed_buffer_map& d     = *(DL_get_loader(self)->get_current_iter());
         auto                    names = DL_get_loader(self)->get_buffer_names();
 
-        Py_BLOCK_THREADS;
+        block_threads b{a};
         result            = PyTuple_New(names.size());
         int buf_tuple_len = 2;
         int tuple_pos     = 0;
@@ -168,17 +175,14 @@ static PyObject* DataLoader_iternext(PyObject* self)
                 PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
             }
         }
-        Py_UNBLOCK_THREADS;
     }
     else
     {
-        Py_BLOCK_THREADS
-            /* Raising of standard StopIteration exception with empty value. */
-            PyErr_SetNone(PyExc_StopIteration);
-        Py_UNBLOCK_THREADS;
+        block_threads b{a};
+        /* Raising of standard StopIteration exception with empty value. */
+        PyErr_SetNone(PyExc_StopIteration);
     }
 
-    Py_END_ALLOW_THREADS;
     return result;
 }
 
@@ -233,13 +237,15 @@ static PyObject* wrap_buffer_as_np_array(const buffer_fixed_size_elements* buf, 
 
 static void DataLoader_dealloc(aeon_DataLoader* self)
 {
-    Py_BEGIN_ALLOW_THREADS;
     INFO << " DataLoader_dealloc";
-    if (self->m_loader != nullptr)
     {
-        delete self->m_loader;
+        allow_threads a;
+        if (self->m_loader != nullptr)
+        {
+            delete self->m_loader;
+        }
     }
-    Py_END_ALLOW_THREADS;
+
     Py_XDECREF(self->ndata);
     Py_XDECREF(self->batch_size);
     Py_XDECREF(self->axes_info);
@@ -285,10 +291,10 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             return NULL;
         }
 
-        Py_BEGIN_ALLOW_THREADS;
+        allow_threads a;
         try
         {
-            self->m_loader          = create_loader(json_config);
+            self->m_loader = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
 
@@ -310,10 +316,10 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 auto axes_lengths = name_shape_list[i].second.get_shape();
                 auto axes_names   = name_shape_list[i].second.get_names();
 
+                block_threads{a};
+
                 // using tuple instead of dict to preserve the order
                 // python 2.x doesnt have the support for ordereddict obj, its supported in python 3.x onwards
-
-                Py_BLOCK_THREADS;
                 PyObject* py_axis_tuple  = PyTuple_New(axes_lengths.size());
                 int       axis_tuple_len = 2;
                 for (size_t j = 0; j < axes_lengths.size(); ++j)
@@ -352,21 +358,19 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 PyTuple_SetItem(py_datum_tuple, 1, py_axis_tuple);
 
                 int tuple_status = PyTuple_SetItem(self->axes_info, i, py_datum_tuple);
-
-                Py_UNBLOCK_THREADS;
+                
                 if (tuple_status < 0)
                 {
-                    Py_BLOCK_THREADS;
                     ERR << "Error building shape string";
                     PyErr_SetString(PyExc_RuntimeError, "Error building shape dict");
                     return NULL;
                 }
             }
         }
-
         catch (std::exception& e)
         {
-            Py_BLOCK_THREADS;
+            block_threads b{a};
+
             // Some kind of problem with creating the internal loader object
             std::stringstream ss;
             ss << "Unable to create internal loader object: " << e.what() << endl;
@@ -375,7 +379,6 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
             PyErr_SetString(PyExc_RuntimeError, ss.str().c_str());
             return NULL;
         }
-        Py_END_ALLOW_THREADS;
     }
     return (PyObject*)self;
 }

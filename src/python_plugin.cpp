@@ -27,8 +27,8 @@ namespace nervana
 
         PyObject* arg = convert::to_pyobject(in_data);
 
-        PyObject* ret_val =
-            PyObject_CallMethodObjArgs(instance, PyUnicode_FromString(methodname.c_str()), arg, NULL);
+        PyObject* ret_val = PyObject_CallMethodObjArgs(
+            instance, PyUnicode_FromString(methodname.c_str()), arg, NULL);
 
         T out;
         if (ret_val != NULL)
