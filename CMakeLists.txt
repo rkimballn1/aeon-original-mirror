@@ -132,6 +132,7 @@ link_directories(${SOX_LIBRARY_DIRS})
 add_definitions(${SOX_CFLAGS_OTHERS})
 
 find_package(OpenCV REQUIRED)
+
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 
@@ -147,13 +148,15 @@ include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 
 set(Python_ADDITIONAL_VERSIONS 3.6 3.5 3.4)
+
+find_package(PythonLibs)
+find_package(PythonInterp)
+
 if (PYTHON_PLUGIN)
-    find_package(PythonLibs 2.7 REQUIRED)
-    find_package(PythonInterp 2.7 REQUIRED)
-else(PYTHON_PLUGIN)
-    find_package(PythonLibs)
-    find_package(PythonInterp)
-endif(PYTHON_PLUGIN)
+    if (NOT ${PYTHON_VERISON_MAJOR} EQUAL ${OpenCV_VERSION_MAJOR})
+        message(WARNING "Python version " ${PYTHON_VERSION_MAJOR} " incompatible with OpenCV version " ${OpenCV_VERSION_MAJOR})
+    endif ()
+endif (PYTHON_PLUGIN)
 
 
 if (PYTHONLIBS_FOUND)
