@@ -1171,7 +1171,7 @@ bool test_contrast_image(cv::Mat m, float v1, float v2, float v3)
 
 TEST(photometric, contrast)
 {
-    cv::Mat  source{384, 512, CV_8UC3};
+    cv::Mat  source(384, 512, CV_8UC3);
     uint8_t* p = source.data;
     for (int row = 0; row < 128; row++)
     {
@@ -1224,7 +1224,7 @@ TEST(photometric, contrast)
 
 TEST(photometric, brightness)
 {
-    cv::Mat  source{384, 512, CV_8UC3};
+    cv::Mat  source(384, 512, CV_8UC3);
     uint8_t* p = source.data;
     for (int row = 0; row < 128; row++)
     {
@@ -1328,7 +1328,7 @@ bool test_saturation(cv::Mat m, vector<float> v1, vector<float> v2, vector<float
 
 TEST(DISABLED_photometric, saturation)
 {
-    cv::Mat  source{128 * 4, 512, CV_8UC3};
+    cv::Mat  source(128 * 4, 512, CV_8UC3);
     uint8_t* p = source.data;
     for (int row = 0; row < 128; row++)
     {
