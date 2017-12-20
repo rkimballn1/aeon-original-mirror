@@ -326,6 +326,11 @@ cv::Mat python::conversion::detail::to_mat(const PyObject* o)
 
     m = cv::Mat(ndims, size, type, PyArray_DATA(o), step);
 
+#ifdef USE_OPENCV3
+    m.u = g_numpyAllocator.allocate(const_cast<PyObject*>(o), ndims, size, type, step);
+    Py_INCREF(o);
+#endif
+
     if (m.data)
     {
 #ifdef USE_OPENCV2
