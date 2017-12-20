@@ -16,7 +16,8 @@
 
 /*
  * The following conversion functions are taken/adapted from OpenCV's cv2.cpp file
- * inside modules/python/src2 folder.
+ * inside modules/python/src2 folder and from opencv-ndarray-converter by Yati Sagade:
+ * https://github.com/yati-sagade/opencv-ndarray-conversion
  */
 
 #if CV_VERSION_MAJOR == 2
