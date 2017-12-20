@@ -72,12 +72,12 @@ namespace nervana
         };
 #else
         struct allow_threads
-        { };
+        {
+        };
 
         struct block_threads
         {
-            block_threads(allow_threads&)
-            { }
+            block_threads(allow_threads&) {}
         };
 #endif
     }

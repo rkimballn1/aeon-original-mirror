@@ -294,7 +294,7 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
         allow_threads a;
         try
         {
-            self->m_loader = create_loader(json_config);
+            self->m_loader          = create_loader(json_config);
             self->m_i               = 0;
             self->m_first_iteration = true;
 
@@ -358,7 +358,7 @@ static PyObject* DataLoader_new(PyTypeObject* type, PyObject* args, PyObject* kw
                 PyTuple_SetItem(py_datum_tuple, 1, py_axis_tuple);
 
                 int tuple_status = PyTuple_SetItem(self->axes_info, i, py_datum_tuple);
-                
+
                 if (tuple_status < 0)
                 {
                     ERR << "Error building shape string";
