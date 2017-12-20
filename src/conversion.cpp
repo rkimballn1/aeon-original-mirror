@@ -20,9 +20,9 @@
  * https://github.com/yati-sagade/opencv-ndarray-conversion
  */
 
-#if CV_VERSION_MAJOR == 2
+#if CV_MAJOR_VERSION == 2
 #define USE_OPENCV2
-#elif CV_VERSION_MAJOR == 3
+#elif CV_MAJOR_VERSION == 3
 #define USE_OPENCV3
 #else
 #error "No OpenCV defined"
