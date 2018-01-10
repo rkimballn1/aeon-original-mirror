@@ -158,13 +158,19 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
 
     cv::Size2f input_size = cv::Size(input_width, input_height);
 
-    if (!crop_enable)
+    if(padding > 0)
     {
         int c_off_x                   = padding_crop_offset_distribution(random);
         int c_off_y                   = padding_crop_offset_distribution(random);
         settings->padding_crop_offset = cv::Size2i(c_off_x, c_off_y);
         settings->cropbox             = cv::Rect(cv::Point2f(0, 0), input_size);
-
+    }
+    else if (!crop_enable)
+    {
+        int c_off_x                   = padding_crop_offset_distribution(random);
+        int c_off_y                   = padding_crop_offset_distribution(random);
+        settings->padding_crop_offset = cv::Size2i(c_off_x, c_off_y);
+        settings->cropbox             = cv::Rect(cv::Point2f(0, 0), input_size);
         float image_scale;
         if (fixed_scaling_factor > 0)
         {
@@ -180,12 +186,6 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
     }
     else
     {
-        if (padding > 0)
-        {
-            throw std::invalid_argument(
-                "crop_enable should not be true: when padding is defined, crop is executed by "
-                "default with cropbox size equal to intput image size");
-        }
         float      image_scale            = scale(random);
         float      _horizontal_distortion = horizontal_distortion(random);
         cv::Size2f out_shape(output_width * _horizontal_distortion, output_height);
