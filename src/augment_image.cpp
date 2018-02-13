@@ -315,8 +315,8 @@ nbox augment::image::param_factory::sample_patch(const vector<nbox>& object_bbox
     {
         return nbox(0,
                     0,
-                    ((double)max_size.width - 1) / max_size.width,
-                    ((double)max_size.height - 1) / max_size.height);
+                    (max_size.width - 1.0f) / max_size.width,
+                    (max_size.height - 1.0f) / max_size.height);
     }
 
     std::uniform_int_distribution<int> uniform_dist(0, batch_samples.size() - 1);
@@ -373,8 +373,8 @@ nbox augment::image::sampler::sample_patch(cv::Size max_size) const
     std::uniform_real_distribution<float> height_generator(0.f, 1.f - bbox_height);
     w_off            = width_generator(random);
     h_off            = height_generator(random);
-    float max_width  = ((float)max_size.width - 1) / max_size.width;
-    float max_height = ((float)max_size.height - 1) / max_size.height;
+    float max_width  = (max_size.width - 1.0f) / max_size.width;
+    float max_height = (max_size.height - 1.0f) / max_size.height;
     try
     {
         return nbox(w_off * max_width,
