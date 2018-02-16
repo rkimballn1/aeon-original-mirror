@@ -66,7 +66,7 @@ TEST(provider, image)
     auto files = image_dataset.get_files();
     ASSERT_NE(0, files.size());
     ifstream f(files[0], istream::binary);
-    ASSERT_TRUE(f);
+    ASSERT_TRUE(f.is_open());
     cpio::reader reader(f);
     for (int i = 0; i < reader.record_count() / 2; i++)
     {

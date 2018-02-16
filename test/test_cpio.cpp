@@ -32,7 +32,7 @@ using namespace nervana;
 TEST(cpio, read_canonical)
 {
     ifstream f(string(CURDIR) + "/test_data/test.cpio", istream::binary);
-    ASSERT_TRUE(f);
+    ASSERT_TRUE(f.is_open());
     cpio::reader reader(f);
     EXPECT_EQ(1, reader.record_count());
 

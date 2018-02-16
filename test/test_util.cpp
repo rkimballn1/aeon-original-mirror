@@ -164,7 +164,7 @@ TEST(avi, video_buffer)
 {
     const string filename = CURDIR "/test_data/bb8.avi";
     ifstream     in(filename, ios_base::binary);
-    ASSERT_TRUE(in);
+    ASSERT_TRUE(in.is_open());
     in.seekg(0, in.end);
     size_t size = in.tellg();
     in.seekg(0, in.beg);
