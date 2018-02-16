@@ -71,10 +71,6 @@ if(COVERAGE)
 endif(COVERAGE)
 
 option(PYTHON_PLUGIN "Enable support of custom python plugins in augmentation pipeline" OFF)
-if(PYTHON_PLUGIN)
-    add_definitions(-DPYTHON_PLUGIN)
-    list(APPEND CMAKE_CXX_FLAGS "-DPYTHON_PLUGIN")
-endif(PYTHON_PLUGIN)
 
 if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
@@ -127,13 +123,13 @@ find_package(Threads)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SOX REQUIRED sox)
-include_directories(${SOX_INCLUDE_DIRS})
+include_directories(SYSTEM ${SOX_INCLUDE_DIRS})
 link_directories(${SOX_LIBRARY_DIRS})
 add_definitions(${SOX_CFLAGS_OTHERS})
 
 find_package(OpenCV REQUIRED)
 
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 
 # opecv_ts is for testing opencv. if it is left in the lib list then we get an error when
@@ -144,7 +140,7 @@ list(REMOVE_ITEM OpenCV_LIBRARIES "${OpenCV_LIB_DIR_OPT}/libopencv_ts.so")
 list(REMOVE_ITEM OpenCV_LIBRARIES opencv_ts)
 
 find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIRS})
+include_directories(SYSTEM ${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 
 set(Python_ADDITIONAL_VERSIONS 3.6 3.5 3.4)
@@ -152,36 +148,41 @@ set(Python_ADDITIONAL_VERSIONS 3.6 3.5 3.4)
 find_package(PythonLibs)
 find_package(PythonInterp)
 
-if (PYTHON_PLUGIN)
-    if (NOT ${PYTHON_VERISON_MAJOR} EQUAL ${OpenCV_VERSION_MAJOR})
-        message(WARNING "Python version " ${PYTHON_VERSION_MAJOR} " incompatible with OpenCV version " ${OpenCV_VERSION_MAJOR})
-    endif ()
-endif (PYTHON_PLUGIN)
-
-
 if (PYTHONLIBS_FOUND)
+
+    set(PYTHON_FOUND true)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPYTHON_FOUND")
+    include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
+    link_directories(${PYTHON_LIBRARY_DIRS})
+
     find_package(NumPy)
     if(NUMPY_FOUND)
-        set(PYTHON_FOUND true)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPYTHON_FOUND")
-        include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
-        link_directories(${PYTHON_LIBRARY_DIRS})
         include_directories(SYSTEM ${NUMPY_INCLUDE_DIRS})
         link_directories(${NUMPY_LIBRARY_DIRS})
     endif(NUMPY_FOUND)
-else()
-    unset(PYTHON_LIBRARIES)
-endif (PYTHONLIBS_FOUND)
+
+    if (PYTHON_PLUGIN)
+        if (NOT ${PYTHON_VERISON_MAJOR} EQUAL ${OpenCV_VERSION_MAJOR})
+            message(WARNING "Python version ${PYTHON_VERSION_MAJOR} incompatible with OpenCV version ${OpenCV_VERSION_MAJOR}")
+        endif ()
+        add_definitions(-DPYTHON_PLUGIN)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPYTHON_PLUGIN")
+    endif()
+
+elseif (PYTHON_PLUGIN)
+    message(WARNING "Python Plugin is disabled - no Python libraries found!")
+    set(PYTHON_PLUGIN OFF)
+endif()
 
 if (ENABLE_AEON_SERVICE)
     # Check for C++ REST SDK from Microsoft
     find_package(CppRest REQUIRED)
-    include_directories(${CPPREST_INCLUDE_DIRS})
+    include_directories(SYSTEM ${CPPREST_INCLUDE_DIRS})
     link_directories(${CPPREST_LIBRARY_DIRS})
 
     # Check for OpenSSL
     find_package(OpenSSL REQUIRED)
-    include_directories(${OPENSSL_INCLUDE_DIRS})
+    include_directories(SYSTEM ${OPENSSL_INCLUDE_DIRS})
     link_directories(${OPENSSL_LIBRARY_DIRS})
 endif()
 
@@ -192,14 +193,14 @@ endif()
 if (ENABLE_OPENFABRICS_CONNECTOR)
     # Check for OpenFabrics Interface
     find_package(OpenFabrics REQUIRED)
-    include_directories(${OPENFABRICS_INCLUDE_DIRS})
+    include_directories(SYSTEM ${OPENFABRICS_INCLUDE_DIRS})
     link_directories(${OPENFABRICS_LIBRARY_DIRS})
 endif()
 
 # Check for BOOST components
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
 set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/test_data)
@@ -221,11 +222,6 @@ find_package(Doxygen)
 find_package(Sphinx)
 find_package(Breathe)
 
-include_directories(BEFORE gtest/googletest/include)
-include_directories(BEFORE gtest/googlemock/include)
-set(BUILD_SHARED_LIBS off)
-add_subdirectory(gtest)
-set(BUILD_SHARED_LIBS on)
 add_subdirectory(src)
 if (ENABLE_AEON_SERVICE)
 add_subdirectory(src/service)
