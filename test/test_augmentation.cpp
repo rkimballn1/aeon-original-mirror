@@ -114,7 +114,7 @@ TEST(image_augmentation, config)
     EXPECT_FLOAT_EQ(0.5, config.crop_offset.a());
     EXPECT_FLOAT_EQ(0.5, config.crop_offset.b());
 
-    EXPECT_FLOAT_EQ(0.0, config.flip_distribution.p());
+    EXPECT_FLOAT_EQ(0.5, config.flip_distribution.p());
 }
 
 TEST(image_augmnetation, config_crop_and_batch_sampler)

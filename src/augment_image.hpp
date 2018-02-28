@@ -186,7 +186,7 @@ public:
     mutable std::uniform_real_distribution<float> crop_offset{0.5f, 0.5f};
 
     /** Flip the image left to right */
-    mutable std::bernoulli_distribution flip_distribution{0};
+    mutable std::bernoulli_distribution flip_distribution{0.5};
 
     /** Image padding pixel number with random crop to original image size */
     int padding{0};

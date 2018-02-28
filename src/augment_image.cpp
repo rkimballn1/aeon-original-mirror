@@ -67,11 +67,6 @@ augment::image::param_factory::param_factory(nlohmann::json js)
             }
 
             // Now fill in derived
-            if (flip_enable)
-            {
-                flip_distribution = bernoulli_distribution{0.5};
-            }
-
             if (!center)
             {
                 crop_offset = uniform_real_distribution<float>{0.0f, 1.0f};
@@ -147,8 +142,11 @@ shared_ptr<augment::image::params> augment::image::param_factory::make_params(
 
     settings->output_size = cv::Size2i(output_width, output_height);
 
-    settings->angle                  = angle(random);
-    settings->flip                   = flip_distribution(random);
+    settings->angle = angle(random);
+    if (flip_enable)
+    {
+        settings->flip = flip_distribution(random);
+    }
     settings->hue                    = hue(random);
     settings->contrast               = contrast(random);
     settings->brightness             = brightness(random);
