@@ -492,11 +492,9 @@ namespace nervana {
     Py_INCREF(&aeon_DataLoaderType);
     PyModule_AddObject(m, "DataLoader", (PyObject*) &aeon_DataLoaderType);
 
-#ifdef IS_PY3K
     return m;
-#endif
   }
-  }
+}
 
   namespace {
 
