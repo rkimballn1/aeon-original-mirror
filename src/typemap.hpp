@@ -182,15 +182,13 @@ public:
         obj.m_otype     = js[m_otype_json_name];
         obj.m_byte_size = js[m_byte_size_json_name];
 
-        auto shape_elements = js[m_shape_json_name];
-        for (size_t shape_element : shape_elements)
-        {
+        auto shape_elements{ js[m_shape_json_name] };
+        for (const auto& shape_element : shape_elements) {
             obj.m_shape.push_back(shape_element);
         }
 
-        auto names = js[m_names_json_name];
-        for (std::string name : names)
-        {
+        auto names{ js[m_names_json_name] };
+        for (const auto& name : names) {
             obj.m_names.push_back(name);
         }
     }
