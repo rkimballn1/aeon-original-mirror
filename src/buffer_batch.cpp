@@ -343,18 +343,17 @@ std::istream& fixed_buffer_map::deserialize(std::istream& in)
     clear();
 
     char   separator;
-    size_t count;
-    in >> count >> separator;
-    for (int i = 0; i < count; i++)
+    std::size_t _count;
+    in >> _count >> separator;
+    for (int i = 0; i < _count; i++)
     {
-        size_t size;
-        in >> size >> separator;
-        vector<char> tmp(size);
-        in.read(tmp.data(), size);
+        std::size_t _size;
+        in >> _size >> separator;
+        vector<char> t(_size);
+        in.read(t.data(), _size);
         in >> separator;
 
-        string name;
-        name.assign(tmp.data(), size);
+        string name{ t.data(), _size };
 
         buffer_fixed_size_elements* fse = new buffer_fixed_size_elements();
         in >> *fse;
