@@ -72,7 +72,7 @@ public:
     {
     }
 
-    virtual ~decoded() override {}
+    virtual ~decoded() = default;
 private:
     const void* m_data;
     size_t      m_data_size;
