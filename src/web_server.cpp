@@ -231,7 +231,7 @@ void web::server::process_loop()
         {
             connection = m_listen_connection->listen();
         }
-        catch (exception)
+        catch (const exception&)
         {
             break;
         }
