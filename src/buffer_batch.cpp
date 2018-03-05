@@ -60,43 +60,44 @@ buffer_fixed_size_elements::buffer_fixed_size_elements(const shape_type& shp_tp,
     allocate();
 }
 
-buffer_fixed_size_elements::buffer_fixed_size_elements(const buffer_fixed_size_elements& rhs)
-    : m_data{nullptr}
-    , m_shape_type{rhs.m_shape_type}
-    , m_size{rhs.m_size}
-    , m_batch_size{rhs.m_batch_size}
-    , m_stride{rhs.m_stride}
-    , m_pinned{rhs.m_pinned}
+buffer_fixed_size_elements::buffer_fixed_size_elements(const buffer_fixed_size_elements& other)
+    : m_data{ nullptr },
+      m_shape_type{ other.m_shape_type },
+      m_size{ other.m_size },
+      m_batch_size{ other.m_batch_size },
+      m_stride{ other.m_stride },
+      m_pinned{ other.m_pinned }
 {
-    allocate();
-    memcpy(m_data, rhs.m_data, m_size);
+    if (other.m_data != nullptr) {
+      allocate();
+      memcpy(m_data, other.m_data, m_size);
+    }
 }
 
-buffer_fixed_size_elements::buffer_fixed_size_elements(buffer_fixed_size_elements&& other)
-    : buffer_fixed_size_elements()
-{
-    move(other);
+buffer_fixed_size_elements::buffer_fixed_size_elements(buffer_fixed_size_elements&& other) noexcept {
+    move(std::move(other));
 }
 
-buffer_fixed_size_elements& buffer_fixed_size_elements::
-    operator=(buffer_fixed_size_elements&& other) noexcept
+buffer_fixed_size_elements& buffer_fixed_size_elements::operator = (buffer_fixed_size_elements&& other) noexcept
 {
-    move(other);
+    if (this != &other) {
+      move(std::move(other));
+    }
     return *this;
 }
 
-void buffer_fixed_size_elements::move(buffer_fixed_size_elements& second)
-{
+void buffer_fixed_size_elements::move(buffer_fixed_size_elements&& other) noexcept {
+  if (m_data != nullptr) {
     deallocate();
-    m_data        = second.m_data;
-    second.m_data = nullptr;
-
-    using std::swap;
-    swap(m_shape_type, second.m_shape_type);
-    swap(m_size, second.m_size);
-    swap(m_batch_size, second.m_batch_size);
-    swap(m_stride, second.m_stride);
-    swap(m_pinned, second.m_pinned);
+  }
+  m_data = other.m_data;
+  m_size = other.m_size;
+  other.m_data = nullptr;
+  other.m_size = 0;
+  m_shape_type = std::move(other.m_shape_type);
+  m_batch_size = other.m_batch_size;
+  m_stride = other.m_stride;
+  m_pinned = other.m_pinned;
 }
 
 char* buffer_fixed_size_elements::get_item(size_t index)
@@ -147,42 +148,34 @@ const char* buffer_fixed_size_elements::get_item(size_t index) const
     return &m_data[offset];
 }
 
-void buffer_fixed_size_elements::allocate()
-{
+void buffer_fixed_size_elements::allocate() {
 #if HAS_GPU
-    if (m_pinned)
-    {
-        CUresult status = cuMemAllocHost((void**)&m_data, m_size);
-        if (status != CUDA_SUCCESS)
-        {
-            throw std::bad_alloc();
-        }
+  if (m_pinned) {
+    CUresult status = cuMemAllocHost((void**)&m_data, m_size);
+    if (status != CUDA_SUCCESS) {
+      throw std::bad_alloc();
     }
-    else
-    {
-        m_data = new char[m_size];
-    }
-#else
+  } else {
+#endif
     m_data = new char[m_size];
+#if HAS_GPU
+  }
 #endif
 }
 
-void buffer_fixed_size_elements::deallocate()
-{
-    if (m_data == nullptr)
-        return;
+void buffer_fixed_size_elements::deallocate() {
+  if (m_data != nullptr) {
 #if HAS_GPU
-    if (m_pinned)
-    {
-        cuMemFreeHost(m_data);
-    }
-    else
-    {
-        delete[] m_data;
-    }
-#else
-    delete[] m_data;
+    if (m_pinned) {
+      cuMemFreeHost(m_data);
+    } else {
 #endif
+      delete[] m_data;
+#if HAS_GPU
+    }
+#endif
+    m_data = nullptr;
+  }
 }
 
 // Transposes the rows and columns of a matrix
