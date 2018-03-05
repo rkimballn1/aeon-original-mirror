@@ -36,12 +36,12 @@ nervana::block_manager::block_manager(shared_ptr<block_loader_source> file_loade
     , m_elements_per_record{file_loader->elements_per_record()}
 {
     if (!cache_root.empty())
-        m_cache.reset(new cache_system(file_loader->get_uid(),
-                                       file_loader->block_count(),
-                                       file_loader->elements_per_record(),
-                                       cache_root,
-                                       enable_shuffle,
-                                       seed));
+        m_cache = std::unique_ptr<cache_system>{ new cache_system(file_loader->get_uid(),
+                                                 file_loader->block_count(),
+                                                 file_loader->elements_per_record(),
+                                                 cache_root,
+                                                 enable_shuffle,
+                                                 seed) };
 }
 
 void block_manager::initialize()

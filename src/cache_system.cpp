@@ -49,7 +49,7 @@ cache_system::cache_system(source_uid_t       uid,
     ss << hex << setw(8) << setfill('0') << uid;
     m_cache_dir = file_util::path_join(m_cache_root, ss.str());
 
-    if (file_util::exists(m_cache_dir) == false)
+    if (!file_util::exists(m_cache_dir))
     {
         file_util::make_directory(m_cache_dir);
     }

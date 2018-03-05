@@ -216,7 +216,7 @@ public:
 class nervana::interface::config : public json_configurable
 {
 public:
-    config() {}
+    config() = default;
     const nervana::shape_type& get_shape_type(size_t index = 0) const
     {
         if (index >= m_shape_type_list.size())
