@@ -336,17 +336,16 @@ augment::image::sampler::sampler(const nlohmann::json& config)
     }
 }
 
-void augment::image::sampler::operator=(const nlohmann::json& config)
+augment::image::sampler& augment::image::sampler::operator=(const nlohmann::json& config)
 {
-    if (config.is_null())
+    if (!config.is_null())
     {
-        return;
+        for (auto& info : config_list)
+        {
+            info->parse(config);
+        }
     }
-
-    for (auto& info : config_list)
-    {
-        info->parse(config);
-    }
+    return *this;
 }
 
 nbox augment::image::sampler::sample_patch() const
@@ -468,17 +467,16 @@ augment::image::sample_constraint::sample_constraint(const nlohmann::json& confi
     }
 }
 
-void augment::image::sample_constraint::operator=(const nlohmann::json& config)
+augment::image::sample_constraint& augment::image::sample_constraint::operator=(const nlohmann::json& config)
 {
-    if (config.is_null())
+    if (!config.is_null())
     {
-        return;
+        for (auto& info : config_list)
+        {
+            info->parse(config);
+        }
     }
-
-    for (auto& info : config_list)
-    {
-        info->parse(config);
-    }
+    return *this;
 }
 
 float augment::image::sample_constraint::get_min_jaccard_overlap() const

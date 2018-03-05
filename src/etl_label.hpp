@@ -21,124 +21,106 @@
 #include "interface.hpp"
 #include "util.hpp"
 
-namespace nervana
-{
-    namespace label
-    {
-        class config;
-        class decoded;
+namespace nervana {
+  namespace label {
 
-        class extractor;
-        class loader;
-    }
-}
+    class config : public interface::config {
+    public:
+      bool binary = false;
+      std::string output_type{ "uint32_t" };
+      std::string type;
+      std::string name;
 
-class nervana::label::config : public interface::config
-{
-public:
-    bool        binary = false;
-    std::string output_type{"uint32_t"};
-    std::string type;
-    std::string name;
-
-    config(nlohmann::json js)
-    {
-        for (auto& info : config_list)
-        {
-            info->parse(js);
+      config() = default;
+      explicit config(const nlohmann::json& js) {
+        for (auto& info : config_list) {
+          info->parse(js);
         }
         verify_config("label", config_list, js);
 
-        add_shape_type({1}, output_type);
-    }
+        add_shape_type({ 1 }, output_type);
+      }
 
-private:
-    config() {}
-    std::vector<std::shared_ptr<interface::config_info_interface>> config_list = {
+    private:
+      std::vector<std::shared_ptr<interface::config_info_interface>> config_list = {
         ADD_SCALAR(name, mode::OPTIONAL),
         ADD_SCALAR(binary, mode::OPTIONAL),
         ADD_SCALAR(type, mode::OPTIONAL),
         ADD_SCALAR(output_type, mode::OPTIONAL, [](const std::string& v) {
-            return output_type::is_valid_type(v);
-        })};
-};
+          return output_type::is_valid_type(v);
+        }) };
+    };
 
-class nervana::label::decoded : public interface::decoded_media
-{
-public:
-    decoded(int index)
-        : _index{index}
-    {
-    }
-    virtual ~decoded() override {}
-    int get_index() { return _index; }
-private:
-    decoded() = delete;
-    int _index;
-};
+    class decoded : public interface::decoded_media {
+    public:
+      decoded() = delete;
+      explicit decoded(int index)
+        : _index{ index } {
+      }
+      virtual ~decoded() = default;
+      int get_index() {
+        return _index;
+      }
+    private:
+      int _index;
+    };
 
-class nervana::label::extractor : public interface::extractor<label::decoded>
-{
-public:
-    extractor(const label::config& cfg)
-        : _binary{cfg.binary}
-    {
-    }
+    class extractor : public interface::extractor<decoded> {
+    public:
+      explicit extractor(const config& cfg)
+        : _binary{ cfg.binary } {
+      }
 
-    ~extractor() {}
-    std::shared_ptr<label::decoded> extract(const void* buf, size_t bufSize) const override
-    {
+      ~extractor() override = default;
+
+      std::shared_ptr<decoded> extract(const void* buf, size_t bufSize) const override {
         int lbl;
-        if (_binary)
-        {
-            if (bufSize != 4)
-            {
-                std::stringstream ss;
-                ss << "Only 4 byte buffers can be loaded as int32.  ";
-                ss << "label_extractor::extract received " << bufSize << " bytes";
-                throw std::runtime_error(ss.str());
-            }
-            lbl = unpack<int>((const char*)buf);
+        if (_binary) {
+          if (bufSize != 4) {
+            std::stringstream ss;
+            ss << "Only 4 byte buffers can be loaded as int32.  ";
+            ss << "label_extractor::extract received " << bufSize << " bytes";
+            throw std::runtime_error(ss.str());
+          }
+          lbl = unpack<int>((const char*) buf);
         }
-        else
-        {
-            try
-            {
-                lbl = std::stoi(std::string((const char*)buf, bufSize));
-            }
-            catch (const std::invalid_argument& ex)
-            {
-                ERR << "Cannot convert string to integer: " << ex.what();
-                throw ex;
-            }
-            catch (const std::out_of_range& ex)
-            {
-                ERR << "String to int conversion out of range error: " << ex.what();
-                throw ex;
-            }
+        else {
+          try {
+            lbl = std::stoi(std::string((const char*) buf, bufSize));
+          }
+          catch (const std::invalid_argument& ex) {
+            ERR << "Cannot convert string to integer: " << ex.what();
+            throw ex;
+          }
+          catch (const std::out_of_range& ex) {
+            ERR << "String to int conversion out of range error: " << ex.what();
+            throw ex;
+          }
         }
         return std::make_shared<label::decoded>(lbl);
-    }
+      }
 
-private:
-    bool _binary;
-};
+    private:
+      bool _binary;
+    };
 
-class nervana::label::loader : public interface::loader<label::decoded>
-{
-public:
-    loader(const label::config& cfg)
-        : _cfg{cfg}
-    {
-    }
-    ~loader() {}
-    void load(const std::vector<void*>& buflist, std::shared_ptr<label::decoded> mp) const override
-    {
-        char* buf   = reinterpret_cast<char*>(buflist[0]);
-        int   index = mp->get_index();
+    class loader : public interface::loader<decoded> {
+    public:
+      explicit loader(const config& cfg)
+        : _cfg{ cfg } {
+      }
+
+      ~loader() override = default;
+
+      void load(const std::vector<void*>& buflist, std::shared_ptr<decoded> mp) const override {
+        auto buf = reinterpret_cast<char*>(buflist[0]);
+        int index = mp->get_index();
         memcpy(buf, &index, _cfg.get_shape_type().get_otype().get_size());
-    }
+      }
 
-private:
-    const label::config& _cfg;
-};
+    private:
+      const config& _cfg;
+    };
+
+  }
+}
