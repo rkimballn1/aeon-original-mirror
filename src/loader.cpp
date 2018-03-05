@@ -213,15 +213,23 @@ const shape_t& loader_local::get_shape(const string& name) const
 }
 
 loader::iterator::iterator(loader& ld, bool is_end)
-    : m_current_loader(ld)
-    , m_is_end{is_end}
+    : m_current_loader{ ld },
+      m_is_end{ is_end }
 {
 }
 
 loader::iterator::iterator(const iterator& other)
-    : m_current_loader{other.m_current_loader}
-    , m_is_end{other.m_is_end}
+    : m_current_loader{ other.m_current_loader }
+    , m_is_end{ other.m_is_end }
 {
+}
+
+loader::iterator& loader::iterator::operator = (const loader::iterator& other) {
+  if (this != &other) {
+    m_current_loader = other.m_current_loader;
+    m_is_end = other.m_is_end;
+  }
+  return *this;
 }
 
 loader::iterator& loader::iterator::operator++()

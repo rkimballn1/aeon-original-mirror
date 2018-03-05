@@ -136,6 +136,7 @@ public:
     public:
         explicit iterator(loader& ld, bool is_end);
         iterator(const iterator&);
+        iterator& operator = (const iterator&);
         ~iterator() {}
         iterator& operator++();
         iterator& operator++(int);
@@ -148,8 +149,8 @@ public:
     private:
         iterator() = delete;
 
-        loader&    m_current_loader;
-        const bool m_is_end;
+        loader& m_current_loader;
+        bool m_is_end;
     };
 
     virtual ~loader() {}

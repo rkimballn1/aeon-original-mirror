@@ -49,5 +49,6 @@ namespace nervana
         std::vector<std::pair<size_t, size_t>> m_block_load_sequence;
 
         manifest(const manifest&) = default;
+        manifest& operator = (const manifest&) = default;
     };
 }

@@ -88,6 +88,9 @@ public:
     server();
     ~server();
 
+    server(const server&) = delete;
+    server& operator = (const server&) = delete;
+
     void start(uint16_t port);
     void stop();
 
@@ -99,8 +102,6 @@ public:
     void wait_for_exit();
 
 private:
-    server(server&);
-
     static void connection_handler_entry(std::shared_ptr<page>);
     void        connection_handler(void*);
 
@@ -159,12 +160,13 @@ public:
 
     page();
 
+    page(const page&) = delete;
+    page& operator = (const page&) = delete;
+
     std::ostream& output_stream();
     std::istream& input_stream();
 
 private:
-    page(page&);
-
     void   close_pending_open();
     size_t get_file_size(const std::string& filename);
 

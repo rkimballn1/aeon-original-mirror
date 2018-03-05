@@ -163,6 +163,7 @@ namespace nervana {
     virtual ~buffer_fixed_size_elements();
 
     buffer_fixed_size_elements(const buffer_fixed_size_elements&);
+    buffer_fixed_size_elements& operator = (const buffer_fixed_size_elements&);
     buffer_fixed_size_elements(buffer_fixed_size_elements&&) noexcept;
     buffer_fixed_size_elements& operator =(buffer_fixed_size_elements&&) noexcept;
     void move(buffer_fixed_size_elements&& other) noexcept;
@@ -202,6 +203,7 @@ namespace nervana {
   class fixed_buffer_map {
   public:
     fixed_buffer_map(const fixed_buffer_map&) = delete;
+    fixed_buffer_map& operator = (const fixed_buffer_map&) = delete;
 
     fixed_buffer_map(const std::vector<std::pair<std::string, shape_type>>& write_sizes, size_t batch_size, bool pinned = false) {
       add_items(write_sizes, batch_size, pinned);

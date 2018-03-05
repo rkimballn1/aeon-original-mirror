@@ -74,6 +74,22 @@ buffer_fixed_size_elements::buffer_fixed_size_elements(const buffer_fixed_size_e
     }
 }
 
+buffer_fixed_size_elements& buffer_fixed_size_elements::operator = (const buffer_fixed_size_elements& other) {
+	if (this != &other) {
+		deallocate();
+		m_shape_type = other.m_shape_type;
+		m_size = other.m_size;
+		m_batch_size = other.m_batch_size;
+		m_stride = other.m_stride;
+		m_pinned = other.m_pinned;
+		if (other.m_data != nullptr) {
+			allocate();
+			memcpy(m_data, other.m_data, other.m_size);
+		}
+	}
+	return *this;
+}
+
 buffer_fixed_size_elements::buffer_fixed_size_elements(buffer_fixed_size_elements&& other) noexcept {
     move(std::move(other));
 }
@@ -164,10 +180,10 @@ void buffer_fixed_size_elements::allocate() {
 }
 
 void buffer_fixed_size_elements::deallocate() {
-  if (m_data != nullptr) {
 #if HAS_GPU
     if (m_pinned) {
-      cuMemFreeHost(m_data);
+      if (m_data != nullptr)
+    		cuMemFreeHost(m_data);
     } else {
 #endif
       delete[] m_data;
@@ -175,7 +191,6 @@ void buffer_fixed_size_elements::deallocate() {
     }
 #endif
     m_data = nullptr;
-  }
 }
 
 // Transposes the rows and columns of a matrix
