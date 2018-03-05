@@ -79,6 +79,7 @@ if (ENABLE_OPENFABRICS_CONNECTOR)
 endif()
 
 set(AEON_HEADER_FILES
+        aeon.hpp
         version.hpp
         bounding_box.hpp
         etl_bounding_box.hpp
