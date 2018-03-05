@@ -66,6 +66,7 @@ int main(int argc, char** argv)
     }
 
     use_aeon(address, port, manifest_path, rdma_address, rdma_port);
+    return 0;
 }
 
 void use_aeon(const string& address, int port, const boost::filesystem::path& manifest_path, const string& rdma_address, int rdma_port)
