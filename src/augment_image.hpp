@@ -25,7 +25,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "boundingbox.hpp"
+#include "bounding_box.hpp"
 #include "normalized_box.hpp"
 #include "json.hpp"
 #include "interface.hpp"

@@ -15,7 +15,7 @@
 *******************************************************************************/
 
 #include <sstream>
-#include "etl_boundingbox.hpp"
+#include "etl_bounding_box.hpp"
 #include "log.hpp"
 
 using namespace std;

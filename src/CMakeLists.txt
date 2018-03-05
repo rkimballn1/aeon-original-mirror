@@ -27,14 +27,14 @@ set (SRC
     block_loader_nds.cpp
     block_manager.cpp
     box.cpp
-    boundingbox.cpp
+    bounding_box.cpp
     buffer_batch.cpp
     cache_system.cpp
     cap_mjpeg_decoder.cpp
     cpio.cpp
     crc.cpp
     etl_audio.cpp
-    etl_boundingbox.cpp
+    etl_bounding_box.cpp
     etl_char_map.cpp
     etl_depthmap.cpp
     etl_image.cpp
@@ -79,7 +79,9 @@ if (ENABLE_OPENFABRICS_CONNECTOR)
 endif()
 
 set(AEON_HEADER_FILES
-        version.hpp)
+        version.hpp
+        bounding_box.hpp
+        etl_bounding_box.hpp)
 
 if (PYTHON_FOUND)
     list(APPEND SRC api.cpp)

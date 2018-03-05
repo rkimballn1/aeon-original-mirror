@@ -25,7 +25,7 @@
 #include "etl_label.hpp"
 #include "etl_audio.hpp"
 #include "etl_blob.hpp"
-#include "etl_boundingbox.hpp"
+#include "etl_bounding_box.hpp"
 #include "etl_char_map.hpp"
 #include "etl_depthmap.hpp"
 #include "etl_label_map.hpp"

@@ -16,7 +16,7 @@
 
 #include "box.hpp"
 #include "log.hpp"
-#include "boundingbox.hpp"
+#include "bounding_box.hpp"
 #include "normalized_box.hpp"
 
 using namespace std;

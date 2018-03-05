@@ -21,7 +21,7 @@
 #include <random>
 
 #include "interface.hpp"
-#include "etl_boundingbox.hpp"
+#include "etl_bounding_box.hpp"
 #include "etl_image.hpp"
 #include "util.hpp"
 #include "box.hpp"

@@ -23,7 +23,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
 #include "numpy/ndarrayobject.h"
-#include "boundingbox.hpp"
+#include "bounding_box.hpp"
 
 namespace python
 {

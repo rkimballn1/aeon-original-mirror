@@ -33,7 +33,7 @@
 #define private public
 
 #include "etl_audio.hpp"
-#include "etl_boundingbox.hpp"
+#include "etl_bounding_box.hpp"
 #include "etl_char_map.hpp"
 #include "etl_image.hpp"
 #include "etl_label.hpp"
