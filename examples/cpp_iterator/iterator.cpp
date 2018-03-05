@@ -76,7 +76,7 @@ int main(int argc, char** argv)
                          {"augmentation", aug_config}};
 
     loader_factory factory;
-    shared_ptr<loader> train_set = factory.get_loader( config );
+    std::unique_ptr<loader> train_set = factory.get_loader( config );
 
     cout << "batch size: " << train_set->batch_size() << endl;
     cout << "batch count: " << train_set->batch_count() << endl;
@@ -88,4 +88,6 @@ int main(int argc, char** argv)
         cout << "\tbatch " << batch_no << " [number of elements: " << batch.size() << "]" << endl;
         batch_no++;
     }
+
+    return 0;
 }
