@@ -90,4 +90,5 @@ int main(int argc, char** argv)
         cout << "\tbatch " << batch_no << " [number of elements: " << batch.size() << "]" << endl;
         batch_no++;
     }
+    return 0;
 }
