@@ -59,13 +59,16 @@ namespace nervana
         class message
         {
         public:
-            message() {}
+            message() = default;
             virtual ~message() { deallocate(); }
-            message(const message* other) { copy(other); }
-            const message& operator=(const message& other)
+            message(const message& other) { copy(other); }
+            message& operator=(const message& other)
             {
-                deallocate();
-                copy(other);
+                if (this != &other)
+                {
+                    deallocate();
+                    copy(other);
+                }
                 return *this;
             }
 
@@ -93,13 +96,16 @@ namespace nervana
             friend class ofi;
 
         public:
-            rdma_memory() {}
-            rdma_memory(size_t size) { allocate(size); }
-            rdma_memory(const rdma_memory* other) { copy(other); }
-            const rdma_memory& operator=(const rdma_memory& other)
+            rdma_memory() = default;
+            explicit rdma_memory(size_t size) { allocate(size); }
+            rdma_memory(const rdma_memory& other) { copy(other); }
+            rdma_memory& operator=(const rdma_memory& other)
             {
-                deallocate();
-                copy(other);
+                if (this != &other)
+                {
+                    deallocate();
+                    copy(other);
+                }
                 return *this;
             }
             ~rdma_memory() { deallocate(); }
@@ -122,7 +128,7 @@ namespace nervana
         class connection_info
         {
         public:
-            connection_info() {}
+            connection_info() = default;
             connection_info(const std::string& address, const std::string& port)
                 : m_address(address)
                 , m_port(port)
