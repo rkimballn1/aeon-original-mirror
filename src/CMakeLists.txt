@@ -82,6 +82,7 @@ set(AEON_HEADER_FILES
         aeon.hpp
         version.hpp
         bounding_box.hpp
+        etl_label.hpp
         etl_bounding_box.hpp
         etl_blob.hpp)
 
