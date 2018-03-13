@@ -17,4 +17,3 @@
 #pragma once
 
 #include "loader.hpp"
-#include "etl_image.hpp"

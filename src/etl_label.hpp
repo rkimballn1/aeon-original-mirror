@@ -52,6 +52,11 @@ public:
         add_shape_type({1}, output_type);
     }
 
+    const std::vector<std::shared_ptr<nervana::interface::config_info_interface>> get_config_list() override
+    {
+        return config_list;
+    }
+
 private:
     config() {}
     std::vector<std::shared_ptr<interface::config_info_interface>> config_list = {

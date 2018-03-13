@@ -96,7 +96,7 @@ public:
         time_t     t   = time(0);
         struct tm* now = localtime(&t);
         ostream&   out = p.output_stream();
-        nervana::image::config cfg;
+        nervana::interface::config cfg;
 
         out << "<span>Current time: " << asctime(now) << "</span>\n";
 

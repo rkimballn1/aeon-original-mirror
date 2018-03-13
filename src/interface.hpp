@@ -190,7 +190,7 @@ public:
         }
         else if (required == mode::REQUIRED)
         {
-            throw std::invalid_argument("required argument '" + key + "' not set");
+            throw std::invalid_argument("Required argument '" + key + "' not set");
         }
     }
 
@@ -217,6 +217,17 @@ class nervana::interface::config : public json_configurable
 {
 public:
     config() {}
+    virtual ~config() {}
+    // Body of this pure virtual function is required to instantiate class objects, and defined in cpp file.
+    // It is pure virtual to force return of actual variable instead of default empty object.
+    virtual const std::vector<std::shared_ptr<interface::config_info_interface>> get_config_list()
+    {
+        throw std::runtime_error(
+            "Unexpected behavior detected. Calling get_config_list() on nervana::interface::config "
+            "object is forbidden. Please "
+            "report this error.");
+    }
+
     const nervana::shape_type& get_shape_type(size_t index = 0) const
     {
         if (index >= m_shape_type_list.size())

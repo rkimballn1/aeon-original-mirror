@@ -58,6 +58,11 @@ public:
 
     explicit config(nlohmann::json js);
 
+    const std::vector<std::shared_ptr<interface::config_info_interface>> get_config_list() override
+    {
+        return config_list;
+    }
+
 private:
     config() {}
     void validate();

@@ -61,6 +61,12 @@ public:
     config(nlohmann::json js);
 
     const cmap_t& get_cmap() const { return _cmap; }
+
+    const std::vector<std::shared_ptr<nervana::interface::config_info_interface>> get_config_list() override
+    {
+        return config_list;
+    }
+
 private:
     std::vector<std::shared_ptr<interface::config_info_interface>> config_list = {
         ADD_SCALAR(max_length, mode::REQUIRED),

@@ -49,6 +49,11 @@ public:
     std::vector<nlohmann::json> etl;
     std::vector<nlohmann::json> augmentation;
 
+    const std::vector<std::shared_ptr<nervana::interface::config_info_interface>> get_config_list() override
+    {
+        return config_list;
+    }
+
 private:
     std::vector<std::shared_ptr<nervana::interface::config_info_interface>> config_list = {
         ADD_OBJECT(etl, mode::REQUIRED), ADD_OBJECT(augmentation, mode::OPTIONAL)};

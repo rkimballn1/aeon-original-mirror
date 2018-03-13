@@ -124,6 +124,11 @@ public:
                int(std::floor(width * scaling_factor));
     }
 
+    const std::vector<std::shared_ptr<interface::config_info_interface>> get_config_list() override
+    {
+        return config_list;
+    }
+
 private:
     std::vector<std::shared_ptr<interface::config_info_interface>> config_list = {
         ADD_SCALAR(height, mode::REQUIRED),
