@@ -35,6 +35,8 @@ static int IGNORE_VALUE;
 namespace nervana
 {
     class json_configurable;
+    class loader;
+    class fixed_buffer_map;
     namespace interface
     {
         class config_info_interface;
@@ -399,4 +401,67 @@ class nervana::interface::params
 {
 public:
     virtual ~params() {}
+};
+
+// this is interface for loaders
+class nervana::loader
+{
+public:
+    enum class BatchMode
+    {
+        INFINITE,
+        ONCE,
+        COUNT
+    };
+
+    class iterator : public std::iterator<std::input_iterator_tag, // iterator_category
+                                          fixed_buffer_map         // value_type
+                                          >
+    {
+        friend class loader_local;
+#if defined(ENABLE_AEON_SERVICE)
+        friend class loader_remote;
+#endif
+
+    public:
+        explicit iterator(loader& ld, bool is_end);
+        iterator(const iterator&);
+        ~iterator() {}
+        iterator& operator++();
+        iterator& operator++(int);
+        bool operator==(const iterator& other) const;
+        bool operator!=(const iterator& other) const;
+        const fixed_buffer_map& operator*() const;
+        const size_t& position() const { return m_current_loader.position(); }
+        bool          positional_end() const;
+
+    private:
+        iterator() = delete;
+
+        loader&    m_current_loader;
+        const bool m_is_end;
+    };
+
+    virtual ~loader() {}
+    virtual const std::vector<std::string>& get_buffer_names() const = 0;
+    virtual const std::vector<std::pair<std::string, shape_type>>& get_names_and_shapes() const = 0;
+    virtual const shape_t& get_shape(const std::string& name) const = 0;
+
+    virtual int record_count() const = 0;
+    virtual int batch_size() const   = 0;
+    virtual int batch_count() const  = 0;
+
+    virtual iterator  begin()            = 0;
+    virtual iterator  end()              = 0;
+    virtual iterator& get_current_iter() = 0;
+    virtual iterator& get_end_iter()     = 0;
+
+    virtual const fixed_buffer_map* get_output_buffer() const  = 0;
+    virtual const size_t&           position()                 = 0;
+    virtual void                    reset()                    = 0;
+    virtual nlohmann::json          get_current_config() const = 0;
+    virtual const char*             get_session_id() const     = 0;
+
+protected:
+    virtual void increment_position() = 0;
 };
