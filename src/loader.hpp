@@ -43,7 +43,6 @@ namespace nervana
 {
     class loader_config;
     class loader;
-    class loader_factory;
     class loader_local;
     class dataset_builder;
     class batch_decoder;
@@ -116,19 +115,6 @@ private:
     };
 
     void validate();
-};
-
-class nervana::loader_factory
-{
-public:
-    std::unique_ptr<loader> get_loader(const std::string& config);
-    std::unique_ptr<loader> get_loader(const nlohmann::json& config);
-
-#if defined(ENABLE_AEON_SERVICE)
-private:
-    bool remote_version(const nlohmann::json& config);
-    std::unique_ptr<loader> create_loader_remote(const nlohmann::json& js);
-#endif
 };
 
 class nervana::loader_local final : public nervana::loader

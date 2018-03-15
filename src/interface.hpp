@@ -37,6 +37,7 @@ namespace nervana
     class fixed_buffer_map;
     class json_configurable;
     class loader;
+    class loader_factory;
     namespace interface
     {
         class config_info_interface;
@@ -464,4 +465,17 @@ public:
 
 protected:
     virtual void increment_position() = 0;
+};
+
+class nervana::loader_factory
+{
+public:
+    std::unique_ptr<loader> get_loader(const std::string& config);
+    std::unique_ptr<loader> get_loader(const nlohmann::json& config);
+
+#if defined(ENABLE_AEON_SERVICE)
+private:
+    bool remote_version(const nlohmann::json& config);
+    std::unique_ptr<loader> create_loader_remote(const nlohmann::json& js);
+#endif
 };
