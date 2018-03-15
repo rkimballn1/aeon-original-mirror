@@ -34,9 +34,9 @@ static int IGNORE_VALUE;
 
 namespace nervana
 {
+    class fixed_buffer_map;
     class json_configurable;
     class loader;
-    class fixed_buffer_map;
     namespace interface
     {
         class config_info_interface;
