@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <immintrin.h>
 #include <xmmintrin.h>
-
+/*
 namespace transpose
 {
     namespace sse
@@ -248,4 +248,4 @@ namespace transpose
             }
         }
     }
-}
+}*/

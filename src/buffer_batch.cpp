@@ -201,7 +201,7 @@ static void transpose_regular(T* dest, const T* src, int rows, int cols)
         }
     }
 }
-
+/*
 static void transpose_buf(
     char* dest, char* src, size_t rows, size_t cols, size_t element_size, TransposeType type)
 {
@@ -242,7 +242,7 @@ static void transpose_buf(
     default: throw "unsupported datatype for transpose";
     }
 }
-
+*/
 buffer_fixed_size_elements::~buffer_fixed_size_elements()
 {
     deallocate();
@@ -268,13 +268,13 @@ void fixed_buffer_map::copy(fixed_buffer_map& src,
 
         int element_size = (this->operator[](name))->get_shape_type().get_otype().get_size();
         int cols         = count * src_fbm->get_stride() / batch_size / element_size;
-        if (transpose && batch_size > 1 && cols > 1)
+       /* if (transpose && batch_size > 1 && cols > 1)
             if ((cols % 16) ||
                 (batch_size % 16)) //data must be bounded to 16 elements for using SSE
                 transpose_buf(p_dst, p_src, batch_size, cols, element_size, TransposeType::REGULAR);
             else
                 transpose_buf(p_dst, p_src, batch_size, cols, element_size, TransposeType::SSE);
-        else
+        else*/
             memcpy(p_dst, p_src, count * src_fbm->get_stride());
     }
 }
