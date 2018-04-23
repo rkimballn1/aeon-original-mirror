@@ -29,7 +29,18 @@ The configuration for this provider accepts a few parameters:
 
    name (string) | ~"~" | Name prepended to the output buffer name
    binary (bool) | False | Determines whether label is already converted to ASCII format
-   output_type (string) | ~"int32_t~" | label data type
+   output_type (string) | ~"uint32_t~" | label data type
+
+Available output_type's are:
+* int8_t
+* uint8_t
+* int16_t
+* uint16_t
+* int32_t
+* uint32_t
+* float
+* double
+* char
 
 The buffers provisioned to the model are:
 
