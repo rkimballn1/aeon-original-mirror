@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 # Set this flag before project definition to avoid using other compiler by gtest
-set(CMAKE_C_COMPILER "g++-7")
+#set(CMAKE_C_COMPILER "g++-7")
 set(CMAKE_CXX_COMPILER "g++-7")
 
 project(aeon C CXX)
@@ -85,7 +85,7 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=inconsistent-missing-override")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=inconsistent-missing-override")
 
 # whitelist errors here
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
